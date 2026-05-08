@@ -17,6 +17,7 @@ interface FileTreeProps {
 
 export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileTreeProps) {
   const [nodes, setNodes] = useState<TreeNode[]>([])
+  const [search, setSearch] = useState('')
 
   const loadDirectory = useCallback(async (dirPath: string, depth: number): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
@@ -35,7 +36,6 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
     }
 
     if (node.expanded) {
-      // Collapse: remove all children deeper than this node
       setNodes(prev => {
         const idx = prev.findIndex(n => n.path === node.path)
         if (idx === -1) return prev
@@ -50,12 +50,10 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
         return updated
       })
     } else {
-      // Expand: load children first, then update state once
       const children = await loadDirectory(node.path, node.depth + 1)
       setNodes(prev => {
         const idx = prev.findIndex(n => n.path === node.path)
         if (idx === -1) return prev
-        // Check if already expanded (double-click guard)
         if (prev[idx].expanded) return prev
         const updated = [...prev]
         updated[idx] = { ...node, expanded: true }
@@ -65,26 +63,53 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
     }
   }
 
+  const filteredNodes = search
+    ? nodes.filter(n => n.name.toLowerCase().includes(search.toLowerCase()))
+    : nodes
+
   return (
-    <div className="file-tree">
-      {nodes.map((node) => (
-        <div
-          key={node.path}
-          className={`tree-item ${selectedFile === node.path ? 'active' : ''}`}
-          style={{ paddingLeft: `${18 + node.depth * 16}px` }}
-          onClick={() => handleClick(node)}
-        >
-          <span className="tree-item-icon">
-            {node.isDirectory ? (node.expanded ? '▾' : '▸') : '📄'}
-          </span>
-          <span className="tree-item-name">{node.name}</span>
-        </div>
-      ))}
-      {nodes.length === 0 && (
-        <div style={{ padding: '18px', fontSize: '13px', color: '#B5B1AC' }}>
-          No files found
-        </div>
-      )}
-    </div>
+    <>
+      <div className="file-tree-search">
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+      <div className="file-tree">
+        {filteredNodes.map((node) => {
+          const isTopLevel = node.depth === 0
+          const isExpanded = node.expanded
+          const classes = [
+            'tree-item',
+            selectedFile === node.path ? 'active' : '',
+            isTopLevel && node.isDirectory ? 'top-level' : '',
+            isExpanded ? 'expanded' : ''
+          ].filter(Boolean).join(' ')
+
+          return (
+            <div
+              key={node.path}
+              className={classes}
+              style={{ paddingLeft: `${14 + node.depth * 16}px` }}
+              onClick={() => handleClick(node)}
+            >
+              {node.isDirectory ? (
+                <span className="tree-item-icon">›</span>
+              ) : (
+                <span className="tree-item-icon" style={{ opacity: 0.35, fontSize: '13px' }}>📄</span>
+              )}
+              <span className="tree-item-name">{node.name}</span>
+            </div>
+          )
+        })}
+        {filteredNodes.length === 0 && (
+          <div style={{ padding: '18px', fontSize: '13px', color: '#B5B1AC', textAlign: 'center' }}>
+            {search ? 'No matches' : 'No files found'}
+          </div>
+        )}
+      </div>
+    </>
   )
 }

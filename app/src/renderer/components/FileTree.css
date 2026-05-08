@@ -4,11 +4,41 @@
   padding: 4px 0;
 }
 
+.file-tree-search {
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.file-tree-search input {
+  width: 100%;
+  padding: 7px 10px 7px 30px;
+  background: #F5F0EB;
+  border: 1px solid #EDE8E2;
+  border-radius: 8px;
+  color: #4A4743;
+  font-size: 12px;
+  font-family: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%238E8B87' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 9px center;
+}
+
+.file-tree-search input::placeholder {
+  color: #B5B1AC;
+}
+
+.file-tree-search input:focus {
+  outline: none;
+  border-color: rgba(139,43,255,0.4);
+  box-shadow: 0 0 0 3px rgba(139,43,255,0.08);
+  background-color: white;
+}
+
 .tree-item {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 18px;
+  padding: 6px 14px;
   font-size: 13px;
   color: #6B6966;
   cursor: pointer;
@@ -26,12 +56,26 @@
   font-weight: 500;
 }
 
+.tree-item.top-level {
+  font-weight: 500;
+  padding: 8px 14px;
+}
+
 .tree-item-icon {
   width: 16px;
   text-align: center;
-  font-size: 13px;
-  opacity: 0.5;
+  font-size: 12px;
+  opacity: 0.4;
   flex-shrink: 0;
+  transition: transform 100ms ease;
+}
+
+.tree-item.top-level > .tree-item-icon {
+  opacity: 0.35;
+}
+
+.tree-item.expanded > .tree-item-icon {
+  transform: rotate(90deg);
 }
 
 .tree-item-name {

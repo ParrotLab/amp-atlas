@@ -96,9 +96,13 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
               onClick={() => handleClick(node)}
             >
               {node.isDirectory ? (
-                <span className="tree-item-icon">›</span>
+                <span className="tree-item-icon">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M3 1.5L7 5L3 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
               ) : (
-                <span className="tree-item-icon" style={{ opacity: 0.35, fontSize: '13px' }}>📄</span>
+                <span className="tree-item-icon" style={{ color: '#B5B1AC', fontSize: '14px' }}>📄</span>
               )}
               <span className="tree-item-name">{node.name}</span>
             </div>

@@ -5,7 +5,7 @@
 }
 
 .file-tree-search {
-  padding: 8px 12px;
+  padding: 44px 12px 8px; /* 38px titlebar + 6px spacing */
   flex-shrink: 0;
 }
 
@@ -62,16 +62,15 @@
 }
 
 .tree-item-icon {
-  width: 16px;
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.4;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #8E8B87;
   flex-shrink: 0;
   transition: transform 100ms ease;
-}
-
-.tree-item.top-level > .tree-item-icon {
-  opacity: 0.35;
 }
 
 .tree-item.expanded > .tree-item-icon {

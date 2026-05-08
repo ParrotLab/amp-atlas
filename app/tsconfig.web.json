@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/renderer/*"]
+    }
+  },
+  "include": [
+    "src/renderer/**/*"
+  ]
+}

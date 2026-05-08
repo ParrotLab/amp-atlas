@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMP UP — Review</title>
+  <link rel="stylesheet" href="../../design-system/tokens.css">
+  <link rel="stylesheet" href="../../design-system/typography.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      background: #131313;
+      color: #1a1a2e;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── Window Chrome ───────────────────────────────────────── */
+    .window {
+      width: 1320px;
+      height: 860px;
+      background: #F5F0EB;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.08),
+        0 30px 60px rgba(0,0,0,0.35),
+        0 0 120px rgba(139, 43, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .titlebar {
+      height: 38px;
+      background: #FEFCF9;
+      border-bottom: 1px solid #EDE8E2;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot.r { background: #FF5F57; }
+    .dot.y { background: #FFBD2E; }
+    .dot.g { background: #28CA42; }
+    .titlebar-label {
+      flex: 1; text-align: center;
+      font-size: 13px; font-weight: 500; color: #999;
+    }
+    .titlebar-spacer { width: 52px; }
+
+    .app { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── Left Sidebar ────────────────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      background: #FEFCF9;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #EDE8E2;
+    }
+
+    .sidebar-nav {
+      padding: 12px 10px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 2px; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6B6966;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 100ms ease;
+      position: relative;
+      text-decoration: none;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: #F0EBE5;
+      color: #3D3832;
+    }
+
+    .nav-item.active {
+      background: rgba(139, 43, 255, 0.08);
+      color: #8B2BFF;
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      position: absolute;
+      right: 10px;
+      background: #FF5C5C;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .nav-divider {
+      height: 1px;
+      background: #EDE8E2;
+      margin: 8px 14px;
+    }
+
+    /* ── Main Layout ─────────────────────────────────────────── */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .main {
+      flex: 1;
+      background: #F5F0EB;
+      overflow-y: auto;
+      padding: 28px 32px 40px;
+      transition: padding-right 200ms ease;
+    }
+
+    .main::-webkit-scrollbar { width: 6px; }
+    .main::-webkit-scrollbar-track { background: transparent; }
+    .main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.10); border-radius: 3px; }
+    .main::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.18); }
+
+    /* ── Comments Panel ──────────────────────────────────────── */
+    .comments-panel {
+      width: 0;
+      overflow: hidden;
+      background: #fff;
+      border-left: 1px solid #EDE8E2;
+      transition: width 200ms ease;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .comments-panel.open {
+      width: 300px;
+    }
+
+    .comments-panel-inner {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .comments-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #EDE8E2;
+      flex-shrink: 0;
+    }
+
+    .comments-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .comments-footer {
+      flex-shrink: 0;
+      padding: 12px 20px 16px;
+      border-top: 1px solid #EDE8E2;
+    }
+
+    .comments-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .comments-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .comments-close-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8E8B87;
+      transition: all 120ms ease;
+    }
+
+    .comments-close-btn:hover {
+      background: #F5F0EB;
+      color: #6B6966;
+    }
+
+    .add-comment-btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1px dashed #DDD8D2;
+      background: #FEFCF9;
+      font-size: 13px;
+      font-weight: 500;
+      color: #8E8B87;
+      cursor: pointer;
+      transition: all 120ms ease;
+      text-align: left;
+    }
+
+    .add-comment-btn:hover {
+      border-color: #8B2BFF;
+      color: #8B2BFF;
+      background: rgba(139, 43, 255, 0.03);
+    }
+
+    .add-comment-btn.hidden {
+      display: none;
+    }
+
+    /* Comment compose area */
+    .comment-compose {
+      display: none;
+      padding: 0;
+    }
+
+    .comment-compose.visible {
+      display: block;
+    }
+
+    .comment-compose textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #DDD8D2;
+      background: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      color: #1a1a2e;
+      resize: vertical;
+      outline: none;
+      transition: border-color 120ms ease;
+    }
+
+    .comment-compose textarea:focus {
+      border-color: #8B2BFF;
+    }
+
+    .comment-compose-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .comment-file-tag {
+      font-size: 11px;
+      font-weight: 500;
+      color: #8E8B87;
+      background: #F5F0EB;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .comment-post-btn {
+      padding: 6px 16px;
+      border-radius: 8px;
+      border: none;
+      background: #8B2BFF;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+
+    .comment-post-btn:hover {
+      background: #7C22EE;
+    }
+
+    /* Comment list */
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    .comments-list::-webkit-scrollbar { width: 4px; }
+    .comments-list::-webkit-scrollbar-track { background: transparent; }
+    .comments-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 2px; }
+
+    .comment-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid #F5F0EB;
+    }
+
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .comment-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8B2BFF, #A855FF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .comment-author {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .comment-time {
+      font-size: 11px;
+      color: #B5B1AC;
+    }
+
+    .comment-file-ref {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #8E8B87;
+      background: #F5F0EB;
+      padding: 2px 8px;
+      border-radius: 5px;
+      margin-bottom: 6px;
+    }
+
+    .comment-text {
+      font-size: 13px;
+      color: #3D3832;
+      line-height: 1.5;
+    }
+
+    /* ── Review Header Card ──────────────────────────────────── */
+    .review-header-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03);
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .review-header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .review-header-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .review-back-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .review-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #8E8B87;
+      transition: all 120ms ease;
+      text-decoration: none;
+    }
+
+    .review-back-btn:hover {
+      background: #F5F0EB;
+      color: #6B6966;
+    }
+
+    .review-back-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #B5B1AC;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .review-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+
+    .review-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .review-meta-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8B2BFF, #A855FF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .review-meta-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .review-meta-time {
+      font-size: 13px;
+      color: #8E8B87;
+    }
+
+    .review-meta-sep {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: #D5D1CC;
+      flex-shrink: 0;
+    }
+
+    .review-system-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 16px;
+      background: rgba(139, 43, 255, 0.08);
+      color: #8B2BFF;
+    }
+
+    .review-description {
+      font-size: 14px;
+      color: #6B6966;
+      line-height: 1.55;
+    }
+
+    .review-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      padding-top: 24px;
+    }
+
+    .btn-comments-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: 1px solid #EDE8E2;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6B6966;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+
+    .btn-comments-toggle:hover {
+      border-color: #D5D1CC;
+      color: #3D3832;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-comments-toggle.active {
+      border-color: #8B2BFF;
+      color: #8B2BFF;
+      background: rgba(139, 43, 255, 0.04);
+    }
+
+    .comment-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: #8B2BFF;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0 5px;
+    }
+
+    .btn-request-changes {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      border: 1px solid #EDE8E2;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6B6966;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+
+    .btn-request-changes:hover {
+      border-color: #D5D1CC;
+      color: #3D3832;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-request-changes:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .btn-approve {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 22px;
+      border-radius: 10px;
+      border: none;
+      background: #16A34A;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 120ms ease;
+      box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
+    }
+
+    .btn-approve:hover {
+      background: #15803d;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+    }
+
+    .btn-approve:disabled {
+      opacity: 0.7;
+      cursor: default;
+    }
+
+    /* Approval banner */
+    .approval-banner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      margin-top: 16px;
+      border-radius: 10px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      font-size: 13px;
+      font-weight: 500;
+      color: #16A34A;
+    }
+
+    .approval-banner.visible {
+      display: flex;
+    }
+
+    /* ── File Cards ──────────────────────────────────────────── */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .file-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #EDE8E2;
+      overflow: hidden;
+      transition: all 200ms ease;
+    }
+
+    .file-card:hover {
+      border-color: #D5D1CC;
+    }
+
+    .file-card.reviewed {
+      border-left: 3px solid #86efac;
+    }
+
+    .file-card.reviewed .file-card-header {
+      opacity: 0.75;
+    }
+
+    .file-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+
+    .file-card-header:hover {
+      background: #FEFCF9;
+    }
+
+    /* Checkbox circle */
+    .file-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #D5D1CC;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .file-checkbox:hover {
+      border-color: #16A34A;
+    }
+
+    .file-checkbox.checked {
+      background: #16A34A;
+      border-color: #16A34A;
+    }
+
+    .file-checkbox svg {
+      display: none;
+    }
+
+    .file-checkbox.checked svg {
+      display: block;
+    }
+
+    /* File icon */
+    .file-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .file-card-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a2e;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-card-path {
+      font-size: 12px;
+      color: #B5B1AC;
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* File comment count badge */
+    .file-comment-count {
+      font-size: 12px;
+      color: #8E8B87;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    /* Status badges */
+    .file-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .file-status.edited {
+      background: rgba(245, 158, 11, 0.1);
+      color: #D97706;
+    }
+
+    .file-status.added {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16A34A;
+    }
+
+    .file-status.deleted {
+      background: rgba(220, 38, 38, 0.1);
+      color: #DC2626;
+    }
+
+    /* Expand chevron */
+    .file-chevron {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #B5B1AC;
+      transition: transform 200ms ease;
+      flex-shrink: 0;
+    }
+
+    .file-card.expanded .file-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* File content area */
+    .file-content {
+      display: none;
+      border-top: 1px solid #EDE8E2;
+    }
+
+    .file-card.expanded .file-content {
+      display: block;
+    }
+
+    /* Content toolbar */
+    .content-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-bottom: 1px solid #F5F0EB;
+      background: #FEFCF9;
+    }
+
+    .content-toolbar-filename {
+      font-size: 13px;
+      font-weight: 500;
+      color: #8E8B87;
+    }
+
+    /* View toggle pill */
+    .view-toggle {
+      display: flex;
+      align-items: center;
+      border-radius: 8px;
+      background: #F5F0EB;
+      padding: 2px;
+    }
+
+    .view-toggle-btn {
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      font-weight: 500;
+      color: #8E8B87;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+
+    .view-toggle-btn.active {
+      background: #8B2BFF;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(139, 43, 255, 0.25);
+    }
+
+    /* Document content */
+    .doc-content {
+      padding: 32px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .doc-content h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a2e;
+      letter-spacing: -0.01em;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #EDE8E2;
+    }
+
+    .doc-content h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-top: 28px;
+      margin-bottom: 14px;
+    }
+
+    .doc-content h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #3D3832;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    .doc-content p {
+      font-size: 14px;
+      color: #3D3832;
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    /* Checkboxes in doc */
+    .doc-checklist {
+      list-style: none;
+      padding: 0;
+      margin: 4px 0 8px;
+    }
+
+    .doc-checklist li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 14px;
+      color: #3D3832;
+      line-height: 1.5;
+    }
+
+    .doc-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2px solid #D5D1CC;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doc-check.done {
+      background: #16A34A;
+      border-color: #16A34A;
+    }
+
+    .doc-check.done svg {
+      display: block;
+    }
+
+    .doc-check svg {
+      display: none;
+    }
+
+    /* ── Changes View ────────────────────────────────────────── */
+    .changes-view {
+      display: none;
+    }
+
+    .final-view {
+      display: block;
+    }
+
+    .file-card[data-view="changes"] .changes-view {
+      display: block;
+    }
+
+    .file-card[data-view="changes"] .final-view {
+      display: none;
+    }
+
+    /* Change line styles */
+    .change-line {
+      position: relative;
+    }
+
+    .change-line.added {
+      background: #f0fdf4;
+      border-left: 2px solid #16A34A;
+      padding-left: 8px;
+      margin-left: -10px;
+      border-radius: 3px;
+    }
+
+    .change-line.removed {
+      background: #fef2f2;
+      border-left: 2px solid #DC2626;
+      padding-left: 8px;
+      margin-left: -10px;
+      border-radius: 3px;
+      text-decoration: line-through;
+      opacity: 0.65;
+    }
+
+    .change-line.modified-old {
+      background: #fef2f2;
+      border-left: 2px solid #DC2626;
+      padding-left: 8px;
+      margin-left: -10px;
+      border-radius: 3px 3px 0 0;
+      text-decoration: line-through;
+      opacity: 0.65;
+    }
+
+    .change-line.modified-new {
+      background: #f0fdf4;
+      border-left: 2px solid #16A34A;
+      padding-left: 8px;
+      margin-left: -10px;
+      border-radius: 0 0 3px 3px;
+    }
+
+    .change-line.all-new {
+      background: #f0fdf4;
+      border-left: 2px solid #16A34A;
+      padding-left: 8px;
+      margin-left: -10px;
+      border-radius: 3px;
+    }
+
+    /* Hover tooltip for changes */
+    .change-line .change-tooltip {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: -32px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .change-line .change-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 14px;
+      border: 5px solid transparent;
+      border-top-color: #1a1a2e;
+    }
+
+    .change-line .change-tooltip .tt-avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8B2BFF, #A855FF);
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .change-line:hover .change-tooltip {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Deleted file overlay */
+    .deleted-file-message {
+      padding: 32px;
+      text-align: center;
+    }
+
+    .deleted-file-message p {
+      font-size: 14px;
+      color: #8E8B87;
+      margin-bottom: 20px;
+    }
+
+    .deleted-file-preview {
+      background: #fef2f2;
+      border-radius: 10px;
+      padding: 20px 24px;
+      opacity: 0.6;
+      text-align: left;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .deleted-file-preview h1 {
+      font-size: 18px;
+      color: #6B6966;
+      text-decoration: line-through;
+      margin-bottom: 8px;
+      border: none;
+      padding-bottom: 0;
+    }
+
+    .deleted-file-preview li {
+      color: #8E8B87;
+      text-decoration: line-through;
+      font-size: 13px;
+    }
+
+    /* ── Animations ───────────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .review-header-card { animation: fadeInUp 400ms ease both; animation-delay: 60ms; }
+    .file-card:nth-child(1) { animation: fadeInUp 400ms ease both; animation-delay: 140ms; }
+    .file-card:nth-child(2) { animation: fadeInUp 400ms ease both; animation-delay: 200ms; }
+    .file-card:nth-child(3) { animation: fadeInUp 400ms ease both; animation-delay: 260ms; }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <!-- Titlebar -->
+    <div class="titlebar">
+      <div class="dots">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+      </div>
+      <div class="titlebar-label">AI Momentum Protocols</div>
+      <div class="titlebar-spacer"></div>
+    </div>
+
+    <div class="app">
+      <!-- ── Left Sidebar ─────────────────────────────────────── -->
+      <div class="sidebar">
+        <!-- Logo at top -->
+        <div style="padding: 22px 20px 16px; border-bottom: 1px solid #EDE8E2;">
+          <img src="../../design-system/assets/logo-wordmark-dark.svg" alt="AI Momentum Protocols" style="height: 26px;">
+        </div>
+
+        <!-- Navigation -->
+        <div class="sidebar-nav">
+          <a class="nav-item" href="final-dashboard.html" style="text-decoration:none;">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2" y="2" width="5.5" height="5.5" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="10.5" y="2" width="5.5" height="5.5" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="2" y="10.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </div>
+            Dashboard
+          </a>
+
+          <div class="nav-item">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2" y="3.5" width="14" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M2 7h14" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </div>
+            Inbox
+            <span class="nav-badge">3</span>
+          </div>
+
+          <div class="nav-divider"></div>
+
+          <a class="nav-item active" href="final-system-overview.html" style="text-decoration:none;">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h5a3.5 3.5 0 013.5 3.5V18a2.5 2.5 0 00-2.5-2.5H2V3z"/>
+                <path d="M18 3h-5a3.5 3.5 0 00-3.5 3.5V18a2.5 2.5 0 012.5-2.5H18V3z"/>
+              </svg>
+            </div>
+            Learning System
+          </a>
+
+          <div class="nav-item">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V4a1 1 0 00-1-1z"/>
+                <path d="M2 8h16"/>
+                <path d="M6 15v3M14 15v3M4 18h12"/>
+              </svg>
+            </div>
+            Marketing System
+          </div>
+
+          <div class="nav-item">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 2L2 6l8 4 8-4-8-4z"/>
+                <path d="M2 14l8 4 8-4"/>
+                <path d="M2 10l8 4 8-4"/>
+              </svg>
+            </div>
+            AI Operations
+          </div>
+
+          <div class="nav-divider"></div>
+
+          <div class="nav-item">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.22 4.22l1.42 1.42M12.36 12.36l1.42 1.42M4.22 13.78l1.42-1.42M12.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            Settings
+          </div>
+        </div>
+
+        <!-- User at bottom -->
+        <div style="padding: 14px 20px; border-top: 1px solid #EDE8E2; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #8B2BFF, #A855FF); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; position: relative; flex-shrink: 0;">
+            R
+            <div style="position: absolute; bottom: 0px; right: 0px; width: 10px; height: 10px; border-radius: 50%; background: #22C55E; border: 2px solid #FEFCF9;"></div>
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Rose</div>
+            <div style="font-size: 11px; color: #8E8B87;">Parrot Labs</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Main Wrapper (content + comments panel) ──────────── -->
+      <div class="main-wrapper">
+        <div class="main" id="mainContent">
+
+          <!-- ── Review Header Card ───────────────────────────── -->
+          <div class="review-header-card" id="reviewHeaderCard">
+            <!-- Approval banner (hidden by default) -->
+            <div class="approval-banner" id="approvalBanner">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1a7 7 0 110 14A7 7 0 018 1z" fill="#16A34A" opacity="0.15"/>
+                <path d="M5 8l2 2 4-4" stroke="#16A34A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              You approved this draft. Kristi will be notified.
+            </div>
+
+            <div class="review-header-top">
+              <div class="review-header-left">
+                <div class="review-back-row">
+                  <a class="review-back-btn" href="final-system-overview.html">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                  <span class="review-back-label">Review Request</span>
+                </div>
+
+                <div class="review-title">Updated onboarding checklist</div>
+
+                <div class="review-meta">
+                  <div class="review-meta-avatar">K</div>
+                  <span class="review-meta-name">Kristi</span>
+                  <div class="review-meta-sep"></div>
+                  <span class="review-meta-time">Submitted 1 hour ago</span>
+                  <div class="review-meta-sep"></div>
+                  <span class="review-system-tag">Learning System</span>
+                </div>
+
+                <div class="review-description">Updated the onboarding checklist to include Q2 training requirements and new tool setup steps.</div>
+              </div>
+
+              <div class="review-header-actions">
+                <button class="btn-comments-toggle" id="commentsToggleBtn" onclick="toggleComments()">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M14 10a1.33 1.33 0 01-1.33 1.33H4.67L2 14V3.33A1.33 1.33 0 013.33 2h9.34A1.33 1.33 0 0114 3.33V10z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Comments
+                  <span class="comment-count-badge" id="commentCountBadge">1</span>
+                </button>
+
+                <button class="btn-request-changes" id="requestChangesBtn" onclick="handleRequestChanges()">
+                  Request Changes
+                </button>
+
+                <button class="btn-approve" id="approveBtn" onclick="handleApprove()">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3.5 8.5l3 3 6-6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Approve
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── File List ────────────────────────────────────── -->
+          <div class="file-list">
+
+            <!-- File 1: onboarding-checklist.md (Edited) -->
+            <div class="file-card expanded" id="file1" data-view="final" data-filename="onboarding-checklist.md">
+              <div class="file-card-header" onclick="toggleFile('file1')">
+                <div class="file-checkbox" id="check1" onclick="event.stopPropagation(); toggleCheck('check1', 'file1')">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="file-icon" style="color: #D97706;">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M9 1H4a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5V5.5L9 1z" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M9 1v4.5h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="file-name">
+                  <div class="file-card-name">onboarding-checklist.md</div>
+                </div>
+                <span class="file-comment-count" data-file="onboarding-checklist.md" data-count="1" onclick="event.stopPropagation(); openCommentsPanel();"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 10a1.33 1.33 0 01-1.33 1.33H4.67L2 14V3.33A1.33 1.33 0 013.33 2h9.34A1.33 1.33 0 0114 3.33V10z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> 1</span>
+                <span class="file-status edited">Edited</span>
+                <div class="file-chevron">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="file-content">
+                <div class="content-toolbar">
+                  <span class="content-toolbar-filename">reference/guides/onboarding-checklist.md</span>
+                  <div class="view-toggle">
+                    <button class="view-toggle-btn active" onclick="setView('file1', 'final', this)">Final</button>
+                    <button class="view-toggle-btn" onclick="setView('file1', 'changes', this)">Changes</button>
+                  </div>
+                </div>
+
+                <!-- Final View -->
+                <div class="final-view">
+                  <div class="doc-content">
+                    <h1>Onboarding Checklist</h1>
+
+                    <h2>Week 1</h2>
+
+                    <h3>Day 1-2: Setup</h3>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Set up development environment
+                      </li>
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Complete security training
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Set up Claude Code workspace
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Install recommended VS Code extensions
+                      </li>
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Meet with team leads
+                      </li>
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Review company playbooks
+                      </li>
+                    </ul>
+
+                    <h3>Day 3-5: Training</h3>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check"></div>
+                        Complete AI operations overview
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Review domain workspace structure and learn the Draft &rarr; Review &rarr; Publish workflow
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Shadow team member on active project
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Complete first practice draft submission
+                      </li>
+                    </ul>
+
+                    <h2>Week 2</h2>
+
+                    <h3>Day 6-8: Integration</h3>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check"></div>
+                        Begin contributing to assigned system
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Set up recurring 1:1 with system mentor
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Submit first review request
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Complete onboarding retrospective and share feedback
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Changes View -->
+                <div class="changes-view">
+                  <div class="doc-content">
+                    <h1>Onboarding Checklist</h1>
+
+                    <h2>Week 1</h2>
+
+                    <h3>Day 1-2: Setup</h3>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Set up development environment
+                      </li>
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Complete security training
+                      </li>
+                      <li class="change-line added">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Set up Claude Code workspace
+                      </li>
+                      <li class="change-line added">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Install recommended VS Code extensions
+                      </li>
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Meet with team leads
+                      </li>
+                      <li>
+                        <div class="doc-check done">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        Review company playbooks
+                      </li>
+                    </ul>
+
+                    <h3>Day 3-5: Training</h3>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check"></div>
+                        Complete AI operations overview
+                      </li>
+                      <li class="change-line modified-old">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Review domain workspace structure
+                      </li>
+                      <li class="change-line modified-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Review domain workspace structure and learn the Draft &rarr; Review &rarr; Publish workflow
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Shadow team member on active project
+                      </li>
+                      <li class="change-line added">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Complete first practice draft submission
+                      </li>
+                    </ul>
+
+                    <h2>Week 2</h2>
+
+                    <h3>Day 6-8: Integration</h3>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check"></div>
+                        Begin contributing to assigned system
+                      </li>
+                      <li class="change-line added">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Set up recurring 1:1 with system mentor
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        Submit first review request
+                      </li>
+                      <li class="change-line modified-old">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Complete onboarding survey
+                      </li>
+                      <li class="change-line modified-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Complete onboarding retrospective and share feedback
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- File 2: new-tools-setup.md (Added) -->
+            <div class="file-card" id="file2" data-view="final" data-filename="new-tools-setup.md">
+              <div class="file-card-header" onclick="toggleFile('file2')">
+                <div class="file-checkbox" id="check2" onclick="event.stopPropagation(); toggleCheck('check2', 'file2')">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="file-icon" style="color: #16A34A;">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M9 1H4a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5V5.5L9 1z" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M9 1v4.5h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 7.5v5M5.5 10h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="file-name">
+                  <div class="file-card-name">new-tools-setup.md</div>
+                </div>
+                <span class="file-comment-count" data-file="new-tools-setup.md" data-count="0" style="display: none;" onclick="event.stopPropagation(); openCommentsPanel();"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 10a1.33 1.33 0 01-1.33 1.33H4.67L2 14V3.33A1.33 1.33 0 013.33 2h9.34A1.33 1.33 0 0114 3.33V10z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> 0</span>
+                <span class="file-status added">Added</span>
+                <div class="file-chevron">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="file-content">
+                <div class="content-toolbar">
+                  <span class="content-toolbar-filename">reference/guides/new-tools-setup.md</span>
+                  <div class="view-toggle">
+                    <button class="view-toggle-btn active" onclick="setView('file2', 'final', this)">Final</button>
+                    <button class="view-toggle-btn" onclick="setView('file2', 'changes', this)">Changes</button>
+                  </div>
+                </div>
+
+                <!-- Final View -->
+                <div class="final-view">
+                  <div class="doc-content">
+                    <h1>New Tools Setup Guide</h1>
+                    <p>This guide covers the tools and extensions every team member should have installed.</p>
+
+                    <h2>Required Tools</h2>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check"></div>
+                        Claude Code (desktop app)
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        VS Code with AMP extensions
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        GitHub Desktop <span style="color: #8E8B87; font-size: 12px;">(optional &mdash; AMP UP handles this)</span>
+                      </li>
+                    </ul>
+
+                    <h2>Recommended Extensions</h2>
+                    <ul class="doc-checklist">
+                      <li>
+                        <div class="doc-check"></div>
+                        Markdown Preview Enhanced
+                      </li>
+                      <li>
+                        <div class="doc-check"></div>
+                        GitLens <span style="color: #8E8B87; font-size: 12px;">(for power users)</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Changes View -->
+                <div class="changes-view">
+                  <div class="doc-content">
+                    <div class="change-line all-new" style="padding: 4px 8px; margin-bottom: 12px;">
+                      <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                      <h1 style="margin-bottom: 0; border: none; padding-bottom: 0;">New Tools Setup Guide</h1>
+                    </div>
+                    <div class="change-line all-new" style="padding: 4px 8px; margin-bottom: 8px;">
+                      <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                      <p style="margin: 0;">This guide covers the tools and extensions every team member should have installed.</p>
+                    </div>
+
+                    <div class="change-line all-new" style="padding: 4px 8px; margin-bottom: 4px;">
+                      <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                      <h2 style="margin-top: 12px;">Required Tools</h2>
+                    </div>
+                    <ul class="doc-checklist">
+                      <li class="change-line all-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Claude Code (desktop app)
+                      </li>
+                      <li class="change-line all-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        VS Code with AMP extensions
+                      </li>
+                      <li class="change-line all-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        GitHub Desktop <span style="color: #8E8B87; font-size: 12px;">(optional &mdash; AMP UP handles this)</span>
+                      </li>
+                    </ul>
+
+                    <div class="change-line all-new" style="padding: 4px 8px; margin-bottom: 4px;">
+                      <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                      <h2 style="margin-top: 12px;">Recommended Extensions</h2>
+                    </div>
+                    <ul class="doc-checklist">
+                      <li class="change-line all-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        Markdown Preview Enhanced
+                      </li>
+                      <li class="change-line all-new">
+                        <div class="change-tooltip"><span class="tt-avatar">K</span> Kristi &middot; 1h ago</div>
+                        <div class="doc-check"></div>
+                        GitLens <span style="color: #8E8B87; font-size: 12px;">(for power users)</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- File 3: old-checklist-v1.md (Deleted) -->
+            <div class="file-card" id="file3" data-view="final" data-filename="old-checklist-v1.md">
+              <div class="file-card-header" onclick="toggleFile('file3')">
+                <div class="file-checkbox" id="check3" onclick="event.stopPropagation(); toggleCheck('check3', 'file3')">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 6l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="file-icon" style="color: #DC2626;">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M9 1H4a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5V5.5L9 1z" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M9 1v4.5h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M5.5 9.5h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="file-name">
+                  <div class="file-card-name">old-checklist-v1.md</div>
+                </div>
+                <span class="file-comment-count" data-file="old-checklist-v1.md" data-count="0" style="display: none;" onclick="event.stopPropagation(); openCommentsPanel();"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 10a1.33 1.33 0 01-1.33 1.33H4.67L2 14V3.33A1.33 1.33 0 013.33 2h9.34A1.33 1.33 0 0114 3.33V10z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> 0</span>
+                <span class="file-status deleted">Deleted</span>
+                <div class="file-chevron">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="file-content">
+                <div class="content-toolbar">
+                  <span class="content-toolbar-filename">reference/templates/old-checklist-v1.md</span>
+                  <div class="view-toggle" style="visibility: hidden;">
+                    <button class="view-toggle-btn active">Final</button>
+                    <button class="view-toggle-btn">Changes</button>
+                  </div>
+                </div>
+
+                <div class="final-view">
+                  <div class="deleted-file-message">
+                    <p>This file was removed in this draft.</p>
+                    <div class="deleted-file-preview">
+                      <h1>Onboarding Checklist (v1)</h1>
+                      <ul class="doc-checklist" style="margin-top: 10px;">
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Set up development environment
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Complete security training
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Meet with team leads
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Review company playbooks
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Complete onboarding survey
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="changes-view">
+                  <div class="deleted-file-message">
+                    <p>This file was removed in this draft.</p>
+                    <div class="deleted-file-preview">
+                      <h1>Onboarding Checklist (v1)</h1>
+                      <ul class="doc-checklist" style="margin-top: 10px;">
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Set up development environment
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Complete security training
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Meet with team leads
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Review company playbooks
+                        </li>
+                        <li style="color: #8E8B87; text-decoration: line-through; font-size: 13px;">
+                          <div class="doc-check" style="opacity: 0.5;"></div>
+                          Complete onboarding survey
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Comments Panel ────────────────────────────────────── -->
+        <div class="comments-panel" id="commentsPanel">
+          <div class="comments-panel-inner">
+            <div class="comments-header">
+              <div class="comments-header-row">
+                <span class="comments-title">Comments</span>
+                <button class="comments-close-btn" onclick="toggleComments()">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M11 3L3 11M3 3l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="comments-body">
+              <div class="comments-list" id="commentsList">
+                <!-- Existing comment (oldest first, chronological order) -->
+                <div class="comment-item">
+                  <div class="comment-header">
+                    <div class="comment-avatar">R</div>
+                    <span class="comment-author">Rose</span>
+                    <span class="comment-time">Just now</span>
+                  </div>
+                  <div class="comment-file-ref">onboarding-checklist.md</div>
+                  <div class="comment-text">Looks great! One question &mdash; should we add a link to the workspace setup guide in the Day 1-2 section?</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="comments-footer">
+              <button class="add-comment-btn" id="addCommentBtn" onclick="showCompose()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align: -2px; margin-right: 4px;">
+                  <path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                Add Comment
+              </button>
+              <div class="comment-compose" id="commentCompose">
+                <textarea id="commentTextarea" placeholder="Write a comment..."></textarea>
+                <div class="comment-compose-meta">
+                  <span class="comment-file-tag" id="commentFileTag">General</span>
+                  <button class="comment-post-btn" onclick="postComment()">Post</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ───────────────────────────────────────────────────
+    let commentsPanelOpen = false;
+    let approved = false;
+    let requestChangesState = 0; // 0 = initial, 1 = composing, 2 = sent
+    let commentCount = 1;
+
+    // ── File Accordion ──────────────────────────────────────────
+    function toggleFile(fileId) {
+      const card = document.getElementById(fileId);
+      const wasExpanded = card.classList.contains('expanded');
+
+      // Collapse all files (accordion behavior)
+      document.querySelectorAll('.file-card').forEach(fc => {
+        fc.classList.remove('expanded');
+      });
+
+      // Toggle the clicked file
+      if (!wasExpanded) {
+        card.classList.add('expanded');
+        updateCommentFileTag(fileId);
+      } else {
+        updateCommentFileTag(null);
+      }
+    }
+
+    // ── View Toggle (Final / Changes) ───────────────────────────
+    function setView(fileId, view, btnEl) {
+      const card = document.getElementById(fileId);
+      card.setAttribute('data-view', view);
+
+      // Update toggle buttons
+      const toggle = btnEl.closest('.view-toggle');
+      toggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+    }
+
+    // ── File Checkbox ───────────────────────────────────────────
+    function toggleCheck(checkId, fileId) {
+      const check = document.getElementById(checkId);
+      const card = document.getElementById(fileId);
+
+      check.classList.toggle('checked');
+      card.classList.toggle('reviewed');
+    }
+
+    // ── Comments Panel ──────────────────────────────────────────
+    function toggleComments() {
+      const panel = document.getElementById('commentsPanel');
+      const btn = document.getElementById('commentsToggleBtn');
+      commentsPanelOpen = !commentsPanelOpen;
+
+      if (commentsPanelOpen) {
+        panel.classList.add('open');
+        btn.classList.add('active');
+      } else {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+      }
+
+      // Update file tag based on current expanded file
+      const expandedFile = document.querySelector('.file-card.expanded');
+      if (expandedFile) {
+        updateCommentFileTag(expandedFile.id);
+      }
+    }
+
+    function openCommentsPanel() {
+      if (!commentsPanelOpen) {
+        toggleComments();
+      }
+    }
+
+    function updateCommentFileTag(fileId) {
+      const tag = document.getElementById('commentFileTag');
+      if (!tag) return;
+      if (fileId) {
+        const card = document.getElementById(fileId);
+        const filename = card ? card.getAttribute('data-filename') : 'General';
+        tag.textContent = filename;
+      } else {
+        tag.textContent = 'General';
+      }
+    }
+
+    function showCompose() {
+      const compose = document.getElementById('commentCompose');
+      const btn = document.getElementById('addCommentBtn');
+      compose.classList.add('visible');
+      btn.classList.add('hidden');
+      document.getElementById('commentTextarea').focus();
+    }
+
+    function postComment() {
+      const textarea = document.getElementById('commentTextarea');
+      const text = textarea.value.trim();
+      if (!text) return;
+
+      const fileTag = document.getElementById('commentFileTag').textContent;
+      const list = document.getElementById('commentsList');
+
+      const item = document.createElement('div');
+      item.className = 'comment-item';
+      item.innerHTML = `
+        <div class="comment-header">
+          <div class="comment-avatar">R</div>
+          <span class="comment-author">Rose</span>
+          <span class="comment-time">Just now</span>
+        </div>
+        <div class="comment-file-ref">${fileTag}</div>
+        <div class="comment-text">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+      `;
+
+      list.appendChild(item);
+      textarea.value = '';
+      commentCount++;
+      document.getElementById('commentCountBadge').textContent = commentCount;
+
+      // Auto-scroll to the bottom to show the new comment
+      list.scrollTop = list.scrollHeight;
+
+      // Update file comment count badge if tagged to a specific file
+      if (fileTag !== 'General') {
+        const badge = document.querySelector('.file-comment-count[data-file="' + fileTag + '"]');
+        if (badge) {
+          const current = parseInt(badge.getAttribute('data-count') || '0');
+          const newCount = current + 1;
+          badge.setAttribute('data-count', newCount);
+          badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 10a1.33 1.33 0 01-1.33 1.33H4.67L2 14V3.33A1.33 1.33 0 013.33 2h9.34A1.33 1.33 0 0114 3.33V10z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> ' + newCount;
+          badge.style.display = 'flex';
+        }
+      }
+
+      // Reset compose
+      const compose = document.getElementById('commentCompose');
+      const btn = document.getElementById('addCommentBtn');
+      compose.classList.remove('visible');
+      btn.classList.remove('hidden');
+
+      // If request changes was in composing state, transition to sent
+      if (requestChangesState === 1) {
+        requestChangesState = 2;
+        const rcBtn = document.getElementById('requestChangesBtn');
+        rcBtn.textContent = 'Feedback Sent!';
+        rcBtn.disabled = true;
+        rcBtn.style.color = '#16A34A';
+        rcBtn.style.borderColor = '#bbf7d0';
+        rcBtn.style.background = '#f0fdf4';
+      }
+    }
+
+    // ── Approve ─────────────────────────────────────────────────
+    function handleApprove() {
+      if (approved) return;
+      approved = true;
+
+      const btn = document.getElementById('approveBtn');
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3.5 8.5l3 3 6-6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Approved!
+      `;
+      btn.disabled = true;
+      btn.style.opacity = '1';
+
+      // Show approval banner
+      const banner = document.getElementById('approvalBanner');
+      banner.classList.add('visible');
+    }
+
+    // ── Request Changes ─────────────────────────────────────────
+    function handleRequestChanges() {
+      if (requestChangesState === 2) return;
+
+      if (requestChangesState === 0) {
+        // Open comments panel if not open
+        if (!commentsPanelOpen) {
+          toggleComments();
+        }
+        // Show compose and focus
+        showCompose();
+
+        // Change button text
+        requestChangesState = 1;
+        const btn = document.getElementById('requestChangesBtn');
+        btn.textContent = 'Submit Feedback';
+      } else if (requestChangesState === 1) {
+        // Post the comment if there's text
+        const textarea = document.getElementById('commentTextarea');
+        if (textarea.value.trim()) {
+          postComment();
+        }
+      }
+    }
+
+    // ── Initialize ──────────────────────────────────────────────
+    // File 1 starts expanded, update the comment file tag
+    updateCommentFileTag('file1');
+  </script>
+</body>
+</html>

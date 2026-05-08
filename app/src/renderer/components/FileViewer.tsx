@@ -8,6 +8,7 @@ import { TableRow } from '@tiptap/extension-table'
 import { TableCell } from '@tiptap/extension-table'
 import { TableHeader } from '@tiptap/extension-table'
 import { markdownToHtml } from '../utils/markdown'
+import { htmlToMarkdown } from '../utils/htmlToMarkdown'
 import './FileViewer.css'
 
 interface FileViewerProps {
@@ -70,16 +71,12 @@ export default function FileViewer({ filePath }: FileViewerProps) {
     if (!currentFilePath.current || !editor) return
     setSaveStatus('saving')
 
-    // TODO: Proper HTML-to-markdown conversion. For now, save the raw text
-    // for markdown files and HTML for others. A real implementation would
-    // serialize the TipTap document back to markdown.
     const path = currentFilePath.current
     const isMarkdown = path.endsWith('.md') || path.endsWith('.mdx')
 
     let content: string
     if (isMarkdown) {
-      // Save raw text for now — preserves readability even without proper md serialization
-      content = editor.getText()
+      content = htmlToMarkdown(editor.getHTML())
     } else {
       content = editor.getHTML()
     }

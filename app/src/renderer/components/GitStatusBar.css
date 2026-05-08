@@ -16,8 +16,19 @@
   color: #1a1a2e;
 }
 
-.git-branch-icon {
-  color: #8E8B87;
+.git-branch-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.git-branch-dot.dot-main {
+  background-color: #16A34A;
+}
+
+.git-branch-dot.dot-draft {
+  background-color: #8B2BFF;
 }
 
 .git-changes {

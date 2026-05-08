@@ -5,17 +5,36 @@ interface StatusBarProps {
   savedCount: number
   newCount: number
   isDirty: boolean
+  branchName?: string
+  isMain?: boolean
   onSave: () => void
   onDiscard: () => void
   onPublish: () => void
 }
 
-export default function StatusBar({ editedCount, savedCount, newCount, isDirty, onSave, onDiscard, onPublish }: StatusBarProps) {
+function humanize(branch: string): string {
+  return branch
+    .replace(/^(draft|feature|fix|hotfix)\//i, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+export default function StatusBar({ editedCount, savedCount, newCount, isDirty, branchName, isMain, onSave, onDiscard, onPublish }: StatusBarProps) {
   const hasChanges = editedCount > 0 || savedCount > 0 || newCount > 0
+  const displayBranch = isMain ? 'Current Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
 
   return (
     <div className="status-bar">
       <div className="status-left">
+        {displayBranch && (
+          <>
+            <span className="status-branch">
+              <span className={`status-dot ${isMain ? 'green' : 'violet'}`} />
+              {displayBranch}
+            </span>
+            <span className="status-sep">&middot;</span>
+          </>
+        )}
         {hasChanges ? (
           <>
             {editedCount > 0 && (

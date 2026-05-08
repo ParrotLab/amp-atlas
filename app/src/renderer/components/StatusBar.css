@@ -1,0 +1,87 @@
+.status-bar {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FEFCF9;
+  border-top: 1px solid #EDE8E2;
+  flex-shrink: 0;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #8E8B87;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-dot.orange { background: #C47A0A; }
+.status-dot.violet { background: #8B2BFF; }
+.status-dot.green { background: #16A34A; }
+
+.status-sep {
+  color: #D4D0CC;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 100ms ease;
+}
+
+.status-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.status-btn.secondary {
+  background: #F0EBE5;
+  color: #6B6966;
+}
+
+.status-btn.secondary:hover:not(:disabled) {
+  background: #E8E2DB;
+}
+
+.status-btn.primary {
+  background: #8B2BFF;
+  color: white;
+}
+
+.status-btn.primary:hover:not(:disabled) {
+  background: #7A1FE6;
+}
+
+.status-btn.outline {
+  background: transparent;
+  color: #6B6966;
+  border: 1px solid #EDE8E2;
+}
+
+.status-btn.outline:hover:not(:disabled) {
+  background: #F5F0EB;
+}

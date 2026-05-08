@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import FileTree from '../components/FileTree'
 import FileViewer from '../components/FileViewer'
 import GitStatusBar from '../components/GitStatusBar'
+import StatusBar from '../components/StatusBar'
 import TabBar, { Tab } from '../components/TabBar'
 import { useState, useEffect, useCallback } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
@@ -54,6 +55,9 @@ export default function SystemOverview() {
   const [gitModified, setGitModified] = useState<Set<string>>(new Set())
   const [gitNew, setGitNew] = useState<Set<string>>(new Set())
   const [gitDeleted, setGitDeleted] = useState<Set<string>>(new Set())
+  const [branch, setBranch] = useState<string>('')
+  const [isMainBranch, setIsMainBranch] = useState(true)
+  const [isDirty, setIsDirty] = useState(false)
 
   const rootPath = system?.folderPath || ''
 
@@ -65,12 +69,34 @@ export default function SystemOverview() {
         setGitModified(new Set(result.status.modified))
         setGitNew(new Set([...result.status.not_added]))
         setGitDeleted(new Set(result.status.deleted))
+        setBranch(result.status.current || 'main')
+        setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
       }
     }
     fetchGitStatus()
     const interval = setInterval(fetchGitStatus, 5000)
     return () => clearInterval(interval)
   }, [rootPath])
+
+  const handleSave = () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true }))
+  }
+
+  const handleDiscard = () => {
+    if (window.confirm('Discard unsaved edits? You\'ll lose changes since your last save.')) {
+      if (selectedFile) {
+        const current = selectedFile
+        setSelectedFile(undefined)
+        setTimeout(() => setSelectedFile(current), 50)
+      }
+      setIsDirty(false)
+    }
+  }
+
+  const handlePublish = async () => {
+    // TODO: Implement git push
+    alert('Publish coming soon — this will push your saves to GitHub.')
+  }
 
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
@@ -116,8 +142,17 @@ export default function SystemOverview() {
 
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
-        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
-        <FileViewer filePath={selectedFile} />
+        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} branchName={branch} isMain={isMainBranch} isDirty={isDirty} />
+        <FileViewer filePath={selectedFile} onDirtyChange={setIsDirty} />
+        <StatusBar
+          editedCount={isDirty ? gitModified.size + gitNew.size : 0}
+          savedCount={0}
+          newCount={gitNew.size}
+          isDirty={isDirty}
+          onSave={handleSave}
+          onDiscard={handleDiscard}
+          onPublish={handlePublish}
+        />
       </div>
     </div>
   )

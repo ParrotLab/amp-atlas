@@ -2,8 +2,9 @@
   display: flex;
   align-items: flex-end;
   background: #FEFCF9;
+  border-bottom: 1px solid #EDE8E2;
   min-height: 40px;
-  padding: 38px 4px 0; /* titlebar space at top */
+  padding: 38px 4px 0;
   flex-shrink: 0;
   overflow-x: auto;
 }

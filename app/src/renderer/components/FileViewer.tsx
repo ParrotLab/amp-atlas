@@ -13,16 +13,21 @@ import './FileViewer.css'
 
 interface FileViewerProps {
   filePath: string | undefined
+  rootPath?: string
   onDirtyChange?: (dirty: boolean) => void
   onContentLoad?: (content: string) => void
+  onToggleProperties?: () => void
+  propsOpen?: boolean
 }
 
-export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: FileViewerProps) {
+export default function FileViewer({ filePath, rootPath, onDirtyChange, onContentLoad, onToggleProperties, propsOpen }: FileViewerProps) {
   const [loading, setLoading] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [lastModified, setLastModified] = useState<string>('')
   const originalContent = useRef<string>('')
   const currentFilePath = useRef<string | undefined>()
+  const isLoadingContent = useRef(false)
   const onDirtyChangeRef = useRef(onDirtyChange)
   onDirtyChangeRef.current = onDirtyChange
   const onContentLoadRef = useRef(onContentLoad)
@@ -44,6 +49,8 @@ export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: F
     editable: true,
     content: '',
     onUpdate: () => {
+      // Don't mark dirty during programmatic content loads
+      if (isLoadingContent.current) return
       setIsDirty(true)
       setSaveStatus('idle')
       onDirtyChangeRef.current?.(true)
@@ -57,14 +64,35 @@ export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: F
     setIsDirty(false)
     onDirtyChangeRef.current?.(false)
     setSaveStatus('idle')
+
+    // Get file stat for last modified time
+    window.api.fs.stat(filePath).then(statResult => {
+      if (statResult.ok && statResult.stats) {
+        const date = new Date(statResult.stats.modified)
+        const now = new Date()
+        const diffMs = now.getTime() - date.getTime()
+        const diffMins = Math.floor(diffMs / 60000)
+        const diffHours = Math.floor(diffMs / 3600000)
+        const diffDays = Math.floor(diffMs / 86400000)
+
+        if (diffMins < 1) setLastModified('Just now')
+        else if (diffMins < 60) setLastModified(`${diffMins} min ago`)
+        else if (diffHours < 24) setLastModified(`${diffHours}h ago`)
+        else if (diffDays < 7) setLastModified(`${diffDays}d ago`)
+        else setLastModified(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }))
+      }
+    })
+
     window.api.fs.readFile(filePath).then(result => {
       if (result.ok && result.content !== undefined) {
         originalContent.current = result.content
         onContentLoadRef.current?.(result.content)
         const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.mdx')
+
+        // Prevent onUpdate from firing isDirty during setContent
+        isLoadingContent.current = true
         if (isMarkdown) {
           let markdownContent = result.content
-          // Strip frontmatter if present
           const fmMatch = markdownContent.match(/^---\n[\s\S]*?\n---\n?/)
           if (fmMatch) {
             markdownContent = markdownContent.substring(fmMatch[0].length)
@@ -75,6 +103,10 @@ export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: F
             `<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
           )
         }
+        // Re-enable dirty tracking after a tick
+        requestAnimationFrame(() => {
+          isLoadingContent.current = false
+        })
       } else {
         editor.commands.setContent(`<p>Error reading file: ${result.error}</p>`)
         onContentLoadRef.current?.('')
@@ -108,7 +140,6 @@ export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: F
     }
   }, [editor])
 
-  // Cmd+S to save
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -129,18 +160,35 @@ export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: F
   }
 
   const fileName = filePath.split('/').pop() || ''
-  const dirPath = filePath.split('/').slice(-3, -1).join(' / ')
+  // Build full relative path from root
+  const fullPath = rootPath
+    ? filePath.replace(rootPath + '/', '').split('/').join(' / ')
+    : filePath.split('/').slice(-4).join(' / ')
 
   return (
     <div className="file-viewer">
       <div className="file-viewer-content">
-        <div className="file-viewer-breadcrumb">
-          <span>{dirPath}</span>
-          {isDirty && <span className="file-viewer-unsaved">Unsaved changes</span>}
-          {saveStatus === 'saving' && <span className="file-viewer-saving">Saving...</span>}
-          {saveStatus === 'saved' && <span className="file-viewer-saved">Saved</span>}
+        <div className="file-viewer-header-row">
+          <div className="file-viewer-breadcrumb">
+            {fullPath}
+          </div>
+          {onToggleProperties && (
+            <button
+              className={`file-viewer-props-btn ${propsOpen ? 'active' : ''}`}
+              onClick={onToggleProperties}
+              title="Properties"
+            >
+              ☰
+            </button>
+          )}
         </div>
         <div className="file-viewer-title">{fileName}</div>
+        <div className="file-viewer-meta">
+          {lastModified && <span>Last edited {lastModified}</span>}
+          {isDirty && <span className="file-viewer-unsaved">· Unsaved changes</span>}
+          {saveStatus === 'saving' && <span className="file-viewer-saving">· Saving...</span>}
+          {saveStatus === 'saved' && <span className="file-viewer-saved">· Saved</span>}
+        </div>
         {loading ? (
           <div style={{ color: '#B5B1AC' }}>Loading...</div>
         ) : (

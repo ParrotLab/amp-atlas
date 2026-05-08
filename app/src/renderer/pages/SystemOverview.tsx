@@ -163,32 +163,16 @@ export default function SystemOverview() {
 
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
-        {/* Tab bar + properties toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', background: '#FEFCF9', borderBottom: '1px solid #EDE8E2', flexShrink: 0 }}>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
-          </div>
-          {selectedFile && (
-            <button
-              onClick={() => setPropsOpen(!propsOpen)}
-              style={{
-                width: '32px', height: '32px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: '8px', border: 'none',
-                background: propsOpen ? 'rgba(139,43,255,0.06)' : 'transparent',
-                color: propsOpen ? '#8B2BFF' : '#B5B1AC',
-                cursor: 'pointer', flexShrink: 0, marginRight: '12px',
-                fontSize: '16px', fontFamily: 'inherit',
-                transition: 'all 80ms ease'
-              }}
-              title="Properties"
-            >
-              &#9776;
-            </button>
-          )}
-        </div>
+        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-          <FileViewer filePath={selectedFile} onDirtyChange={setIsDirty} onContentLoad={setRawContent} />
+          <FileViewer
+            filePath={selectedFile}
+            rootPath={rootPath}
+            onDirtyChange={setIsDirty}
+            onContentLoad={setRawContent}
+            onToggleProperties={() => setPropsOpen(!propsOpen)}
+            propsOpen={propsOpen}
+          />
           <PropertiesPanel isOpen={propsOpen} onClose={() => setPropsOpen(false)} filePath={selectedFile} rawContent={rawContent} />
         </div>
         <StatusBar

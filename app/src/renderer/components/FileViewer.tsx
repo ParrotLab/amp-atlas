@@ -14,9 +14,10 @@ import './FileViewer.css'
 interface FileViewerProps {
   filePath: string | undefined
   onDirtyChange?: (dirty: boolean) => void
+  onContentLoad?: (content: string) => void
 }
 
-export default function FileViewer({ filePath, onDirtyChange }: FileViewerProps) {
+export default function FileViewer({ filePath, onDirtyChange, onContentLoad }: FileViewerProps) {
   const [loading, setLoading] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -24,6 +25,8 @@ export default function FileViewer({ filePath, onDirtyChange }: FileViewerProps)
   const currentFilePath = useRef<string | undefined>()
   const onDirtyChangeRef = useRef(onDirtyChange)
   onDirtyChangeRef.current = onDirtyChange
+  const onContentLoadRef = useRef(onContentLoad)
+  onContentLoadRef.current = onContentLoad
 
   const editor = useEditor({
     extensions: [
@@ -52,13 +55,21 @@ export default function FileViewer({ filePath, onDirtyChange }: FileViewerProps)
     currentFilePath.current = filePath
     setLoading(true)
     setIsDirty(false)
+    onDirtyChangeRef.current?.(false)
     setSaveStatus('idle')
     window.api.fs.readFile(filePath).then(result => {
       if (result.ok && result.content !== undefined) {
         originalContent.current = result.content
+        onContentLoadRef.current?.(result.content)
         const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.mdx')
         if (isMarkdown) {
-          editor.commands.setContent(markdownToHtml(result.content))
+          let markdownContent = result.content
+          // Strip frontmatter if present
+          const fmMatch = markdownContent.match(/^---\n[\s\S]*?\n---\n?/)
+          if (fmMatch) {
+            markdownContent = markdownContent.substring(fmMatch[0].length)
+          }
+          editor.commands.setContent(markdownToHtml(markdownContent))
         } else {
           editor.commands.setContent(
             `<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
@@ -66,6 +77,7 @@ export default function FileViewer({ filePath, onDirtyChange }: FileViewerProps)
         }
       } else {
         editor.commands.setContent(`<p>Error reading file: ${result.error}</p>`)
+        onContentLoadRef.current?.('')
       }
       setLoading(false)
     })

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import FileTree from '../components/FileTree'
 import FileViewer from '../components/FileViewer'
+import PropertiesPanel from '../components/PropertiesPanel'
 import StatusBar from '../components/StatusBar'
 import TabBar, { Tab } from '../components/TabBar'
 import { useState, useEffect, useCallback } from 'react'
@@ -58,6 +59,8 @@ export default function SystemOverview() {
   const [isMainBranch, setIsMainBranch] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
   const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
+  const [propsOpen, setPropsOpen] = useState(false)
+  const [rawContent, setRawContent] = useState('')
 
   const rootPath = system?.folderPath || ''
 
@@ -160,8 +163,34 @@ export default function SystemOverview() {
 
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
-        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
-        <FileViewer filePath={selectedFile} onDirtyChange={setIsDirty} />
+        {/* Tab bar + properties toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', background: '#FEFCF9', borderBottom: '1px solid #EDE8E2', flexShrink: 0 }}>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
+          </div>
+          {selectedFile && (
+            <button
+              onClick={() => setPropsOpen(!propsOpen)}
+              style={{
+                width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '8px', border: 'none',
+                background: propsOpen ? 'rgba(139,43,255,0.06)' : 'transparent',
+                color: propsOpen ? '#8B2BFF' : '#B5B1AC',
+                cursor: 'pointer', flexShrink: 0, marginRight: '12px',
+                fontSize: '16px', fontFamily: 'inherit',
+                transition: 'all 80ms ease'
+              }}
+              title="Properties"
+            >
+              &#9776;
+            </button>
+          )}
+        </div>
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+          <FileViewer filePath={selectedFile} onDirtyChange={setIsDirty} onContentLoad={setRawContent} />
+          <PropertiesPanel isOpen={propsOpen} onClose={() => setPropsOpen(false)} filePath={selectedFile} rawContent={rawContent} />
+        </div>
         <StatusBar
           editedCount={isDirty ? gitModified.size + gitNew.size : 0}
           savedCount={0}

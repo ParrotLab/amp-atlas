@@ -1,0 +1,131 @@
+.properties-panel {
+  width: 0;
+  overflow: hidden;
+  background: white;
+  border-left: 0px solid #EDE8E2;
+  transition: width 200ms ease, border-width 200ms ease;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.properties-panel.open {
+  width: 280px;
+  border-left-width: 1px;
+}
+
+.properties-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #EDE8E2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.properties-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.properties-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #B5B1AC;
+  font-size: 16px;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+.properties-close:hover {
+  background: #F0EBE5;
+  color: #6B6966;
+}
+
+.properties-body {
+  padding: 16px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.prop-group {
+  margin-bottom: 18px;
+}
+
+.prop-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #B5B1AC;
+  margin-bottom: 6px;
+}
+
+.prop-input {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #EDE8E2;
+  border-radius: 8px;
+  background: #FEFCF9;
+  color: #4A4743;
+}
+
+.prop-input:focus {
+  outline: none;
+  border-color: rgba(139,43,255,0.4);
+  box-shadow: 0 0 0 3px rgba(139,43,255,0.08);
+  background: white;
+}
+
+.prop-select {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #EDE8E2;
+  border-radius: 8px;
+  background: #FEFCF9;
+  color: #4A4743;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.prop-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(139,43,255,0.06);
+  color: #8B2BFF;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+.prop-divider {
+  height: 1px;
+  background: #EDE8E2;
+  margin: 14px 0;
+}
+
+.prop-meta {
+  font-size: 12px;
+  color: #B5B1AC;
+  line-height: 1.7;
+}
+
+.prop-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #B5B1AC;
+  font-size: 13px;
+}

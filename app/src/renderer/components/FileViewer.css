@@ -5,14 +5,18 @@
   box-shadow: 0 -1px 4px rgba(0,0,0,0.03);
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   justify-content: center;
+  min-height: 0;
 }
 
 .file-viewer-content {
   width: 100%;
   max-width: 720px;
   padding: 48px 40px 80px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .file-viewer-breadcrumb {

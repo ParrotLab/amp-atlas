@@ -1,0 +1,60 @@
+.system-card {
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: white;
+  display: block;
+  overflow: hidden;
+}
+
+.system-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.system-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.system-card-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: white;
+}
+
+.system-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.system-card-meta {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.systems-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #B0ADA8;
+  margin-bottom: 14px;
+}

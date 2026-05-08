@@ -83,3 +83,20 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Git status colors */
+.tree-item.git-modified .tree-item-name { color: #C47A0A; }
+.tree-item.git-new .tree-item-name { color: #16A34A; }
+.tree-item.git-deleted .tree-item-name { color: #DC2626; text-decoration: line-through; }
+
+.tree-item-git-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.tree-item-git-dot.modified { background: #C47A0A; }
+.tree-item-git-dot.new { background: #16A34A; }
+.tree-item-git-dot.deleted { background: #DC2626; }

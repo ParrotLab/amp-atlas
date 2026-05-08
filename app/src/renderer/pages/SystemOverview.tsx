@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import FileTree from '../components/FileTree'
 import FileViewer from '../components/FileViewer'
+import GitStatusBar from '../components/GitStatusBar'
 import TabBar, { Tab } from '../components/TabBar'
 import { useState, useEffect, useCallback } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
@@ -50,7 +51,26 @@ export default function SystemOverview() {
     })
   }, [selectedFile])
 
+  const [gitModified, setGitModified] = useState<Set<string>>(new Set())
+  const [gitNew, setGitNew] = useState<Set<string>>(new Set())
+  const [gitDeleted, setGitDeleted] = useState<Set<string>>(new Set())
+
   const rootPath = system?.folderPath || ''
+
+  useEffect(() => {
+    if (!rootPath) return
+    const fetchGitStatus = async () => {
+      const result = await window.api.git.status(rootPath)
+      if (result.ok && result.status) {
+        setGitModified(new Set(result.status.modified))
+        setGitNew(new Set([...result.status.not_added]))
+        setGitDeleted(new Set(result.status.deleted))
+      }
+    }
+    fetchGitStatus()
+    const interval = setInterval(fetchGitStatus, 5000)
+    return () => clearInterval(interval)
+  }, [rootPath])
 
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
@@ -65,7 +85,10 @@ export default function SystemOverview() {
         overflow: 'hidden'
       }}>
         {rootPath ? (
-          <FileTree rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} />
+          <>
+            <FileTree rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} />
+            <GitStatusBar repoPath={rootPath} />
+          </>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>

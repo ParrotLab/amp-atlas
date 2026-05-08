@@ -5,6 +5,28 @@ interface GitStatusBarProps {
   repoPath: string
 }
 
+/**
+ * Humanize a git branch name for display.
+ * - "main" / "master" → "Current Version"
+ * - anything else → "Draft: Foo Bar" (strip prefixes, replace separators, title-case)
+ */
+function humanizeBranch(raw: string): { label: string; isMain: boolean } {
+  const lower = raw.trim().toLowerCase()
+  if (lower === 'main' || lower === 'master') {
+    return { label: 'Current Version', isMain: true }
+  }
+
+  // Strip common prefixes like "draft/", "feature/", "fix/", "bugfix/", "hotfix/"
+  let name = raw.replace(/^(draft|feature|fix|bugfix|hotfix)\//i, '')
+
+  // Replace hyphens and underscores with spaces, then title-case each word
+  name = name
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+
+  return { label: `Draft: ${name}`, isMain: false }
+}
+
 export default function GitStatusBar({ repoPath }: GitStatusBarProps) {
   const [branch, setBranch] = useState<string>('')
   const [modified, setModified] = useState<number>(0)
@@ -42,16 +64,13 @@ export default function GitStatusBar({ repoPath }: GitStatusBarProps) {
 
   if (!isRepo) return null
 
+  const { label: branchLabel, isMain } = humanizeBranch(branch)
+
   return (
     <div className="git-status-bar">
       <div className="git-branch">
-        <svg className="git-branch-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="6" y1="3" x2="6" y2="15"/>
-          <circle cx="18" cy="6" r="3"/>
-          <circle cx="6" cy="18" r="3"/>
-          <path d="M18 9a9 9 0 01-9 9"/>
-        </svg>
-        {branch}
+        <span className={`git-branch-dot ${isMain ? 'dot-main' : 'dot-draft'}`} />
+        {branchLabel}
       </div>
 
       {isClean ? (
@@ -59,20 +78,20 @@ export default function GitStatusBar({ repoPath }: GitStatusBarProps) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5"/>
           </svg>
-          Clean — no changes
+          {isMain ? 'All changes published' : 'No unsaved edits'}
         </div>
       ) : (
         <div className="git-changes">
-          {modified > 0 && <span className="git-change-item modified">{modified} modified</span>}
-          {added > 0 && <span className="git-change-item added">{added} new</span>}
+          {modified > 0 && <span className="git-change-item modified">{modified} edited</span>}
+          {added > 0 && <span className="git-change-item added">{added} new files</span>}
           {deleted > 0 && <span className="git-change-item deleted">{deleted} deleted</span>}
         </div>
       )}
 
       {(ahead > 0 || behind > 0) && (
         <div className="git-sync">
-          {ahead > 0 && <span className="git-ahead">{ahead} to publish</span>}
-          {behind > 0 && <span className="git-behind">{behind} to sync</span>}
+          {ahead > 0 && <span className="git-ahead">{ahead} saves not published</span>}
+          {behind > 0 && <span className="git-behind">{behind} updates available</span>}
         </div>
       )}
     </div>

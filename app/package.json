@@ -26,13 +26,15 @@
     "@tiptap/pm": "^3.23.1",
     "@tiptap/react": "^3.23.1",
     "@tiptap/starter-kit": "^3.23.1",
+    "@types/turndown": "^5.0.6",
     "electron-vite": "^5.0.0",
     "lowlight": "^3.3.0",
     "markdown-it": "^14.1.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.0",
-    "simple-git": "^3.36.0"
+    "simple-git": "^3.36.0",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

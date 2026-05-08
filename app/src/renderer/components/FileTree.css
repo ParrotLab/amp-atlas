@@ -100,3 +100,32 @@
 .tree-item-git-dot.modified { background: #C47A0A; }
 .tree-item-git-dot.new { background: #16A34A; }
 .tree-item-git-dot.deleted { background: #DC2626; }
+
+.tree-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #B5B1AC;
+  padding: 14px 14px 6px;
+}
+
+.tree-section-label:first-child {
+  padding-top: 8px;
+}
+
+.tree-item-change-count {
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: rgba(196, 122, 10, 0.1);
+  color: #C47A0A;
+  border: 1px solid rgba(196, 122, 10, 0.15);
+  flex-shrink: 0;
+  padding: 0 5px;
+}

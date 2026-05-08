@@ -142,13 +142,15 @@ export default function SystemOverview() {
 
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
-        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} branchName={branch} isMain={isMainBranch} isDirty={isDirty} />
+        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
         <FileViewer filePath={selectedFile} onDirtyChange={setIsDirty} />
         <StatusBar
           editedCount={isDirty ? gitModified.size + gitNew.size : 0}
           savedCount={0}
           newCount={gitNew.size}
           isDirty={isDirty}
+          branchName={branch}
+          isMain={isMainBranch}
           onSave={handleSave}
           onDiscard={handleDiscard}
           onPublish={handlePublish}

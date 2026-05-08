@@ -36,6 +36,14 @@
   color: #D4D0CC;
 }
 
+.status-branch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
 .status-right {
   display: flex;
   align-items: center;

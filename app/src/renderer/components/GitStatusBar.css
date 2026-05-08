@@ -1,0 +1,55 @@
+.git-status-bar {
+  padding: 10px 14px;
+  border-top: 1px solid #EDE8E2;
+  flex-shrink: 0;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.git-branch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.git-branch-icon {
+  color: #8E8B87;
+}
+
+.git-changes {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  color: #8E8B87;
+}
+
+.git-change-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.git-change-item.modified { color: #C47A0A; }
+.git-change-item.added { color: #16A34A; }
+.git-change-item.deleted { color: #DC2626; }
+
+.git-clean {
+  font-size: 11px;
+  color: #16A34A;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.git-sync {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.git-ahead { color: #8B2BFF; }
+.git-behind { color: #C47A0A; }

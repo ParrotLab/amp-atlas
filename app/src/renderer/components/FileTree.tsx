@@ -13,9 +13,12 @@ interface FileTreeProps {
   rootPath: string
   onFileSelect?: (path: string) => void
   selectedFile?: string
+  gitModified?: Set<string>
+  gitNew?: Set<string>
+  gitDeleted?: Set<string>
 }
 
-export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileTreeProps) {
+export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted }: FileTreeProps) {
   const [nodes, setNodes] = useState<TreeNode[]>([])
   const [search, setSearch] = useState('')
 
@@ -81,11 +84,18 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
         {filteredNodes.map((node) => {
           const isTopLevel = node.depth === 0
           const isExpanded = node.expanded
+          const relativePath = node.path.replace(rootPath + '/', '')
+          const isGitModified = gitModified?.has(relativePath)
+          const isGitNew = gitNew?.has(relativePath)
+          const isGitDeleted = gitDeleted?.has(relativePath)
           const classes = [
             'tree-item',
             selectedFile === node.path ? 'active' : '',
             isTopLevel && node.isDirectory ? 'top-level' : '',
-            isExpanded ? 'expanded' : ''
+            isExpanded ? 'expanded' : '',
+            isGitModified ? 'git-modified' : '',
+            isGitNew ? 'git-new' : '',
+            isGitDeleted ? 'git-deleted' : ''
           ].filter(Boolean).join(' ')
 
           return (
@@ -105,6 +115,9 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
                 <span className="tree-item-icon" style={{ color: '#B5B1AC', fontSize: '14px' }}>📄</span>
               )}
               <span className="tree-item-name">{node.name}</span>
+              {isGitModified && <span className="tree-item-git-dot modified" />}
+              {isGitNew && <span className="tree-item-git-dot new" />}
+              {isGitDeleted && <span className="tree-item-git-dot deleted" />}
             </div>
           )
         })}

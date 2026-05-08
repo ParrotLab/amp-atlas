@@ -1,7 +1,8 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
-import { readdir, readFile, stat } from 'fs/promises'
+import { readdir, readFile, writeFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { simpleGit } from 'simple-git'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -81,6 +82,89 @@ ipcMain.handle('fs:stat', async (_event, filePath: string) => {
         modified: stats.mtime.toISOString(),
         created: stats.birthtime.toISOString()
       }
+    }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('fs:writeFile', async (_event, filePath: string, content: string) => {
+  try {
+    await writeFile(filePath, content, 'utf-8')
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:status', async (_event, repoPath: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    const isRepo = await git.checkIsRepo()
+    if (!isRepo) return { ok: false, error: 'Not a git repository' }
+
+    const status = await git.status()
+    return {
+      ok: true,
+      status: {
+        current: status.current,
+        tracking: status.tracking,
+        ahead: status.ahead,
+        behind: status.behind,
+        staged: status.staged,
+        modified: status.modified,
+        not_added: status.not_added,
+        deleted: status.deleted,
+        renamed: status.renamed.map(r => ({ from: r.from, to: r.to })),
+        conflicted: status.conflicted,
+        isClean: status.isClean()
+      }
+    }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:branches', async (_event, repoPath: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    const isRepo = await git.checkIsRepo()
+    if (!isRepo) return { ok: false, error: 'Not a git repository' }
+
+    const branches = await git.branch()
+    return {
+      ok: true,
+      branches: {
+        current: branches.current,
+        all: branches.all,
+        branches: Object.fromEntries(
+          Object.entries(branches.branches).map(([name, info]) => [
+            name,
+            { name: info.name, current: info.current, label: info.label }
+          ])
+        )
+      }
+    }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:log', async (_event, repoPath: string, maxCount: number = 20) => {
+  try {
+    const git = simpleGit(repoPath)
+    const isRepo = await git.checkIsRepo()
+    if (!isRepo) return { ok: false, error: 'Not a git repository' }
+
+    const log = await git.log({ maxCount })
+    return {
+      ok: true,
+      log: log.all.map(entry => ({
+        hash: entry.hash.substring(0, 8),
+        date: entry.date,
+        message: entry.message,
+        author_name: entry.author_name
+      }))
     }
   } catch (error) {
     return { ok: false, error: String(error) }

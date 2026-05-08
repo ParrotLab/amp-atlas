@@ -24,6 +24,28 @@
   color: #B5B1AC;
   margin-bottom: 24px;
   font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-viewer-unsaved {
+  font-size: 11px;
+  color: #C47A0A;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.file-viewer-saving {
+  font-size: 11px;
+  color: #8E8B87;
+  font-weight: 500;
+}
+
+.file-viewer-saved {
+  font-size: 11px;
+  color: #16A34A;
+  font-weight: 500;
 }
 
 .file-viewer-title {
@@ -50,6 +72,11 @@
   font-size: 15px;
   line-height: 1.75;
   color: #5C5955;
+  cursor: text;
+}
+
+.file-viewer-body .tiptap:focus {
+  outline: none;
 }
 
 .file-viewer-body .tiptap > *:first-child {

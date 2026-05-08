@@ -1,0 +1,19 @@
+.dashboard {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 40px 48px 60px;
+}
+
+.dashboard-greeting {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.dashboard-subtitle {
+  font-size: 14px;
+  color: #8E8B87;
+  margin-bottom: 36px;
+}

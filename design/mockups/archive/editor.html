@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMP UP — Learning System</title>
+  <link rel="stylesheet" href="../../design-system/tokens.css">
+  <link rel="stylesheet" href="../../design-system/typography.css">
+  <link rel="stylesheet" href="../../design-system/components.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: #1a1a1a;
+      color: var(--color-text-primary);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── Desktop Window Chrome ───────────────────────────────── */
+    .desktop-window {
+      width: 1280px;
+      height: 820px;
+      background: var(--amp-white);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.1),
+        0 25px 50px rgba(0,0,0,0.4),
+        0 0 100px rgba(139, 43, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .titlebar {
+      height: 38px;
+      background: var(--amp-gray-100);
+      border-bottom: 1px solid var(--color-border-default);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+
+    .titlebar-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .titlebar-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .titlebar-dot.red { background: #FF5F57; }
+    .titlebar-dot.yellow { background: #FFBD2E; }
+    .titlebar-dot.green { background: #28CA42; }
+
+    .titlebar-title {
+      flex: 1;
+      text-align: center;
+      font-size: 13px;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
+    }
+
+    .titlebar-spacer { width: 52px; }
+
+    /* ── App Layout ──────────────────────────────────────────── */
+    .app-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+    .sidebar {
+      width: 260px;
+      background: var(--amp-gray-900);
+      color: var(--amp-gray-300);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid var(--amp-gray-800);
+    }
+
+    .sidebar-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--amp-gray-800);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-back {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--amp-gray-400);
+      font-size: 16px;
+      transition: all 100ms ease;
+    }
+
+    .sidebar-back:hover {
+      background: var(--amp-gray-800);
+      color: var(--amp-gray-200);
+    }
+
+    .sidebar-system-name {
+      font-size: 14px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--amp-white);
+    }
+
+    .sidebar-system-meta {
+      font-size: 11px;
+      color: var(--amp-gray-500);
+    }
+
+    .sidebar-search {
+      padding: 8px 12px;
+    }
+
+    .sidebar-search-input {
+      width: 100%;
+      padding: 7px 10px 7px 30px;
+      background: var(--amp-gray-800);
+      border: 1px solid var(--amp-gray-700);
+      border-radius: 6px;
+      color: var(--amp-gray-300);
+      font-size: 12px;
+      font-family: var(--font-sans);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23787878' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 9px center;
+    }
+
+    .sidebar-search-input::placeholder {
+      color: var(--amp-gray-600);
+    }
+
+    .sidebar-search-input:focus {
+      outline: none;
+      border-color: var(--amp-violet-700);
+    }
+
+    /* ── File Tree ───────────────────────────────────────────── */
+    .file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .tree-section-label {
+      font-size: 10px;
+      font-weight: var(--font-weight-semibold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amp-gray-600);
+      padding: 12px 16px 4px;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 16px;
+      font-size: 13px;
+      color: var(--amp-gray-400);
+      cursor: pointer;
+      transition: background 80ms ease;
+      position: relative;
+    }
+
+    .tree-item:hover {
+      background: var(--amp-gray-800);
+      color: var(--amp-gray-200);
+    }
+
+    .tree-item.active {
+      background: rgba(139, 43, 255, 0.2);
+      color: var(--amp-white);
+    }
+
+    .tree-item .icon {
+      width: 16px;
+      font-size: 13px;
+      text-align: center;
+      flex-shrink: 0;
+      opacity: 0.5;
+    }
+
+    .tree-item.active .icon { opacity: 0.9; }
+
+    .tree-item .name { flex: 1; }
+
+    .tree-item .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .tree-item .change-count {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 9999px;
+      background: rgba(229, 192, 123, 0.2);
+      color: #E5C07B;
+      line-height: 1.4;
+    }
+
+    .tree-item.modified { color: #E5C07B; }
+    .tree-item.modified:hover { color: #EFD49F; }
+    .tree-item.new-file { color: #98C379; }
+    .tree-item.new-file:hover { color: #B5D8A0; }
+
+    .d1 { padding-left: 32px; }
+    .d2 { padding-left: 48px; }
+
+    .tree-divider {
+      height: 1px;
+      background: var(--amp-gray-800);
+      margin: 8px 16px;
+    }
+
+    /* ── Sidebar Drafts ──────────────────────────────────────── */
+    .sidebar-drafts {
+      border-top: 1px solid var(--amp-gray-800);
+      padding: 12px 12px;
+    }
+
+    .draft-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 80ms ease;
+    }
+
+    .draft-item:hover {
+      background: var(--amp-gray-800);
+    }
+
+    .draft-item.active {
+      background: rgba(139, 43, 255, 0.15);
+    }
+
+    .draft-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .draft-dot.editing { background: var(--amp-orange-500); }
+    .draft-dot.published { background: var(--color-status-success); }
+
+    .draft-name {
+      flex: 1;
+      color: var(--amp-gray-300);
+    }
+
+    .draft-item.active .draft-name { color: var(--amp-white); }
+
+    .draft-meta {
+      font-size: 11px;
+      color: var(--amp-gray-600);
+    }
+
+    .draft-new {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: var(--amp-gray-500);
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .draft-new:hover {
+      background: var(--amp-gray-800);
+      color: var(--amp-gray-300);
+    }
+
+    /* ── Main Area ───────────────────────────────────────────── */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Tab Bar ─────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      background: var(--amp-gray-50);
+      border-bottom: 1px solid var(--color-border-default);
+      min-height: 40px;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 100ms ease;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      color: var(--color-text-primary);
+    }
+
+    .tab.active {
+      color: var(--color-text-primary);
+      border-bottom-color: var(--amp-violet-700);
+      background: var(--amp-white);
+    }
+
+    .tab .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .tab-close {
+      font-size: 14px;
+      opacity: 0;
+      cursor: pointer;
+      color: var(--color-text-tertiary);
+      transition: opacity 80ms ease;
+      margin-left: 4px;
+    }
+
+    .tab:hover .tab-close { opacity: 0.5; }
+    .tab-close:hover { opacity: 1 !important; }
+
+    .tab-bar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-right: 12px;
+    }
+
+    .draft-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: var(--font-weight-medium);
+      background: var(--amp-white);
+      border: 1px solid var(--color-border-default);
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--color-text-primary);
+      font-family: var(--font-sans);
+    }
+
+    .draft-selector:hover {
+      border-color: var(--color-border-strong);
+    }
+
+    .draft-selector .draft-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--amp-orange-500);
+    }
+
+    .draft-selector .chevron {
+      font-size: 10px;
+      color: var(--color-text-tertiary);
+    }
+
+    .sync-badge {
+      font-size: 11px;
+      font-weight: var(--font-weight-medium);
+      padding: 3px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sync-badge.editing {
+      background: var(--amp-orange-100);
+      color: #B45309;
+    }
+
+    .sync-badge .sync-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #B45309;
+    }
+
+    /* ── Editor + Drawer Row ─────────────────────────────────── */
+    .editor-row {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .editor-area {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--amp-white);
+      display: flex;
+      justify-content: center;
+    }
+
+    .editor-content {
+      width: 100%;
+      max-width: 760px;
+      padding: 48px 40px 80px;
+    }
+
+    .editor-breadcrumb {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 24px;
+      font-family: var(--font-mono);
+    }
+
+    .editor-breadcrumb span {
+      color: var(--color-text-secondary);
+    }
+
+    .editor-h1 {
+      font-size: 36px;
+      font-weight: var(--font-weight-bold);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+      outline: none;
+    }
+
+    .editor-meta {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      display: flex;
+      gap: 16px;
+    }
+
+    .editor-h2 {
+      font-size: 22px;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-top: 36px;
+      margin-bottom: 12px;
+    }
+
+    .editor-h3 {
+      font-size: 17px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+
+    .editor-p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .editor-blockquote {
+      border-left: 3px solid var(--amp-violet-700);
+      padding: 12px 20px;
+      margin: 20px 0;
+      background: var(--amp-violet-50);
+      border-radius: 0 8px 8px 0;
+    }
+
+    .editor-blockquote p {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--amp-violet-900);
+      margin: 0;
+      font-style: italic;
+    }
+
+    .editor-ul {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    .editor-ul li {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .editor-ul li strong {
+      color: var(--color-text-primary);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    .editor-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: var(--font-weight-medium);
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--amp-violet-50);
+      color: var(--amp-violet-700);
+      margin-right: 4px;
+    }
+
+    .editor-cursor {
+      border-right: 2px solid var(--amp-violet-700);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ── Status Bar ──────────────────────────────────────────── */
+    .status-bar {
+      border-top: 1px solid var(--color-border-default);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--amp-gray-50);
+      flex-shrink: 0;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .status-dot.orange { background: var(--amp-orange-500); }
+    .status-dot.green { background: var(--color-status-success); }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-btn {
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: var(--font-weight-medium);
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 100ms ease;
+    }
+
+    .status-btn.secondary {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border-default);
+    }
+
+    .status-btn.secondary:hover {
+      background: var(--amp-gray-100);
+    }
+
+    .status-btn.primary {
+      background: var(--amp-violet-700);
+      color: white;
+    }
+
+    .status-btn.primary:hover {
+      background: var(--amp-violet-900);
+    }
+
+    .status-btn.publish {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border-default);
+    }
+
+    /* ── Properties Drawer ────────────────────────────────────── */
+    .properties-drawer {
+      width: 0;
+      overflow: hidden;
+      background: var(--amp-white);
+      border-left: 0px solid var(--color-border-default);
+      transition: width 200ms ease, border 200ms ease;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .properties-drawer.open {
+      width: 300px;
+      border-left-width: 1px;
+    }
+
+    .properties-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .properties-title {
+      font-size: 13px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .properties-close {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--color-text-tertiary);
+      font-size: 16px;
+    }
+
+    .properties-close:hover {
+      background: var(--amp-gray-100);
+      color: var(--color-text-primary);
+    }
+
+    .properties-body {
+      padding: 16px 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .prop-group {
+      margin-bottom: 20px;
+    }
+
+    .prop-label {
+      font-size: 11px;
+      font-weight: var(--font-weight-semibold);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-text-tertiary);
+      margin-bottom: 6px;
+    }
+
+    .prop-value {
+      font-size: 13px;
+      color: var(--color-text-primary);
+      line-height: 1.5;
+    }
+
+    .prop-input {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      border: 1px solid var(--color-border-default);
+      border-radius: 6px;
+      background: var(--amp-gray-50);
+      color: var(--color-text-primary);
+    }
+
+    .prop-input:focus {
+      outline: none;
+      border-color: var(--amp-violet-500);
+      box-shadow: 0 0 0 2px rgba(139, 43, 255, 0.15);
+      background: var(--amp-white);
+    }
+
+    .prop-select {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      border: 1px solid var(--color-border-default);
+      border-radius: 6px;
+      background: var(--amp-gray-50);
+      color: var(--color-text-primary);
+      cursor: pointer;
+    }
+
+    .prop-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: var(--font-weight-medium);
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--amp-violet-50);
+      color: var(--amp-violet-700);
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .prop-divider {
+      height: 1px;
+      background: var(--color-border-subtle);
+      margin: 16px 0;
+    }
+
+    .prop-meta {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      line-height: 1.6;
+    }
+
+    /* Properties toggle button in toolbar */
+    .props-toggle {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--color-text-tertiary);
+      font-size: 16px;
+      border: 1px solid transparent;
+      background: none;
+      font-family: var(--font-sans);
+      transition: all 100ms ease;
+    }
+
+    .props-toggle:hover {
+      background: var(--amp-gray-100);
+      color: var(--color-text-primary);
+    }
+
+    .props-toggle.active {
+      background: var(--amp-violet-50);
+      color: var(--amp-violet-700);
+      border-color: var(--amp-violet-200);
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--amp-gray-300); border-radius: 3px; }
+    .sidebar ::-webkit-scrollbar-thumb { background: var(--amp-gray-700); }
+  </style>
+</head>
+<body>
+
+  <div class="desktop-window">
+
+    <!-- ── Titlebar ──────────────────────────────────────────── -->
+    <div class="titlebar">
+      <div class="titlebar-dots">
+        <div class="titlebar-dot red"></div>
+        <div class="titlebar-dot yellow"></div>
+        <div class="titlebar-dot green"></div>
+      </div>
+      <div class="titlebar-title">AMP UP &mdash; Learning System</div>
+      <div class="titlebar-spacer"></div>
+    </div>
+
+    <!-- ── App Body ──────────────────────────────────────────── -->
+    <div class="app-body">
+
+      <!-- ── Sidebar ─────────────────────────────────────────── -->
+      <div class="sidebar">
+
+        <div class="sidebar-header">
+          <div class="sidebar-back" onclick="window.location.href='dashboard.html'" title="Back to Home">&#8592;</div>
+          <div>
+            <div class="sidebar-system-name">Learning System</div>
+            <div class="sidebar-system-meta">47 files &middot; 3 contributors</div>
+          </div>
+        </div>
+
+        <div class="sidebar-search">
+          <input class="sidebar-search-input" placeholder="Search files... (Cmd+K)" readonly>
+        </div>
+
+        <!-- File Tree -->
+        <div class="file-tree">
+
+          <div class="tree-section-label">Instructions</div>
+          <div class="tree-item">
+            <span class="icon">&#128221;</span>
+            <span class="name">CLAUDE.md</span>
+          </div>
+          <div class="tree-item">
+            <span class="icon">&#128196;</span>
+            <span class="name">README.md</span>
+          </div>
+
+          <div class="tree-section-label">Playbooks</div>
+          <div class="tree-item">
+            <span class="icon">&#9660;</span>
+            <span class="name">Onboarding Playbook</span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#128214;</span>
+            <span class="name">SKILL.md</span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#9654;</span>
+            <span class="name">references</span>
+          </div>
+          <div class="tree-item">
+            <span class="icon">&#9654;</span>
+            <span class="name">Sales Enablement</span>
+          </div>
+          <div class="tree-item modified">
+            <span class="icon">&#9660;</span>
+            <span class="name">Content Creation</span>
+            <span class="status-dot" style="background: #E5C07B;"></span>
+          </div>
+          <div class="tree-item d1 modified">
+            <span class="icon">&#128214;</span>
+            <span class="name">SKILL.md</span>
+            <span class="status-dot" style="background: #E5C07B;"></span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#9654;</span>
+            <span class="name">references</span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#9654;</span>
+            <span class="name">examples</span>
+          </div>
+
+          <div class="tree-section-label">Files</div>
+
+          <div class="tree-item">
+            <span class="icon">&#9660;</span>
+            <span class="name">reference</span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#9654;</span>
+            <span class="name">templates</span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#9654;</span>
+            <span class="name">guides</span>
+          </div>
+
+          <div class="tree-item">
+            <span class="icon">&#9660;</span>
+            <span class="name">work / projects</span>
+            <span class="change-count">3</span>
+          </div>
+          <div class="tree-item d1">
+            <span class="icon">&#9660;</span>
+            <span class="name">q2-content-strategy</span>
+          </div>
+          <div class="tree-item d2">
+            <span class="icon">&#128196;</span>
+            <span class="name">braindump.md</span>
+          </div>
+          <div class="tree-item d2 active">
+            <span class="icon">&#128196;</span>
+            <span class="name">pitch.md</span>
+            <span class="status-dot" style="background: #E5C07B;" title="Unsaved edits"></span>
+          </div>
+          <div class="tree-item d2" style="color: var(--amp-violet-500);">
+            <span class="icon">&#128196;</span>
+            <span class="name">project-plan.md</span>
+            <span class="status-dot" style="background: var(--amp-violet-500);" title="Saved, not published"></span>
+          </div>
+          <div class="tree-item d2 new-file">
+            <span class="icon">&#128196;</span>
+            <span class="name">meeting-notes.md</span>
+            <span class="status-dot" style="background: #98C379;" title="New file, unsaved"></span>
+          </div>
+
+          <div class="tree-item d1">
+            <span class="icon">&#9654;</span>
+            <span class="name">onboarding-playbook</span>
+          </div>
+
+          <div class="tree-item">
+            <span class="icon">&#9654;</span>
+            <span class="name">tools</span>
+          </div>
+          <div class="tree-item">
+            <span class="icon">&#9654;</span>
+            <span class="name">schedules</span>
+          </div>
+
+        </div>
+
+        <!-- Drafts -->
+        <div class="sidebar-drafts">
+          <div class="tree-section-label" style="padding: 0 4px 6px;">Your Drafts</div>
+          <div class="draft-item active">
+            <span class="draft-dot editing"></span>
+            <span class="draft-name">Q2 Content Strategy</span>
+            <span class="draft-meta">editing</span>
+          </div>
+          <div class="draft-item">
+            <span class="draft-dot published"></span>
+            <span class="draft-name">Fix onboarding docs</span>
+            <span class="draft-meta">published</span>
+          </div>
+          <div class="draft-new">
+            <span>+</span>
+            <span>New Draft</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Main Area ───────────────────────────────────────── -->
+      <div class="main-area">
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+          <div class="tab">
+            braindump.md
+            <span class="tab-close">&times;</span>
+          </div>
+          <div class="tab active">
+            pitch.md
+            <span class="tab-dot" style="background: #E5C07B;"></span>
+            <span class="tab-close">&times;</span>
+          </div>
+          <div class="tab">
+            project-plan.md
+            <span class="tab-dot" style="background: #E5C07B;"></span>
+            <span class="tab-close">&times;</span>
+          </div>
+
+          <div class="tab-bar-right">
+            <button class="draft-selector">
+              <span class="draft-indicator"></span>
+              Q2 Content Strategy
+              <span class="chevron">&#9660;</span>
+            </button>
+            <span class="sync-badge editing">
+              <span class="sync-dot"></span>
+              Editing
+            </span>
+            <button class="props-toggle" id="propsToggle" title="Properties">&#9776;</button>
+          </div>
+        </div>
+
+        <!-- Editor + Properties Row -->
+        <div class="editor-row">
+        <div class="editor-area">
+          <div class="editor-content">
+
+            <div class="editor-breadcrumb">
+              work / projects / q2-content-strategy / <span>pitch.md</span>
+            </div>
+
+            <div class="editor-h1" contenteditable="true">Q2 Content Strategy</div>
+
+            <div class="editor-meta">
+              <span>Created by Rose &middot; May 3, 2026</span>
+              <span>Last edited 5 min ago</span>
+            </div>
+
+            <div class="editor-h2">Problem</div>
+
+            <p class="editor-p">
+              Our current content pipeline relies on manual processes that don't scale. Each team member creates documentation in isolation — some in Google Docs, some locally, some in Notion — and there's no single place where the team's knowledge lives and evolves together.
+            </p>
+
+            <div class="editor-blockquote">
+              <p>The goal is to centralize our team's content creation into a shared, versioned system where everyone can contribute, review each other's work, and build on what's already been documented.</p>
+            </div>
+
+            <div class="editor-h2">Success Criteria</div>
+
+            <ul class="editor-ul">
+              <li><strong>All new playbooks</strong> are created and maintained in the Learning System</li>
+              <li><strong>Every team member</strong> can edit and submit content for review without technical help</li>
+              <li><strong>Review turnaround</strong> under 24 hours for submitted content</li>
+              <li><strong>Weekly publishing cadence</strong> — at least 2 new or updated docs per week across the team<span class="editor-cursor"></span></li>
+            </ul>
+
+            <div class="editor-h2">Scope</div>
+
+            <div class="editor-h3">In Scope</div>
+            <ul class="editor-ul">
+              <li>Onboarding documentation refresh</li>
+              <li>New sales enablement playbook</li>
+              <li>Process documentation for Q2 initiatives</li>
+              <li>Reference template updates</li>
+            </ul>
+
+            <div class="editor-h3">Out of Scope</div>
+            <ul class="editor-ul">
+              <li>External-facing content (marketing site, blog)</li>
+              <li>Technical documentation (API docs, architecture)</li>
+            </ul>
+
+            <div class="editor-h2">Team &amp; Roles</div>
+
+            <ul class="editor-ul">
+              <li><strong>Rose</strong> — Onboarding playbook, process docs <span class="editor-tag">Lead</span></li>
+              <li><strong>Hannah</strong> — Sales enablement playbook <span class="editor-tag">Lead</span></li>
+              <li><strong>Rachel</strong> — Strategy review, final approval <span class="editor-tag">Reviewer</span></li>
+              <li><strong>Kristi</strong> — System setup, template creation <span class="editor-tag">Support</span></li>
+            </ul>
+
+          </div>
+        </div><!-- /editor-area -->
+
+        <!-- Properties Drawer -->
+        <div class="properties-drawer" id="propsDrawer">
+          <div class="properties-header">
+            <span class="properties-title">Properties</span>
+            <span class="properties-close" id="propsClose">&times;</span>
+          </div>
+          <div class="properties-body">
+
+            <div class="prop-group">
+              <div class="prop-label">Status</div>
+              <select class="prop-select">
+                <option>Draft</option>
+                <option selected>In Progress</option>
+                <option>In Review</option>
+                <option>Approved</option>
+                <option>Published</option>
+              </select>
+            </div>
+
+            <div class="prop-group">
+              <div class="prop-label">Description</div>
+              <input class="prop-input" type="text" value="Project pitch for Q2 content strategy initiative">
+            </div>
+
+            <div class="prop-group">
+              <div class="prop-label">Owner</div>
+              <input class="prop-input" type="text" value="Rose">
+            </div>
+
+            <div class="prop-group">
+              <div class="prop-label">Tags</div>
+              <div>
+                <span class="prop-tag">content</span>
+                <span class="prop-tag">q2</span>
+                <span class="prop-tag">strategy</span>
+              </div>
+            </div>
+
+            <div class="prop-group">
+              <div class="prop-label">Priority</div>
+              <select class="prop-select">
+                <option>Low</option>
+                <option selected>Medium</option>
+                <option>High</option>
+              </select>
+            </div>
+
+            <div class="prop-divider"></div>
+
+            <div class="prop-group">
+              <div class="prop-label">File Info</div>
+              <div class="prop-meta">
+                Created by Rose<br>
+                May 3, 2026 at 2:15 PM<br><br>
+                Last edited 5 min ago<br>
+                3 saves in this draft<br><br>
+                Path: work/projects/q2-content-strategy/pitch.md
+              </div>
+            </div>
+
+          </div>
+        </div><!-- /properties-drawer -->
+        </div><!-- /editor-row -->
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-left">
+            <span class="status-dot orange"></span>
+            <span>2 unsaved edits</span>
+            <span style="color: var(--color-border-strong);">&middot;</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span class="status-dot" style="background: var(--amp-violet-500);width:7px;height:7px;border-radius:50%;"></span> 1 saved, not published</span>
+            <span style="color: var(--color-border-strong);">&middot;</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span class="status-dot" style="background: #98C379;width:7px;height:7px;border-radius:50%;"></span> 1 new file</span>
+          </div>
+          <div class="status-right">
+            <button class="status-btn secondary">Discard</button>
+            <button class="status-btn primary" id="saveBtn">Save</button>
+            <button class="status-btn publish">Publish</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Save button interaction
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.addEventListener('click', () => {
+      saveBtn.textContent = 'Saved!';
+      saveBtn.style.background = '#16A34A';
+      setTimeout(() => {
+        saveBtn.textContent = 'Save';
+        saveBtn.style.background = '';
+      }, 1500);
+    });
+
+    // Properties drawer toggle
+    const propsToggle = document.getElementById('propsToggle');
+    const propsDrawer = document.getElementById('propsDrawer');
+    const propsClose = document.getElementById('propsClose');
+
+    propsToggle.addEventListener('click', () => {
+      propsDrawer.classList.toggle('open');
+      propsToggle.classList.toggle('active');
+    });
+
+    propsClose.addEventListener('click', () => {
+      propsDrawer.classList.remove('open');
+      propsToggle.classList.remove('active');
+    });
+  </script>
+
+</body>
+</html>

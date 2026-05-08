@@ -18,110 +18,190 @@ interface FileTreeProps {
   gitDeleted?: Set<string>
 }
 
+interface CategorizedTree {
+  instructions: TreeNode[]
+  playbooks: TreeNode[]
+  files: TreeNode[]
+}
+
 export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted }: FileTreeProps) {
-  const [nodes, setNodes] = useState<TreeNode[]>([])
+  const [categories, setCategories] = useState<CategorizedTree>({ instructions: [], playbooks: [], files: [] })
+  const [expandedNodes, setExpandedNodes] = useState<Map<string, TreeNode[]>>(new Map())
   const [search, setSearch] = useState('')
 
-  const loadDirectory = useCallback(async (dirPath: string, depth: number): Promise<TreeNode[]> => {
+  const loadDirectory = useCallback(async (dirPath: string): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
     if (!result.ok || !result.entries) return []
-    return result.entries.map(entry => ({ ...entry, depth, expanded: false }))
+    return result.entries.map(entry => ({ ...entry, depth: 0, expanded: false }))
   }, [])
 
+  // Initial load: categorize root entries
   useEffect(() => {
-    if (rootPath) loadDirectory(rootPath, 0).then(setNodes)
+    if (!rootPath) return
+
+    const load = async () => {
+      const rootEntries = await loadDirectory(rootPath)
+
+      const instructions: TreeNode[] = []
+      const files: TreeNode[] = []
+      let playbooks: TreeNode[] = []
+
+      for (const entry of rootEntries) {
+        if (!entry.isDirectory) {
+          instructions.push(entry)
+        } else if (entry.name === '.claude') {
+          // Skip .claude from files — we'll load playbooks from .claude/skills
+          continue
+        } else {
+          files.push(entry)
+        }
+      }
+
+      // Try to load playbooks from .claude/skills/
+      const skillsPath = `${rootPath}/.claude/skills`
+      const skillsResult = await window.api.fs.readDirectory(skillsPath)
+      if (skillsResult.ok && skillsResult.entries) {
+        playbooks = skillsResult.entries
+          .filter(e => e.isDirectory)
+          .map(entry => ({ ...entry, depth: 0, expanded: false }))
+      }
+
+      setCategories({ instructions, playbooks, files })
+    }
+
+    load()
   }, [rootPath, loadDirectory])
 
-  const handleClick = async (node: TreeNode) => {
-    if (!node.isDirectory) {
-      onFileSelect?.(node.path)
-      return
-    }
-
-    if (node.expanded) {
-      setNodes(prev => {
-        const idx = prev.findIndex(n => n.path === node.path)
-        if (idx === -1) return prev
-        const updated = [...prev]
-        updated[idx] = { ...node, expanded: false }
-        let removeCount = 0
-        for (let i = idx + 1; i < updated.length; i++) {
-          if (updated[i].depth > node.depth) removeCount++
-          else break
+  const toggleExpand = useCallback(async (node: TreeNode) => {
+    if (expandedNodes.has(node.path)) {
+      // Collapse
+      setExpandedNodes(prev => {
+        const next = new Map(prev)
+        next.delete(node.path)
+        // Also remove any children that were expanded
+        for (const key of prev.keys()) {
+          if (key.startsWith(node.path + '/')) next.delete(key)
         }
-        updated.splice(idx + 1, removeCount)
-        return updated
+        return next
       })
     } else {
-      const children = await loadDirectory(node.path, node.depth + 1)
-      setNodes(prev => {
-        const idx = prev.findIndex(n => n.path === node.path)
-        if (idx === -1) return prev
-        if (prev[idx].expanded) return prev
-        const updated = [...prev]
-        updated[idx] = { ...node, expanded: true }
-        updated.splice(idx + 1, 0, ...children)
-        return updated
+      // Expand
+      const children = await loadDirectory(node.path)
+      setExpandedNodes(prev => {
+        const next = new Map(prev)
+        next.set(node.path, children)
+        return next
       })
     }
+  }, [expandedNodes, loadDirectory])
+
+  const handleClick = useCallback((node: TreeNode) => {
+    if (node.isDirectory) {
+      toggleExpand(node)
+    } else {
+      onFileSelect?.(node.path)
+    }
+  }, [toggleExpand, onFileSelect])
+
+  // Count git changes in a directory
+  const getChangeCount = useCallback((dirRelPath: string): number => {
+    let count = 0
+    const prefix = dirRelPath + '/'
+    gitModified?.forEach(p => { if (p.startsWith(prefix)) count++ })
+    gitNew?.forEach(p => { if (p.startsWith(prefix)) count++ })
+    return count
+  }, [gitModified, gitNew])
+
+  // Render a tree item
+  const renderItem = (node: TreeNode, depth: number, isPlaybook?: boolean) => {
+    const isExpanded = expandedNodes.has(node.path)
+    const relativePath = node.path.replace(rootPath + '/', '')
+    const isGitModified = gitModified?.has(relativePath)
+    const isGitNew = gitNew?.has(relativePath)
+    const isGitDeleted = gitDeleted?.has(relativePath)
+    const changeCount = node.isDirectory ? getChangeCount(relativePath) : 0
+
+    const classes = [
+      'tree-item',
+      selectedFile === node.path ? 'active' : '',
+      isExpanded ? 'expanded' : '',
+      isGitModified ? 'git-modified' : '',
+      isGitNew ? 'git-new' : '',
+      isGitDeleted ? 'git-deleted' : ''
+    ].filter(Boolean).join(' ')
+
+    const matchesSearch = !search || node.name.toLowerCase().includes(search.toLowerCase())
+    if (!matchesSearch && !node.isDirectory) return null
+
+    return (
+      <div key={node.path}>
+        <div
+          className={classes}
+          style={{ paddingLeft: `${14 + depth * 16}px` }}
+          onClick={() => handleClick(node)}
+        >
+          {node.isDirectory ? (
+            <span className="tree-item-icon">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M3 1.5L7 5L3 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+          ) : isPlaybook ? (
+            <span className="tree-item-icon" style={{ color: '#8E8B87', fontSize: '14px' }}>&#x1F4D6;</span>
+          ) : (
+            <span className="tree-item-icon" style={{ color: '#B5B1AC', fontSize: '14px' }}>&#x1F4C4;</span>
+          )}
+          <span className="tree-item-name">{node.name}</span>
+          {changeCount > 0 && <span className="tree-item-change-count">{changeCount}</span>}
+          {isGitModified && <span className="tree-item-git-dot modified" />}
+          {isGitNew && <span className="tree-item-git-dot new" />}
+          {isGitDeleted && <span className="tree-item-git-dot deleted" />}
+        </div>
+
+        {isExpanded && expandedNodes.get(node.path)?.map(child =>
+          renderItem(child, depth + 1, isPlaybook)
+        )}
+      </div>
+    )
   }
 
-  const filteredNodes = search
-    ? nodes.filter(n => n.name.toLowerCase().includes(search.toLowerCase()))
-    : nodes
+  const hasPlaybooks = categories.playbooks.length > 0
+  const hasInstructions = categories.instructions.length > 0
+  const hasFiles = categories.files.length > 0
 
   return (
     <>
       <div className="file-tree-search">
         <input
           type="text"
-          placeholder="Search files..."
+          placeholder="Search files... (Cmd+K)"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
       </div>
       <div className="file-tree">
-        {filteredNodes.map((node) => {
-          const isTopLevel = node.depth === 0
-          const isExpanded = node.expanded
-          const relativePath = node.path.replace(rootPath + '/', '')
-          const isGitModified = gitModified?.has(relativePath)
-          const isGitNew = gitNew?.has(relativePath)
-          const isGitDeleted = gitDeleted?.has(relativePath)
-          const classes = [
-            'tree-item',
-            selectedFile === node.path ? 'active' : '',
-            isTopLevel && node.isDirectory ? 'top-level' : '',
-            isExpanded ? 'expanded' : '',
-            isGitModified ? 'git-modified' : '',
-            isGitNew ? 'git-new' : '',
-            isGitDeleted ? 'git-deleted' : ''
-          ].filter(Boolean).join(' ')
+        {hasInstructions && (
+          <>
+            <div className="tree-section-label">Instructions</div>
+            {categories.instructions.map(node => renderItem(node, 0))}
+          </>
+        )}
 
-          return (
-            <div
-              key={node.path}
-              className={classes}
-              style={{ paddingLeft: `${14 + node.depth * 16}px` }}
-              onClick={() => handleClick(node)}
-            >
-              {node.isDirectory ? (
-                <span className="tree-item-icon">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M3 1.5L7 5L3 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-              ) : (
-                <span className="tree-item-icon" style={{ color: '#B5B1AC', fontSize: '14px' }}>📄</span>
-              )}
-              <span className="tree-item-name">{node.name}</span>
-              {isGitModified && <span className="tree-item-git-dot modified" />}
-              {isGitNew && <span className="tree-item-git-dot new" />}
-              {isGitDeleted && <span className="tree-item-git-dot deleted" />}
-            </div>
-          )
-        })}
-        {filteredNodes.length === 0 && (
+        {hasPlaybooks && (
+          <>
+            <div className="tree-section-label">Playbooks</div>
+            {categories.playbooks.map(node => renderItem(node, 0, true))}
+          </>
+        )}
+
+        {hasFiles && (
+          <>
+            <div className="tree-section-label">Files</div>
+            {categories.files.map(node => renderItem(node, 0))}
+          </>
+        )}
+
+        {!hasInstructions && !hasPlaybooks && !hasFiles && (
           <div style={{ padding: '18px', fontSize: '13px', color: '#B5B1AC', textAlign: 'center' }}>
             {search ? 'No matches' : 'No files found'}
           </div>

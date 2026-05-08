@@ -26,6 +26,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .status-dot.orange { background: #C47A0A; }
@@ -36,14 +37,121 @@
   color: #D4D0CC;
 }
 
-.status-branch {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 500;
-  color: #1a1a2e;
+/* Branch selector button */
+.status-branch-wrapper {
+  position: relative;
 }
 
+.status-branch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a1a2e;
+  background: white;
+  border: 1px solid #EDE8E2;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 80ms ease;
+}
+
+.status-branch-btn:hover {
+  border-color: #D4D0CC;
+  background: #F5F0EB;
+}
+
+.status-branch-chevron {
+  font-size: 10px;
+  color: #B5B1AC;
+  margin-left: 2px;
+}
+
+/* Dropdown overlay */
+.status-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+/* Dropdown menu */
+.status-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: white;
+  border: 1px solid #EDE8E2;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
+  min-width: 220px;
+  padding: 6px;
+  z-index: 1000;
+  animation: dropdownFadeIn 100ms ease;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.status-dropdown-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #B5B1AC;
+  padding: 8px 10px 4px;
+}
+
+.status-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4A4743;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 80ms ease;
+}
+
+.status-dropdown-item:hover {
+  background: #F0EBE5;
+}
+
+.status-dropdown-item.active {
+  color: #8B2BFF;
+}
+
+.status-dropdown-check {
+  margin-left: auto;
+  color: #8B2BFF;
+  font-size: 14px;
+}
+
+.status-dropdown-divider {
+  height: 1px;
+  background: #EDE8E2;
+  margin: 4px 6px;
+}
+
+.status-dropdown-item.new-draft {
+  color: #8B2BFF;
+}
+
+.status-dropdown-item.new-draft:hover {
+  background: rgba(139, 43, 255, 0.06);
+}
+
+/* Buttons */
 .status-right {
   display: flex;
   align-items: center;

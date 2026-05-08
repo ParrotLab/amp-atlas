@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom'
 import FileTree from '../components/FileTree'
 import FileViewer from '../components/FileViewer'
-import GitStatusBar from '../components/GitStatusBar'
 import StatusBar from '../components/StatusBar'
 import TabBar, { Tab } from '../components/TabBar'
 import { useState, useEffect, useCallback } from 'react'
@@ -58,6 +57,7 @@ export default function SystemOverview() {
   const [branch, setBranch] = useState<string>('')
   const [isMainBranch, setIsMainBranch] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
+  const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
 
   const rootPath = system?.folderPath || ''
 
@@ -72,9 +72,17 @@ export default function SystemOverview() {
         setBranch(result.status.current || 'main')
         setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
       }
+      const branchResult = await window.api.git.branches(rootPath)
+      if (branchResult.ok && branchResult.branches) {
+        setAllBranches(
+          branchResult.branches.all
+            .filter(b => !b.startsWith('remotes/'))
+            .map(b => ({ name: b, current: b === branchResult.branches!.current }))
+        )
+      }
     }
     fetchGitStatus()
-    const interval = setInterval(fetchGitStatus, 5000)
+    const interval = setInterval(fetchGitStatus, 10000)
     return () => clearInterval(interval)
   }, [rootPath])
 
@@ -98,6 +106,19 @@ export default function SystemOverview() {
     alert('Publish coming soon — this will push your saves to GitHub.')
   }
 
+  const handleSwitchBranch = (branchName: string) => {
+    // TODO: Implement git checkout
+    alert(`Switching to "${branchName}" — coming soon.`)
+  }
+
+  const handleNewDraft = () => {
+    // TODO: Implement create branch
+    const name = prompt('Name your draft:')
+    if (name) {
+      alert(`Creating draft "${name}" — coming soon.`)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
       {/* File tree panel */}
@@ -111,10 +132,7 @@ export default function SystemOverview() {
         overflow: 'hidden'
       }}>
         {rootPath ? (
-          <>
-            <FileTree rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} />
-            <GitStatusBar repoPath={rootPath} />
-          </>
+          <FileTree rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} />
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>
@@ -151,9 +169,12 @@ export default function SystemOverview() {
           isDirty={isDirty}
           branchName={branch}
           isMain={isMainBranch}
+          branches={allBranches}
           onSave={handleSave}
           onDiscard={handleDiscard}
           onPublish={handlePublish}
+          onSwitchBranch={handleSwitchBranch}
+          onNewDraft={handleNewDraft}
         />
       </div>
     </div>

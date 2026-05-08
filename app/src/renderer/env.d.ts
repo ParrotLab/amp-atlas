@@ -33,6 +33,9 @@ interface ElectronAPI {
     readFile: (path: string) => Promise<FsResult>
     stat: (path: string) => Promise<FsResult>
   }
+  dialog: {
+    selectFolder: () => Promise<{ ok: boolean; canceled?: boolean; path?: string }>
+  }
 }
 
 interface Window {

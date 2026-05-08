@@ -34,12 +34,12 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
       return
     }
 
-    setNodes(prev => {
-      const idx = prev.findIndex(n => n.path === node.path)
-      if (idx === -1) return prev
-      const updated = [...prev]
-
-      if (node.expanded) {
+    if (node.expanded) {
+      // Collapse: remove all children deeper than this node
+      setNodes(prev => {
+        const idx = prev.findIndex(n => n.path === node.path)
+        if (idx === -1) return prev
+        const updated = [...prev]
         updated[idx] = { ...node, expanded: false }
         let removeCount = 0
         for (let i = idx + 1; i < updated.length; i++) {
@@ -47,20 +47,22 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile }: FileT
           else break
         }
         updated.splice(idx + 1, removeCount)
-      } else {
+        return updated
+      })
+    } else {
+      // Expand: load children first, then update state once
+      const children = await loadDirectory(node.path, node.depth + 1)
+      setNodes(prev => {
+        const idx = prev.findIndex(n => n.path === node.path)
+        if (idx === -1) return prev
+        // Check if already expanded (double-click guard)
+        if (prev[idx].expanded) return prev
+        const updated = [...prev]
         updated[idx] = { ...node, expanded: true }
-        loadDirectory(node.path, node.depth + 1).then(children => {
-          setNodes(prev2 => {
-            const idx2 = prev2.findIndex(n => n.path === node.path)
-            if (idx2 === -1) return prev2
-            const u = [...prev2]
-            u.splice(idx2 + 1, 0, ...children)
-            return u
-          })
-        })
-      }
-      return updated
-    })
+        updated.splice(idx + 1, 0, ...children)
+        return updated
+      })
+    }
   }
 
   return (

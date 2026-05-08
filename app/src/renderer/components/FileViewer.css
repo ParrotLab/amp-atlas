@@ -35,14 +35,6 @@
   margin-bottom: 24px;
 }
 
-.file-viewer-body {
-  font-size: 15px;
-  line-height: 1.75;
-  color: #5C5955;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
 .file-viewer-empty {
   display: flex;
   align-items: center;
@@ -50,4 +42,173 @@
   height: 100%;
   color: #B5B1AC;
   font-size: 14px;
+}
+
+/* TipTap rendered content styles */
+.file-viewer-body .tiptap {
+  outline: none;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #5C5955;
+}
+
+.file-viewer-body .tiptap > *:first-child {
+  margin-top: 0;
+}
+
+.file-viewer-body .tiptap h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-top: 36px;
+  margin-bottom: 12px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.file-viewer-body .tiptap h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-top: 32px;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.file-viewer-body .tiptap h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.file-viewer-body .tiptap h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #3D3832;
+  margin-top: 20px;
+  margin-bottom: 6px;
+}
+
+.file-viewer-body .tiptap p {
+  margin-bottom: 12px;
+}
+
+.file-viewer-body .tiptap strong {
+  color: #1a1a2e;
+  font-weight: 600;
+}
+
+.file-viewer-body .tiptap em {
+  font-style: italic;
+}
+
+.file-viewer-body .tiptap a {
+  color: #8B2BFF;
+  text-decoration: underline;
+  text-decoration-color: rgba(139, 43, 255, 0.3);
+  text-underline-offset: 2px;
+}
+
+.file-viewer-body .tiptap ul,
+.file-viewer-body .tiptap ol {
+  padding-left: 24px;
+  margin-bottom: 12px;
+}
+
+.file-viewer-body .tiptap li {
+  margin-bottom: 4px;
+}
+
+.file-viewer-body .tiptap li p {
+  margin-bottom: 4px;
+}
+
+.file-viewer-body .tiptap blockquote {
+  border-left: 3px solid #8B2BFF;
+  padding: 12px 20px;
+  margin: 16px 0;
+  background: rgba(139, 43, 255, 0.04);
+  border-radius: 0 12px 12px 0;
+}
+
+.file-viewer-body .tiptap blockquote p {
+  color: #5A3D8F;
+  margin-bottom: 0;
+}
+
+.file-viewer-body .tiptap code {
+  background: #F5F0EB;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: #8B2BFF;
+}
+
+.file-viewer-body .tiptap pre {
+  background: #1a1a2e;
+  color: #e0ddd8;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 16px 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.file-viewer-body .tiptap pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+.file-viewer-body .tiptap hr {
+  border: none;
+  border-top: 1px solid #EDE8E2;
+  margin: 28px 0;
+}
+
+.file-viewer-body .tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.file-viewer-body .tiptap th,
+.file-viewer-body .tiptap td {
+  border: 1px solid #EDE8E2;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.file-viewer-body .tiptap th {
+  background: #F5F0EB;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.file-viewer-body .tiptap img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* Task list styles */
+.file-viewer-body .tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.file-viewer-body .tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.file-viewer-body .tiptap ul[data-type="taskList"] li label {
+  margin-top: 3px;
 }

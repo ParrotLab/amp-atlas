@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { readdir, readFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -57,6 +57,17 @@ ipcMain.handle('fs:readFile', async (_event, filePath: string) => {
   } catch (error) {
     return { ok: false, error: String(error) }
   }
+})
+
+ipcMain.handle('dialog:selectFolder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: 'Select System Folder'
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return { ok: false, canceled: true }
+  }
+  return { ok: true, path: result.filePaths[0] }
 })
 
 ipcMain.handle('fs:stat', async (_event, filePath: string) => {

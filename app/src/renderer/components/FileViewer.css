@@ -1,0 +1,49 @@
+.file-viewer {
+  background: white;
+  border-radius: 16px 16px 0 0;
+  margin: 10px 10px 0;
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.03);
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.file-viewer-content {
+  width: 100%;
+  max-width: 720px;
+  padding: 48px 40px 80px;
+}
+
+.file-viewer-breadcrumb {
+  font-size: 12px;
+  color: #B5B1AC;
+  margin-bottom: 24px;
+  font-family: var(--font-mono);
+}
+
+.file-viewer-title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #1a1a2e;
+  margin-bottom: 24px;
+}
+
+.file-viewer-body {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #5C5955;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.file-viewer-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #B5B1AC;
+  font-size: 14px;
+}

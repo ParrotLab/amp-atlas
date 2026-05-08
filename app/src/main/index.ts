@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
+import { readdir, readFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
 function createWindow(): void {
@@ -28,6 +29,52 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
+
+ipcMain.handle('fs:readDirectory', async (_event, dirPath: string) => {
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true })
+    const results = entries
+      .filter(entry => !entry.name.startsWith('.') || entry.name === '.claude')
+      .map(entry => ({
+        name: entry.name,
+        isDirectory: entry.isDirectory(),
+        path: join(dirPath, entry.name)
+      }))
+      .sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
+        return a.name.localeCompare(b.name)
+      })
+    return { ok: true, entries: results }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('fs:readFile', async (_event, filePath: string) => {
+  try {
+    const content = await readFile(filePath, 'utf-8')
+    return { ok: true, content }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('fs:stat', async (_event, filePath: string) => {
+  try {
+    const stats = await stat(filePath)
+    return {
+      ok: true,
+      stats: {
+        size: stats.size,
+        isDirectory: stats.isDirectory(),
+        modified: stats.mtime.toISOString(),
+        created: stats.birthtime.toISOString()
+      }
+    }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')

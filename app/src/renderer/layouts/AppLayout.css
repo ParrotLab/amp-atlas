@@ -7,7 +7,6 @@
 .app-main {
   flex: 1;
   background: #F5F0EB;
-  padding-top: 38px;
   display: flex;
   flex-direction: column;
   min-width: 0;

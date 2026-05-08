@@ -1,7 +1,7 @@
 .dashboard {
   max-width: 1020px;
   margin: 0 auto;
-  padding: 40px 48px 60px;
+  padding: 52px 48px 60px; /* 38px titlebar + 14px spacing */
   overflow-y: auto;
   height: 100%;
 }

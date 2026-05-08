@@ -13,14 +13,17 @@ import './FileViewer.css'
 
 interface FileViewerProps {
   filePath: string | undefined
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export default function FileViewer({ filePath }: FileViewerProps) {
+export default function FileViewer({ filePath, onDirtyChange }: FileViewerProps) {
   const [loading, setLoading] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const originalContent = useRef<string>('')
   const currentFilePath = useRef<string | undefined>()
+  const onDirtyChangeRef = useRef(onDirtyChange)
+  onDirtyChangeRef.current = onDirtyChange
 
   const editor = useEditor({
     extensions: [
@@ -40,6 +43,7 @@ export default function FileViewer({ filePath }: FileViewerProps) {
     onUpdate: () => {
       setIsDirty(true)
       setSaveStatus('idle')
+      onDirtyChangeRef.current?.(true)
     },
   })
 
@@ -84,6 +88,7 @@ export default function FileViewer({ filePath }: FileViewerProps) {
     const result = await window.api.fs.writeFile(path, content)
     if (result.ok) {
       setIsDirty(false)
+      onDirtyChangeRef.current?.(false)
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
     } else {

@@ -78,6 +78,8 @@
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
   transition: box-shadow 150ms ease;
+  position: relative;
+  z-index: 1;
 }
 
 .settings-system:hover {
@@ -85,19 +87,18 @@
 }
 
 .settings-system-color {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px;
-  font-weight: 600;
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 100ms ease;
   position: relative;
+  z-index: 2;
 }
 
 .settings-system-color:hover {
@@ -214,7 +215,7 @@
 .appearance-picker-overlay {
   position: fixed;
   inset: 0;
-  z-index: 899;
+  z-index: 999;
 }
 
 .appearance-picker {
@@ -223,10 +224,10 @@
   left: 0;
   background: white;
   border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
   padding: 16px;
-  z-index: 900;
-  width: 260px;
+  z-index: 1000;
+  width: 240px;
 }
 
 .appearance-picker-label {

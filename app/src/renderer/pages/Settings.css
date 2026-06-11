@@ -210,43 +210,86 @@
   background: #FEF2F2;
 }
 
-/* Color picker popover */
-.color-picker-overlay {
+/* Appearance picker popover */
+.appearance-picker-overlay {
   position: fixed;
   inset: 0;
   z-index: 899;
 }
 
-.color-picker {
+.appearance-picker {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   background: white;
   border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  padding: 16px;
   z-index: 900;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  width: 200px;
+  width: 260px;
 }
 
-.color-picker-swatch {
-  width: 32px;
-  height: 32px;
+.appearance-picker-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #B5B1AC;
+  margin-bottom: 8px;
+}
+
+.appearance-picker-label:not(:first-child) {
+  margin-top: 14px;
+}
+
+.appearance-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.appearance-swatch {
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 80ms ease;
 }
 
-.color-picker-swatch:hover {
+.appearance-swatch:hover {
   transform: scale(1.1);
 }
 
-.color-picker-swatch.active {
+.appearance-swatch.active {
   border-color: #1a1a2e;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #1a1a2e;
+}
+
+.appearance-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid #EDE8E2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: white;
+  transition: all 80ms ease;
+  color: #6B6966;
+}
+
+.appearance-icon:hover {
+  border-color: #D4D0CC;
+  background: #FEFCF9;
+}
+
+.appearance-icon.active {
+  border-color: #8B2BFF;
+  background: rgba(139, 43, 255, 0.06);
+  color: #8B2BFF;
 }
 
 /* Info cards */

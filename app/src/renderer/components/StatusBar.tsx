@@ -19,6 +19,7 @@ interface StatusBarProps {
   onPublish: () => void
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
+  onArchiveBranch?: (branch: string) => void
 }
 
 function humanize(branch: string): string {
@@ -49,7 +50,7 @@ function addRecentBranch(branch: string): void {
 export default function StatusBar({
   editedCount, savedCount, newCount, isDirty,
   branchName, isMain, branches,
-  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft
+  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAllBranches, setShowAllBranches] = useState(false)
@@ -116,15 +117,18 @@ export default function StatusBar({
                           <div className="status-dropdown-divider" />
                           <div className="status-dropdown-label">Your Drafts</div>
                           {draftBranches.map(b => (
-                            <button
-                              key={b.name}
-                              className={`status-dropdown-item ${b.current ? 'active' : ''}`}
-                              onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}
-                            >
+                            <div key={b.name} className={`status-dropdown-item ${b.current ? 'active' : ''}`}>
                               <span className="status-dot violet" />
-                              Draft: {humanize(b.name)}
+                              <span className="status-dropdown-item-name" onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}>
+                                Draft: {humanize(b.name)}
+                              </span>
                               {b.current && <span className="status-dropdown-check">✓</span>}
-                            </button>
+                              {!b.current && (
+                                <button className="status-archive-btn" title="Archive this draft" onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(b.name); setShowDropdown(false) }}>
+                                  ✕
+                                </button>
+                              )}
+                            </div>
                           ))}
                         </>
                       )}
@@ -134,15 +138,15 @@ export default function StatusBar({
                           <div className="status-dropdown-divider" />
                           <div className="status-dropdown-label">{otherBranches.length} other branch{otherBranches.length !== 1 ? 'es' : ''}</div>
                           {showAllBranches && otherBranches.map(b => (
-                            <button
-                              key={b.name}
-                              className={`status-dropdown-item ${b.current ? 'active' : ''}`}
-                              onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}
-                              style={{ color: '#8E8B87' }}
-                            >
+                            <div key={b.name} className="status-dropdown-item" style={{ color: '#8E8B87' }}>
                               <span className="status-dot" style={{ background: '#B5B1AC' }} />
-                              {humanize(b.name)}
-                            </button>
+                              <span className="status-dropdown-item-name" onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}>
+                                {humanize(b.name)}
+                              </span>
+                              <button className="status-archive-btn" title="Archive this branch" onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(b.name); setShowDropdown(false) }}>
+                                ✕
+                              </button>
+                            </div>
                           ))}
                           {!showAllBranches && (
                             <button className="status-dropdown-item" onClick={() => setShowAllBranches(true)} style={{ color: '#8E8B87', fontSize: '12px' }}>

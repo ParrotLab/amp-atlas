@@ -195,6 +195,24 @@ export default function SystemOverview() {
     }
   }
 
+  const handleArchiveBranch = async (branchName: string) => {
+    if (!rootPath) return
+    const confirmed = window.confirm(`Archive "${humanize(branchName)}"?\n\nThis will delete the local branch. If it hasn't been published, those changes will be lost.\n\nThis cannot be undone.`)
+    if (!confirmed) return
+
+    const result = await window.api.git.deleteBranch(rootPath, branchName)
+    if (result.ok) {
+      // If we were on that branch, we've been switched to main
+      setTabs([])
+      setSelectedFile(undefined)
+      setIsDirty(false)
+      setTreeKey(k => k + 1)
+      await fetchGitStatus()
+    } else {
+      alert(`Couldn't archive: ${result.error}`)
+    }
+  }
+
   const handleNewDraft = () => {
     setShowNewDraft(true)
   }
@@ -279,6 +297,7 @@ export default function SystemOverview() {
           onPublish={handlePublish}
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
+          onArchiveBranch={handleArchiveBranch}
         />
       </div>
       <NewDraftModal

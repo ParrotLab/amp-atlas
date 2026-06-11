@@ -313,6 +313,27 @@ ipcMain.handle('git:switchBranch', async (_event, repoPath: string, branch: stri
   }
 })
 
+ipcMain.handle('git:deleteBranch', async (_event, repoPath: string, branch: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    const status = await git.status()
+
+    // Can't delete the current branch — switch to main first
+    if (status.current === branch) {
+      const branches = await git.branch()
+      const mainBranch = branches.all.includes('main') ? 'main' : branches.all.includes('master') ? 'master' : null
+      if (!mainBranch) return { ok: false, error: 'No main branch to switch to' }
+      await git.checkout(mainBranch)
+    }
+
+    // Force delete since the branch may not be fully merged
+    await git.branch(['-D', branch])
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
 ipcMain.handle('git:discard', async (_event, repoPath: string) => {
   try {
     const git = simpleGit(repoPath)

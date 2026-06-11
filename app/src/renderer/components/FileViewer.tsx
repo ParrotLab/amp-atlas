@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TaskList from '@tiptap/extension-task-list'
@@ -22,16 +22,40 @@ interface FileViewerProps {
 
 export default function FileViewer({ filePath, rootPath, onDirtyChange, onContentLoad, onToggleProperties, propsOpen }: FileViewerProps) {
   const [loading, setLoading] = useState(false)
-  const [isDirty, setIsDirty] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [lastModified, setLastModified] = useState<string>('')
-  const originalContent = useRef<string>('')
+  const [writeStatus, setWriteStatus] = useState<'idle' | 'writing' | 'written'>('idle')
   const currentFilePath = useRef<string | undefined>()
   const isLoadingContent = useRef(false)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
   const onDirtyChangeRef = useRef(onDirtyChange)
   onDirtyChangeRef.current = onDirtyChange
   const onContentLoadRef = useRef(onContentLoad)
   onContentLoadRef.current = onContentLoad
+
+  // Write current editor content to disk
+  const writeToDisk = async (editorInstance: ReturnType<typeof useEditor>) => {
+    if (!currentFilePath.current || !editorInstance) return
+    const path = currentFilePath.current
+    const isMarkdown = path.endsWith('.md') || path.endsWith('.mdx')
+
+    let content: string
+    if (isMarkdown) {
+      content = htmlToMarkdown(editorInstance.getHTML())
+    } else {
+      content = editorInstance.getHTML()
+    }
+
+    setWriteStatus('writing')
+    const result = await window.api.fs.writeFile(path, content)
+    if (result.ok) {
+      setWriteStatus('written')
+      setLastModified('Just now')
+      onDirtyChangeRef.current?.(true) // Mark as dirty = uncommitted changes exist
+      setTimeout(() => setWriteStatus('idle'), 1500)
+    } else {
+      setWriteStatus('idle')
+    }
+  }
 
   const editor = useEditor({
     extensions: [
@@ -48,22 +72,26 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
     ],
     editable: true,
     content: '',
-    onUpdate: () => {
-      // Don't mark dirty during programmatic content loads
+    onUpdate: ({ editor: ed }) => {
       if (isLoadingContent.current) return
-      setIsDirty(true)
-      setSaveStatus('idle')
-      onDirtyChangeRef.current?.(true)
+
+      // Debounce: write to disk after 800ms of no typing
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+      debounceTimer.current = setTimeout(() => {
+        writeToDisk(ed)
+      }, 800)
     },
   })
 
+  // Load file content when filePath changes
   useEffect(() => {
     if (!filePath || !editor) return
     currentFilePath.current = filePath
     setLoading(true)
-    setIsDirty(false)
-    onDirtyChangeRef.current?.(false)
-    setSaveStatus('idle')
+    setWriteStatus('idle')
+
+    // Clear any pending writes from previous file
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
 
     // Get file stat for last modified time
     window.api.fs.stat(filePath).then(statResult => {
@@ -85,11 +113,9 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
 
     window.api.fs.readFile(filePath).then(result => {
       if (result.ok && result.content !== undefined) {
-        originalContent.current = result.content
         onContentLoadRef.current?.(result.content)
         const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.mdx')
 
-        // Prevent onUpdate from firing isDirty during setContent
         isLoadingContent.current = true
         if (isMarkdown) {
           let markdownContent = result.content
@@ -103,7 +129,6 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
             `<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
           )
         }
-        // Re-enable dirty tracking after a tick
         requestAnimationFrame(() => {
           isLoadingContent.current = false
         })
@@ -115,41 +140,12 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
     })
   }, [filePath, editor])
 
-  const handleSave = useCallback(async () => {
-    if (!currentFilePath.current || !editor) return
-    setSaveStatus('saving')
-
-    const path = currentFilePath.current
-    const isMarkdown = path.endsWith('.md') || path.endsWith('.mdx')
-
-    let content: string
-    if (isMarkdown) {
-      content = htmlToMarkdown(editor.getHTML())
-    } else {
-      content = editor.getHTML()
-    }
-
-    const result = await window.api.fs.writeFile(path, content)
-    if (result.ok) {
-      setIsDirty(false)
-      onDirtyChangeRef.current?.(false)
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 2000)
-    } else {
-      setSaveStatus('idle')
-    }
-  }, [editor])
-
+  // Cleanup debounce on unmount
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault()
-        handleSave()
-      }
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [handleSave])
+  }, [])
 
   if (!filePath) {
     return (
@@ -160,7 +156,6 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
   }
 
   const fileName = filePath.split('/').pop() || ''
-  // Build full relative path from root
   const fullPath = rootPath
     ? filePath.replace(rootPath + '/', '').split('/').join(' / ')
     : filePath.split('/').slice(-4).join(' / ')
@@ -185,9 +180,8 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
         <div className="file-viewer-title">{fileName}</div>
         <div className="file-viewer-meta">
           {lastModified && <span>Last edited {lastModified}</span>}
-          {isDirty && <span className="file-viewer-unsaved">· Unsaved changes</span>}
-          {saveStatus === 'saving' && <span className="file-viewer-saving">· Saving...</span>}
-          {saveStatus === 'saved' && <span className="file-viewer-saved">· Saved</span>}
+          {writeStatus === 'writing' && <span className="file-viewer-saving">· Saving to disk...</span>}
+          {writeStatus === 'written' && <span className="file-viewer-saved">· Saved</span>}
         </div>
         {loading ? (
           <div style={{ color: '#B5B1AC' }}>Loading...</div>

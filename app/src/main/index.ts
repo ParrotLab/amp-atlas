@@ -445,6 +445,50 @@ ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) 
   }
 })
 
+// Get the diff content for a specific file in a PR
+ipcMain.handle('git:prFileDiff', async (_event, repoPath: string, prNumber: number, filePath: string) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    // Get the full diff, then extract the portion for this file
+    const result = await exec('/opt/homebrew/bin/gh', [
+      'pr', 'diff', String(prNumber)
+    ], { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 })
+
+    const fullDiff = result.stdout
+    // Parse out just this file's diff
+    const fileHeader = `diff --git a/${filePath} b/${filePath}`
+    const startIdx = fullDiff.indexOf(fileHeader)
+    if (startIdx === -1) return { ok: true, lines: [] }
+
+    // Find the end (next file's diff or end of string)
+    const nextDiffIdx = fullDiff.indexOf('\ndiff --git ', startIdx + 1)
+    const fileDiff = nextDiffIdx === -1
+      ? fullDiff.substring(startIdx)
+      : fullDiff.substring(startIdx, nextDiffIdx)
+
+    // Parse into lines with type (added/removed/context)
+    const lines: Array<{ type: 'added' | 'removed' | 'context' | 'header'; content: string }> = []
+    for (const line of fileDiff.split('\n')) {
+      if (line.startsWith('@@')) {
+        lines.push({ type: 'header', content: line })
+      } else if (line.startsWith('+') && !line.startsWith('+++')) {
+        lines.push({ type: 'added', content: line.substring(1) })
+      } else if (line.startsWith('-') && !line.startsWith('---')) {
+        lines.push({ type: 'removed', content: line.substring(1) })
+      } else if (!line.startsWith('diff ') && !line.startsWith('index ') && !line.startsWith('---') && !line.startsWith('+++')) {
+        if (line.length > 0) lines.push({ type: 'context', content: line.startsWith(' ') ? line.substring(1) : line })
+      }
+    }
+
+    return { ok: true, lines }
+  } catch (error: unknown) {
+    return { ok: false, error: String((error as {message?: string}).message || error), lines: [] }
+  }
+})
+
 // Approve or request changes on a PR
 ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
   const { execFile } = await import('child_process')

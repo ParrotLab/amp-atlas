@@ -76,6 +76,8 @@ export default function SystemOverview() {
       setGitDeleted(new Set(result.status.deleted))
       setBranch(result.status.current || 'main')
       setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
+      // isDirty = there are ANY uncommitted changes (modified, new, or deleted files)
+      setIsDirty(!result.status.isClean)
     }
     const branchResult = await window.api.git.branches(rootPath)
     if (branchResult.ok && branchResult.branches) {
@@ -89,55 +91,54 @@ export default function SystemOverview() {
 
   useEffect(() => {
     fetchGitStatus()
-    const interval = setInterval(fetchGitStatus, 10000)
+    // Poll every 3 seconds so edits show up quickly
+    const interval = setInterval(fetchGitStatus, 3000)
     return () => clearInterval(interval)
   }, [fetchGitStatus])
 
+  // "Save" = git add + commit. File edits are already written to disk by the editor's autosave.
   const handleSave = async () => {
     if (!rootPath) return
-    // First save the file content to disk (trigger Cmd+S on editor)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true }))
-
-    // Then git add + commit with auto-generated message
-    setTimeout(async () => {
-      const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
-      const result = await window.api.git.save(rootPath, message)
-      if (result.ok) {
-        setIsDirty(false)
-      }
-    }, 200) // Small delay to let file write complete first
+    const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+    const result = await window.api.git.save(rootPath, message)
+    if (result.ok) {
+      await fetchGitStatus()
+    }
   }
 
+  // "Discard" = revert all uncommitted changes on disk
   const handleDiscard = async () => {
     if (!rootPath) return
-    const confirmed = window.confirm('Discard all unsaved edits? This will revert your files to the last save.')
+    const confirmed = window.confirm('Discard all edits since your last save? This cannot be undone.')
     if (!confirmed) return
 
     const result = await window.api.git.discard(rootPath)
     if (result.ok) {
-      // Reload current file
+      // Reload current file to show reverted content
       if (selectedFile) {
         const current = selectedFile
         setSelectedFile(undefined)
         setTimeout(() => setSelectedFile(current), 100)
       }
-      setIsDirty(false)
+      await fetchGitStatus()
+      setTreeKey(k => k + 1)
     }
   }
 
+  // "Publish" = commit any outstanding changes + push to GitHub
   const handlePublish = async () => {
     if (!rootPath) return
 
-    // Save first if there are unsaved changes
-    if (isDirty) {
+    // Auto-commit any uncommitted changes first
+    const status = await window.api.git.status(rootPath)
+    if (status.ok && status.status && !status.status.isClean) {
       const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
       await window.api.git.save(rootPath, message)
     }
 
     const result = await window.api.git.publish(rootPath)
     if (result.ok) {
-      setIsDirty(false)
-      // Could show a success toast here in the future
+      await fetchGitStatus()
       alert('Published! Your team can now see your changes.')
     } else {
       alert(`Couldn't publish: ${result.error}`)
@@ -232,7 +233,6 @@ export default function SystemOverview() {
           <FileViewer
             filePath={selectedFile}
             rootPath={rootPath}
-            onDirtyChange={setIsDirty}
             onContentLoad={setRawContent}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}
@@ -240,7 +240,7 @@ export default function SystemOverview() {
           <PropertiesPanel isOpen={propsOpen} onClose={() => setPropsOpen(false)} filePath={selectedFile} rawContent={rawContent} />
         </div>
         <StatusBar
-          editedCount={isDirty ? gitModified.size + gitNew.size : 0}
+          editedCount={gitModified.size}
           savedCount={0}
           newCount={gitNew.size}
           isDirty={isDirty}

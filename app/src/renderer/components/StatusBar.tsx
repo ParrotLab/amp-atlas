@@ -20,6 +20,7 @@ interface StatusBarProps {
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
+  prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
 }
 
 function humanize(branch: string): string {
@@ -50,7 +51,7 @@ function addRecentBranch(branch: string): void {
 export default function StatusBar({
   editedCount, savedCount, newCount, isDirty,
   branchName, isMain, branches,
-  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch
+  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch, prStatus
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAllBranches, setShowAllBranches] = useState(false)
@@ -172,6 +173,14 @@ export default function StatusBar({
             <span className="status-sep">&middot;</span>
           </>
         )}
+        {prStatus?.hasPR && prStatus.state === 'OPEN' && (
+          <>
+            <span className={`status-pr-badge ${prStatus.reviewDecision === 'APPROVED' ? 'approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
+              {prStatus.reviewDecision === 'APPROVED' ? 'Approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
+            </span>
+            <span className="status-sep">&middot;</span>
+          </>
+        )}
         {hasChanges ? (
           <>
             {editedCount > 0 && (
@@ -206,9 +215,15 @@ export default function StatusBar({
         <button className="status-btn primary" disabled={!isDirty} onClick={onSave}>
           Save
         </button>
-        <button className="status-btn outline" onClick={onPublish}>
-          Publish
-        </button>
+        {prStatus?.hasPR && prStatus.state === 'OPEN' ? (
+          <button className="status-btn outline" onClick={onPublish} disabled={!isDirty}>
+            Update Review
+          </button>
+        ) : (
+          <button className="status-btn outline" onClick={onPublish}>
+            Publish
+          </button>
+        )}
       </div>
     </div>
   )

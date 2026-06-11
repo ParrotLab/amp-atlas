@@ -345,6 +345,69 @@ ipcMain.handle('git:discard', async (_event, repoPath: string) => {
   }
 })
 
+// Check PR status for the current branch
+ipcMain.handle('git:prStatus', async (_event, repoPath: string) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    const git = simpleGit(repoPath)
+    const status = await git.status()
+    const branch = status.current
+    if (!branch || branch === 'main' || branch === 'master') {
+      return { ok: true, hasPR: false }
+    }
+
+    // Check for open PR on this branch
+    const result = await exec('/opt/homebrew/bin/gh', [
+      'pr', 'view', '--json', 'state,title,url,reviewDecision,number', '--jq', '.'
+    ], { cwd: repoPath })
+
+    const pr = JSON.parse(result.stdout.trim())
+    return {
+      ok: true,
+      hasPR: true,
+      pr: {
+        number: pr.number,
+        title: pr.title,
+        url: pr.url,
+        state: pr.state, // OPEN, CLOSED, MERGED
+        reviewDecision: pr.reviewDecision || null // APPROVED, CHANGES_REQUESTED, REVIEW_REQUIRED, null
+      }
+    }
+  } catch {
+    // No PR exists for this branch
+    return { ok: true, hasPR: false }
+  }
+})
+
+// Check if the current branch has been merged and clean up
+ipcMain.handle('git:checkMerged', async (_event, repoPath: string) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    const git = simpleGit(repoPath)
+    const status = await git.status()
+    const branch = status.current
+    if (!branch || branch === 'main' || branch === 'master') {
+      return { ok: true, merged: false }
+    }
+
+    // Check if PR was merged
+    const result = await exec('/opt/homebrew/bin/gh', [
+      'pr', 'view', '--json', 'state', '--jq', '.state'
+    ], { cwd: repoPath })
+
+    const state = result.stdout.trim()
+    return { ok: true, merged: state === 'MERGED', branch }
+  } catch {
+    return { ok: true, merged: false }
+  }
+})
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')
   app.on('browser-window-created', (_, window) => {

@@ -249,3 +249,25 @@
 .status-btn.outline:hover:not(:disabled) {
   background: #F5F0EB;
 }
+
+.status-pr-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.status-pr-badge.review {
+  background: rgba(196, 122, 10, 0.1);
+  color: #C47A0A;
+}
+
+.status-pr-badge.approved {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16A34A;
+}
+
+.status-pr-badge.changes {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+}

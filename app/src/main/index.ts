@@ -166,14 +166,16 @@ ipcMain.handle('git:draftChanges', async (_event, repoPath: string) => {
     const baseBranch = branches.all.includes('main') ? 'main' : branches.all.includes('master') ? 'master' : null
     if (!baseBranch) return { ok: true, commits: [], filesChanged: [] }
 
-    // Get commits in current branch that aren't in base
+    // Get commits in current branch that aren't in base, excluding merge commits
     const log = await git.log({ from: baseBranch, to: currentBranch })
-    const commits = log.all.map(entry => ({
-      hash: entry.hash.substring(0, 8),
-      date: entry.date,
-      message: entry.message,
-      author_name: entry.author_name
-    }))
+    const commits = log.all
+      .filter(entry => !entry.message.startsWith('Merge '))
+      .map(entry => ({
+        hash: entry.hash.substring(0, 8),
+        date: entry.date,
+        message: entry.message,
+        author_name: entry.author_name
+      }))
 
     // Get files changed between base and current
     let filesChanged: string[] = []

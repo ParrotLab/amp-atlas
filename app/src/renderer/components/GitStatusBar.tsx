@@ -7,13 +7,13 @@ interface GitStatusBarProps {
 
 /**
  * Humanize a git branch name for display.
- * - "main" / "master" → "Current Version"
+ * - "main" / "master" → "Live Version"
  * - anything else → "Draft: Foo Bar" (strip prefixes, replace separators, title-case)
  */
 function humanizeBranch(raw: string): { label: string; isMain: boolean } {
   const lower = raw.trim().toLowerCase()
   if (lower === 'main' || lower === 'master') {
-    return { label: 'Current Version', isMain: true }
+    return { label: 'Live Version', isMain: true }
   }
 
   // Strip common prefixes like "draft/", "feature/", "fix/", "bugfix/", "hotfix/"

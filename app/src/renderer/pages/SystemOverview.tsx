@@ -233,6 +233,7 @@ export default function SystemOverview() {
           <FileViewer
             filePath={selectedFile}
             rootPath={rootPath}
+            readOnly={isMainBranch}
             onContentLoad={setRawContent}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}

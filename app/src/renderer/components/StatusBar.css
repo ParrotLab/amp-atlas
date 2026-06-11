@@ -250,6 +250,29 @@
   background: #F5F0EB;
 }
 
+.status-pr-badge-inline {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.status-pr-badge-inline.review {
+  background: rgba(196, 122, 10, 0.1);
+  color: #C47A0A;
+}
+
+.status-pr-badge-inline.approved {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16A34A;
+}
+
+.status-pr-badge-inline.changes {
+  background: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+}
+
 .status-pr-badge {
   font-size: 11px;
   font-weight: 500;

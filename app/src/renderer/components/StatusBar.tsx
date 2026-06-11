@@ -34,6 +34,7 @@ export default function StatusBar({
   onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showAllBranches, setShowAllBranches] = useState(false)
   const hasChanges = editedCount > 0 || savedCount > 0 || newCount > 0
   const displayBranch = isMain ? 'Current Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
 
@@ -52,45 +53,83 @@ export default function StatusBar({
                 <span className="status-branch-chevron">▾</span>
               </button>
 
-              {showDropdown && (
-                <>
-                  <div className="status-dropdown-overlay" onClick={() => setShowDropdown(false)} />
-                  <div className="status-dropdown">
-                    <div className="status-dropdown-label">Switch version</div>
+              {showDropdown && (() => {
+                // Separate main, drafts (draft/ prefix), and other branches
+                const mainBranches = branches?.filter(b => b.name === 'main' || b.name === 'master') || []
+                const draftBranches = branches?.filter(b => b.name !== 'main' && b.name !== 'master' && (b.name.startsWith('draft/') || b.current)) || []
+                const otherBranches = branches?.filter(b => b.name !== 'main' && b.name !== 'master' && !b.name.startsWith('draft/') && !b.current) || []
 
-                    {branches?.map(b => {
-                      const isMainBranch = b.name === 'main' || b.name === 'master'
-                      const label = isMainBranch ? 'Current Version' : `Draft: ${humanize(b.name)}`
-                      return (
+                return (
+                  <>
+                    <div className="status-dropdown-overlay" onClick={() => setShowDropdown(false)} />
+                    <div className="status-dropdown">
+                      <div className="status-dropdown-label">Switch version</div>
+
+                      {mainBranches.map(b => (
                         <button
                           key={b.name}
                           className={`status-dropdown-item ${b.current ? 'active' : ''}`}
-                          onClick={() => {
-                            onSwitchBranch?.(b.name)
-                            setShowDropdown(false)
-                          }}
+                          onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}
                         >
-                          <span className={`status-dot ${isMainBranch ? 'green' : 'violet'}`} />
-                          {label}
+                          <span className="status-dot green" />
+                          Current Version
                           {b.current && <span className="status-dropdown-check">✓</span>}
                         </button>
-                      )
-                    })}
+                      ))}
 
-                    <div className="status-dropdown-divider" />
-                    <button
-                      className="status-dropdown-item new-draft"
-                      onClick={() => {
-                        onNewDraft?.()
-                        setShowDropdown(false)
-                      }}
-                    >
-                      <span style={{ fontSize: '14px', color: '#8B2BFF' }}>+</span>
-                      New Draft
-                    </button>
-                  </div>
-                </>
-              )}
+                      {draftBranches.length > 0 && (
+                        <>
+                          <div className="status-dropdown-divider" />
+                          <div className="status-dropdown-label">Your Drafts</div>
+                          {draftBranches.map(b => (
+                            <button
+                              key={b.name}
+                              className={`status-dropdown-item ${b.current ? 'active' : ''}`}
+                              onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}
+                            >
+                              <span className="status-dot violet" />
+                              Draft: {humanize(b.name)}
+                              {b.current && <span className="status-dropdown-check">✓</span>}
+                            </button>
+                          ))}
+                        </>
+                      )}
+
+                      {otherBranches.length > 0 && (
+                        <>
+                          <div className="status-dropdown-divider" />
+                          <div className="status-dropdown-label">{otherBranches.length} other branch{otherBranches.length !== 1 ? 'es' : ''}</div>
+                          {showAllBranches && otherBranches.map(b => (
+                            <button
+                              key={b.name}
+                              className={`status-dropdown-item ${b.current ? 'active' : ''}`}
+                              onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}
+                              style={{ color: '#8E8B87' }}
+                            >
+                              <span className="status-dot" style={{ background: '#B5B1AC' }} />
+                              {humanize(b.name)}
+                            </button>
+                          ))}
+                          {!showAllBranches && (
+                            <button className="status-dropdown-item" onClick={() => setShowAllBranches(true)} style={{ color: '#8E8B87', fontSize: '12px' }}>
+                              Show all...
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      <div className="status-dropdown-divider" />
+                      <button
+                        className="status-dropdown-item new-draft"
+                        onClick={() => { onNewDraft?.(); setShowDropdown(false) }}
+                      >
+                        <span style={{ fontSize: '14px', color: '#8B2BFF' }}>+</span>
+                        New Draft
+                      </button>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
             <span className="status-sep">&middot;</span>
           </>

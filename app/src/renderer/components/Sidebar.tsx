@@ -25,7 +25,8 @@ const LayersIcon = () => (
 const systems = [
   { name: 'Learning System', path: '/system/learning', Icon: BookIcon },
   { name: 'Marketing System', path: '/system/marketing', Icon: MonitorIcon },
-  { name: 'AI Operations', path: '/system/ai-ops', Icon: LayersIcon }
+  { name: 'AI Operations', path: '/system/ai-ops', Icon: LayersIcon },
+  { name: 'Delivery System', path: '/system/delivery', Icon: BookIcon }
 ]
 
 export default function Sidebar() {

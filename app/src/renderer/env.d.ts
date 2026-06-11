@@ -74,6 +74,7 @@ interface ElectronAPI {
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string; url?: string; alreadyExists?: boolean }>
     createDraft: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string }>
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
+    deleteBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
   }
 }

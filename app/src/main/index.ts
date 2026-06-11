@@ -213,18 +213,14 @@ ipcMain.handle('git:switchBranch', async (_event, repoPath: string, branch: stri
     const git = simpleGit(repoPath)
     const statusBefore = await git.status()
 
-    // Stash uncommitted changes (both tracked and untracked)
+    // Auto-commit any uncommitted changes so nothing is lost
     if (!statusBefore.isClean()) {
-      try {
-        await git.stash(['push', '--include-untracked', '-m', `amp-up-auto-stash-${statusBefore.current}`])
-      } catch {
-        // Stash might fail if there's nothing to stash — continue
-      }
+      await git.add('-A')
+      await git.commit('Work in progress (auto-saved)')
     }
 
     await git.checkout(branch)
 
-    // Verify we actually switched
     const statusAfter = await git.status()
     return { ok: true, branch: statusAfter.current }
   } catch (error) {

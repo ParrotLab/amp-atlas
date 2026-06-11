@@ -1,0 +1,230 @@
+.publish-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: overlayFadeIn 150ms ease;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.publish-modal {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  width: 520px;
+  max-width: 90vw;
+  padding: 32px;
+  animation: modalSlideIn 200ms ease;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.publish-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+}
+
+.publish-subtitle {
+  font-size: 13px;
+  color: #8E8B87;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.publish-field {
+  margin-bottom: 20px;
+}
+
+.publish-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #B5B1AC;
+  margin-bottom: 8px;
+}
+
+.publish-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid #EDE8E2;
+  border-radius: 12px;
+  background: #FEFCF9;
+  color: #1a1a2e;
+  transition: all 100ms ease;
+}
+
+.publish-input:focus {
+  outline: none;
+  border-color: rgba(139, 43, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(139, 43, 255, 0.1);
+  background: white;
+}
+
+.publish-input::placeholder {
+  color: #B5B1AC;
+}
+
+.publish-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid #EDE8E2;
+  border-radius: 12px;
+  background: #FEFCF9;
+  color: #1a1a2e;
+  min-height: 80px;
+  resize: vertical;
+  transition: all 100ms ease;
+}
+
+.publish-textarea:focus {
+  outline: none;
+  border-color: rgba(139, 43, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(139, 43, 255, 0.1);
+  background: white;
+}
+
+.publish-textarea::placeholder {
+  color: #B5B1AC;
+}
+
+.publish-reviewers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.publish-reviewer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #EDE8E2;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #6B6966;
+  cursor: pointer;
+  transition: all 100ms ease;
+  background: white;
+  font-family: inherit;
+}
+
+.publish-reviewer:hover {
+  background: #FEFCF9;
+  border-color: #D4D0CC;
+}
+
+.publish-reviewer.selected {
+  border-color: rgba(139, 43, 255, 0.3);
+  background: rgba(139, 43, 255, 0.04);
+  color: #8B2BFF;
+}
+
+.publish-reviewer-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.publish-summary {
+  background: #FEFCF9;
+  border: 1px solid #EDE8E2;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 24px;
+}
+
+.publish-summary-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #B5B1AC;
+  margin-bottom: 8px;
+}
+
+.publish-summary-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #6B6966;
+}
+
+.publish-summary-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.publish-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.publish-btn {
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 100ms ease;
+}
+
+.publish-btn.cancel {
+  background: transparent;
+  color: #6B6966;
+}
+
+.publish-btn.cancel:hover {
+  background: #F0EBE5;
+}
+
+.publish-btn.submit {
+  background: #16A34A;
+  color: white;
+}
+
+.publish-btn.submit:hover {
+  background: #15803D;
+}
+
+.publish-btn.submit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.publish-btn.publishing {
+  background: #8B2BFF;
+  color: white;
+}
+
+.publish-btn.done {
+  background: #16A34A;
+  color: white;
+}

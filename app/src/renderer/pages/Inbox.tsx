@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getSystems } from '../utils/systemStore'
+import { iconMap } from '../components/SystemIcons'
 import './Inbox.css'
 
 interface PRItem {
   systemId: string
   systemName: string
+  systemIcon: string
+  systemGradient: string
   repoPath: string
   number: number
   title: string
@@ -54,7 +57,7 @@ export default function Inbox() {
           const result = await window.api.git.listPRs(sys.folderPath)
           if (result.ok && result.prs) {
             for (const pr of result.prs) {
-              allPRs.push({ ...pr, systemId: sys.id, systemName: sys.name, repoPath: sys.folderPath })
+              allPRs.push({ ...pr, systemId: sys.id, systemName: sys.name, systemIcon: sys.icon, systemGradient: sys.gradient, repoPath: sys.folderPath })
             }
           }
         } catch { /* ignore */ }
@@ -98,8 +101,8 @@ export default function Inbox() {
               to={`/review/${pr.systemId}/${pr.number}`}
               className="inbox-item"
             >
-              <div className="inbox-item-avatar" style={{ background: avatarColor(pr.author.login) }}>
-                {(pr.author.name || pr.author.login).charAt(0).toUpperCase()}
+              <div className="inbox-item-avatar" style={{ background: pr.systemGradient }}>
+                {(() => { const Icon = iconMap[pr.systemIcon]; return Icon ? <Icon size={18} /> : pr.systemName.charAt(0) })()}
               </div>
               <div className="inbox-item-body">
                 <div className="inbox-item-title">{pr.title}</div>

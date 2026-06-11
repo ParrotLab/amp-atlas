@@ -45,22 +45,29 @@
 .status-branch-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
+  gap: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #1a1a2e;
   background: white;
   border: 1px solid #EDE8E2;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
   transition: all 80ms ease;
+  max-width: 280px;
 }
 
 .status-branch-btn:hover {
   border-color: #D4D0CC;
   background: #F5F0EB;
+}
+
+.status-branch-btn .branch-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-branch-chevron {
@@ -79,14 +86,14 @@
 /* Dropdown menu */
 .status-dropdown {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 0;
   background: white;
   border: 1px solid #EDE8E2;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
-  min-width: 220px;
-  padding: 6px;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  min-width: 320px;
+  padding: 8px;
   z-index: 1000;
   animation: dropdownFadeIn 100ms ease;
 }

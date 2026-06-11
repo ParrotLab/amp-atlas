@@ -60,34 +60,36 @@ export default function SystemOverview() {
   const [isDirty, setIsDirty] = useState(false)
   const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
   const [propsOpen, setPropsOpen] = useState(false)
+  const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [rawContent, setRawContent] = useState('')
 
   const rootPath = system?.folderPath || ''
 
-  useEffect(() => {
+  const fetchGitStatus = useCallback(async () => {
     if (!rootPath) return
-    const fetchGitStatus = async () => {
-      const result = await window.api.git.status(rootPath)
-      if (result.ok && result.status) {
-        setGitModified(new Set(result.status.modified))
-        setGitNew(new Set([...result.status.not_added]))
-        setGitDeleted(new Set(result.status.deleted))
-        setBranch(result.status.current || 'main')
-        setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
-      }
-      const branchResult = await window.api.git.branches(rootPath)
-      if (branchResult.ok && branchResult.branches) {
-        setAllBranches(
-          branchResult.branches.all
-            .filter(b => !b.startsWith('remotes/'))
-            .map(b => ({ name: b, current: b === branchResult.branches!.current }))
-        )
-      }
+    const result = await window.api.git.status(rootPath)
+    if (result.ok && result.status) {
+      setGitModified(new Set(result.status.modified))
+      setGitNew(new Set([...result.status.not_added]))
+      setGitDeleted(new Set(result.status.deleted))
+      setBranch(result.status.current || 'main')
+      setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
     }
+    const branchResult = await window.api.git.branches(rootPath)
+    if (branchResult.ok && branchResult.branches) {
+      setAllBranches(
+        branchResult.branches.all
+          .filter(b => !b.startsWith('remotes/'))
+          .map(b => ({ name: b, current: b === branchResult.branches!.current }))
+      )
+    }
+  }, [rootPath])
+
+  useEffect(() => {
     fetchGitStatus()
     const interval = setInterval(fetchGitStatus, 10000)
     return () => clearInterval(interval)
-  }, [rootPath])
+  }, [fetchGitStatus])
 
   const handleSave = async () => {
     if (!rootPath) return
@@ -144,11 +146,11 @@ export default function SystemOverview() {
     if (!rootPath) return
     const result = await window.api.git.switchBranch(rootPath, branchName)
     if (result.ok) {
-      // Close all tabs and clear selection — we're on a new branch
       setTabs([])
       setSelectedFile(undefined)
       setIsDirty(false)
-      // Git status will auto-refresh via polling
+      setTreeKey(k => k + 1) // Force file tree to remount
+      await fetchGitStatus() // Immediately refresh git state
     } else {
       alert(`Couldn't switch: ${result.error}`)
     }
@@ -161,10 +163,11 @@ export default function SystemOverview() {
 
     const result = await window.api.git.createDraft(rootPath, name.trim())
     if (result.ok) {
-      // Close tabs, clear selection — we're on the new draft now
       setTabs([])
       setSelectedFile(undefined)
       setIsDirty(false)
+      setTreeKey(k => k + 1)
+      await fetchGitStatus()
     } else {
       alert(`Couldn't create draft: ${result.error}`)
     }
@@ -183,7 +186,7 @@ export default function SystemOverview() {
         overflow: 'hidden'
       }}>
         {rootPath ? (
-          <FileTree rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} />
+          <FileTree key={treeKey} rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} />
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>

@@ -211,18 +211,22 @@ ipcMain.handle('git:createDraft', async (_event, repoPath: string, draftName: st
 ipcMain.handle('git:switchBranch', async (_event, repoPath: string, branch: string) => {
   try {
     const git = simpleGit(repoPath)
-    // Stash any uncommitted changes
-    const status = await git.status()
-    const hadChanges = !status.isClean()
-    if (hadChanges) {
-      await git.stash()
+    const statusBefore = await git.status()
+
+    // Stash uncommitted changes (both tracked and untracked)
+    if (!statusBefore.isClean()) {
+      try {
+        await git.stash(['push', '--include-untracked', '-m', `amp-up-auto-stash-${statusBefore.current}`])
+      } catch {
+        // Stash might fail if there's nothing to stash — continue
+      }
     }
+
     await git.checkout(branch)
-    // Try to restore stash for this branch
-    if (hadChanges) {
-      try { await git.stash(['pop']) } catch { /* stash pop may conflict, ignore */ }
-    }
-    return { ok: true }
+
+    // Verify we actually switched
+    const statusAfter = await git.status()
+    return { ok: true, branch: statusAfter.current }
   } catch (error) {
     return { ok: false, error: String(error) }
   }

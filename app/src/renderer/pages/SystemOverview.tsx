@@ -144,25 +144,25 @@ export default function SystemOverview() {
 
   const handleSwitchBranch = async (branchName: string) => {
     if (!rootPath) return
-    // Clear git state immediately so stale indicators don't persist
+    // Clear everything immediately
     setGitModified(new Set())
     setGitNew(new Set())
     setGitDeleted(new Set())
+    setTabs([])
+    setSelectedFile(undefined)
+    setIsDirty(false)
 
     const result = await window.api.git.switchBranch(rootPath, branchName)
     if (result.ok) {
-      setTabs([])
-      setSelectedFile(undefined)
-      setIsDirty(false)
+      console.log(`Switched to branch: ${(result as { branch?: string }).branch}`)
+      // Wait for filesystem to settle, then refresh everything
+      await new Promise(r => setTimeout(r, 500))
+      await fetchGitStatus()
       setTreeKey(k => k + 1)
-      // Small delay to let git settle, then refresh
-      setTimeout(async () => {
-        await fetchGitStatus()
-        setTreeKey(k => k + 1) // Remount again with fresh git data
-      }, 300)
     } else {
+      console.error('Branch switch failed:', result.error)
       alert(`Couldn't switch: ${result.error}`)
-      await fetchGitStatus() // Restore correct state
+      await fetchGitStatus()
     }
   }
 

@@ -8,6 +8,7 @@ interface PublishModalProps {
   draftName: string
   modifiedCount: number
   newCount: number
+  aheadCount: number
 }
 
 const teamMembers = [
@@ -17,7 +18,7 @@ const teamMembers = [
   { name: 'Hannah', initial: 'H', color: '#16A34A' },
 ]
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, aheadCount }: PublishModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
@@ -83,19 +84,27 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
             <div className="publish-summary">
               <div className="publish-summary-label">Changes in this draft</div>
               <div className="publish-summary-stats">
+                {aheadCount > 0 && (
+                  <span className="publish-summary-stat">
+                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#8B2BFF' }} />
+                    {aheadCount} save{aheadCount !== 1 ? 's' : ''} not yet published
+                  </span>
+                )}
                 {modifiedCount > 0 && (
                   <span className="publish-summary-stat">
                     <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#C47A0A' }} />
-                    {modifiedCount} edited
+                    {modifiedCount} unsaved edit{modifiedCount !== 1 ? 's' : ''}
                   </span>
                 )}
                 {newCount > 0 && (
                   <span className="publish-summary-stat">
                     <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#16A34A' }} />
-                    {newCount} new
+                    {newCount} new file{newCount !== 1 ? 's' : ''}
                   </span>
                 )}
-                {totalChanges === 0 && <span>No changes to publish</span>}
+                {aheadCount === 0 && modifiedCount === 0 && newCount === 0 && (
+                  <span style={{ color: '#B5B1AC' }}>Everything is already published</span>
+                )}
               </div>
             </div>
 

@@ -67,6 +67,7 @@ export default function SystemOverview() {
   const [branch, setBranch] = useState<string>('')
   const [isMainBranch, setIsMainBranch] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
+  const [ahead, setAhead] = useState(0)
   const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
@@ -85,8 +86,8 @@ export default function SystemOverview() {
       setGitDeleted(new Set(result.status.deleted))
       setBranch(result.status.current || 'main')
       setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
-      // isDirty = there are ANY uncommitted changes (modified, new, or deleted files)
       setIsDirty(!result.status.isClean)
+      setAhead(result.status.ahead)
     }
     const branchResult = await window.api.git.branches(rootPath)
     if (branchResult.ok && branchResult.branches) {
@@ -284,6 +285,7 @@ export default function SystemOverview() {
         draftName={humanize(branch)}
         modifiedCount={gitModified.size}
         newCount={gitNew.size}
+        aheadCount={ahead}
       />
     </div>
   )

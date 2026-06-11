@@ -80,7 +80,7 @@ export default function NewDraftModal({ isOpen, onClose, onCreate }: NewDraftMod
                 <div className="new-draft-radio-inner" />
               </div>
               <div>
-                <div className="new-draft-option-title">Current Version</div>
+                <div className="new-draft-option-title">Live Version</div>
                 <div className="new-draft-option-desc">Start fresh from the latest published version</div>
               </div>
             </div>

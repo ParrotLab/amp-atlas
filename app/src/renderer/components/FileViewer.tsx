@@ -14,13 +14,13 @@ import './FileViewer.css'
 interface FileViewerProps {
   filePath: string | undefined
   rootPath?: string
-  onDirtyChange?: (dirty: boolean) => void
+  readOnly?: boolean
   onContentLoad?: (content: string) => void
   onToggleProperties?: () => void
   propsOpen?: boolean
 }
 
-export default function FileViewer({ filePath, rootPath, onDirtyChange, onContentLoad, onToggleProperties, propsOpen }: FileViewerProps) {
+export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad, onToggleProperties, propsOpen }: FileViewerProps) {
   const [loading, setLoading] = useState(false)
   const [lastModified, setLastModified] = useState<string>('')
   const [writeStatus, setWriteStatus] = useState<'idle' | 'writing' | 'written'>('idle')
@@ -70,10 +70,10 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
       TableCell,
       TableHeader,
     ],
-    editable: true,
+    editable: !readOnly,
     content: '',
     onUpdate: ({ editor: ed }) => {
-      if (isLoadingContent.current) return
+      if (isLoadingContent.current || readOnly) return
 
       // Debounce: write to disk after 800ms of no typing
       if (debounceTimer.current) clearTimeout(debounceTimer.current)
@@ -82,6 +82,11 @@ export default function FileViewer({ filePath, rootPath, onDirtyChange, onConten
       }, 800)
     },
   })
+
+  // Update editable state when readOnly changes
+  useEffect(() => {
+    if (editor) editor.setEditable(!readOnly)
+  }, [readOnly, editor])
 
   // Load file content when filePath changes
   useEffect(() => {

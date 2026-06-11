@@ -54,7 +54,7 @@ export default function StatusBar({
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAllBranches, setShowAllBranches] = useState(false)
   const hasChanges = editedCount > 0 || savedCount > 0 || newCount > 0
-  const displayBranch = isMain ? 'Current Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
+  const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
   const recentBranches = useRef(getRecentBranches())
 
   // Track current branch as recently used
@@ -106,7 +106,7 @@ export default function StatusBar({
                           onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}
                         >
                           <span className="status-dot green" />
-                          Current Version
+                          Live Version
                           {b.current && <span className="status-dropdown-check">✓</span>}
                         </button>
                       ))}

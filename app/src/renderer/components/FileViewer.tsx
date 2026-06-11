@@ -27,12 +27,12 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
   const currentFilePath = useRef<string | undefined>()
   const isLoadingContent = useRef(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
+  const lastWrittenMarkdown = useRef<string>('') // Track what we last wrote to prevent loops
   const onContentLoadRef = useRef(onContentLoad)
   onContentLoadRef.current = onContentLoad
 
-  // Write current editor content to disk
   const writeToDisk = async (editorInstance: ReturnType<typeof useEditor>) => {
-    if (!currentFilePath.current || !editorInstance) return
+    if (!currentFilePath.current || !editorInstance || readOnly) return
     const path = currentFilePath.current
     const isMarkdown = path.endsWith('.md') || path.endsWith('.mdx')
 
@@ -43,12 +43,15 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
       content = editorInstance.getHTML()
     }
 
+    // Don't write if content hasn't changed from what's on disk
+    if (content === lastWrittenMarkdown.current) return
+
     setWriteStatus('writing')
     const result = await window.api.fs.writeFile(path, content)
     if (result.ok) {
+      lastWrittenMarkdown.current = content
       setWriteStatus('written')
       setLastModified('Just now')
-      // Git status polling in SystemOverview will detect the file change
       setTimeout(() => setWriteStatus('idle'), 1500)
     } else {
       setWriteStatus('idle')
@@ -73,7 +76,6 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
     onUpdate: ({ editor: ed }) => {
       if (isLoadingContent.current || readOnly) return
 
-      // Debounce: write to disk after 800ms of no typing
       if (debounceTimer.current) clearTimeout(debounceTimer.current)
       debounceTimer.current = setTimeout(() => {
         writeToDisk(ed)
@@ -93,10 +95,8 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
     setLoading(true)
     setWriteStatus('idle')
 
-    // Clear any pending writes from previous file
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
 
-    // Get file stat for last modified time
     window.api.fs.stat(filePath).then(statResult => {
       if (statResult.ok && statResult.stats) {
         const date = new Date(statResult.stats.modified)
@@ -118,6 +118,11 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
       if (result.ok && result.content !== undefined) {
         onContentLoadRef.current?.(result.content)
         const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.mdx')
+
+        // Store what's currently on disk so we don't re-write identical content
+        if (isMarkdown) {
+          lastWrittenMarkdown.current = result.content
+        }
 
         isLoadingContent.current = true
         if (isMarkdown) {
@@ -143,7 +148,6 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
     })
   }, [filePath, editor])
 
-  // Cleanup debounce on unmount
   useEffect(() => {
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current)
@@ -183,7 +187,8 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
         <div className="file-viewer-title">{fileName}</div>
         <div className="file-viewer-meta">
           {lastModified && <span>Last edited {lastModified}</span>}
-          {writeStatus === 'writing' && <span className="file-viewer-saving">· Saving to disk...</span>}
+          {readOnly && <span className="file-viewer-readonly">· Read only</span>}
+          {writeStatus === 'writing' && <span className="file-viewer-saving">· Saving...</span>}
           {writeStatus === 'written' && <span className="file-viewer-saved">· Saved</span>}
         </div>
         {loading ? (

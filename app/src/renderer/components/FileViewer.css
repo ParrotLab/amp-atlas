@@ -75,6 +75,12 @@
   font-weight: 500;
 }
 
+.file-viewer-readonly {
+  color: #B5B1AC;
+  font-weight: 500;
+  font-style: italic;
+}
+
 .file-viewer-saving {
   color: #8E8B87;
   font-weight: 500;

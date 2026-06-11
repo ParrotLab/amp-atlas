@@ -212,14 +212,30 @@ ipcMain.handle('git:switchBranch', async (_event, repoPath: string, branch: stri
   try {
     const git = simpleGit(repoPath)
     const statusBefore = await git.status()
+    const fromBranch = statusBefore.current || 'unknown'
 
-    // Auto-commit any uncommitted changes so nothing is lost
+    // Stash any uncommitted changes tagged with the branch name
     if (!statusBefore.isClean()) {
       await git.add('-A')
-      await git.commit('Work in progress (auto-saved)')
+      try {
+        await git.stash(['push', '--include-untracked', '-m', `amp-auto:${fromBranch}`])
+      } catch {
+        // If stash fails, try to continue anyway
+      }
     }
 
     await git.checkout(branch)
+
+    // Look for a stash belonging to the target branch and restore it
+    try {
+      const stashList = await git.stashList()
+      const matchIdx = stashList.all.findIndex(s => s.message.includes(`amp-auto:${branch}`))
+      if (matchIdx >= 0) {
+        await git.stash(['pop', `stash@{${matchIdx}}`])
+      }
+    } catch {
+      // Stash pop might conflict — that's okay, changes are still in the stash
+    }
 
     const statusAfter = await git.status()
     return { ok: true, branch: statusAfter.current }

@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import SystemCard from '../components/SystemCard'
+import { getSystems, SystemConfig } from '../utils/systemStore'
 import './Dashboard.css'
 
 const BookIcon = () => (
@@ -21,9 +24,78 @@ const LayersIcon = () => (
   </svg>
 )
 
+const iconMap: Record<string, React.FC> = { book: BookIcon, monitor: MonitorIcon, layers: LayersIcon }
+
+function humanize(branch: string): string {
+  return branch
+    .replace(/^(draft|feature|fix|hotfix)\//i, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+interface DraftInfo {
+  systemId: string
+  systemName: string
+  branchName: string
+  displayName: string
+  modifiedCount: number
+  isClean: boolean
+  prStatus: string | null // 'OPEN', null
+  reviewDecision: string | null
+}
+
 export default function Dashboard() {
   const now = new Date()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening'
+  const [systems, setSystems] = useState<SystemConfig[]>([])
+  const [drafts, setDrafts] = useState<DraftInfo[]>([])
+
+  useEffect(() => {
+    setSystems(getSystems())
+  }, [])
+
+  useEffect(() => {
+    const loadDrafts = async () => {
+      const allDrafts: DraftInfo[] = []
+
+      for (const sys of systems) {
+        if (!sys.folderPath) continue
+        try {
+          const statusResult = await window.api.git.status(sys.folderPath)
+          if (!statusResult.ok || !statusResult.status) continue
+
+          const branch = statusResult.status.current
+          if (!branch || branch === 'main' || branch === 'master') continue
+
+          // Check PR status
+          let prState: string | null = null
+          let reviewDecision: string | null = null
+          try {
+            const prResult = await window.api.git.prStatus(sys.folderPath)
+            if (prResult.ok && prResult.hasPR) {
+              prState = prResult.pr?.state || null
+              reviewDecision = prResult.pr?.reviewDecision || null
+            }
+          } catch { /* ignore */ }
+
+          allDrafts.push({
+            systemId: sys.id,
+            systemName: sys.name,
+            branchName: branch,
+            displayName: humanize(branch),
+            modifiedCount: statusResult.status.modified.length + statusResult.status.not_added.length,
+            isClean: statusResult.status.isClean,
+            prStatus: prState,
+            reviewDecision
+          })
+        } catch { /* ignore */ }
+      }
+
+      setDrafts(allDrafts)
+    }
+
+    if (systems.length > 0) loadDrafts()
+  }, [systems])
 
   return (
     <div className="dashboard">
@@ -32,35 +104,52 @@ export default function Dashboard() {
 
       <div className="section-label">Your Systems</div>
       <div className="systems-grid">
-        <SystemCard
-          name="Learning System"
-          path="/system/learning"
-          gradient="linear-gradient(135deg, #8B2BFF, #A855FF)"
-          meta="5 playbooks · 47 files · 2 open drafts"
-          icon={<BookIcon />}
-        />
-        <SystemCard
-          name="Marketing System"
-          path="/system/marketing"
-          gradient="linear-gradient(135deg, #FF7B00, #FFB875)"
-          meta="3 playbooks · 23 files · Synced"
-          icon={<MonitorIcon />}
-        />
-        <SystemCard
-          name="AI Operations"
-          path="/system/ai-ops"
-          gradient="linear-gradient(135deg, #3D0052, #7A3D8F)"
-          meta="12 playbooks · 112 files · 3 updates"
-          icon={<LayersIcon />}
-        />
-        <SystemCard
-          name="Delivery System"
-          path="/system/delivery"
-          gradient="linear-gradient(135deg, #16A34A, #22C55E)"
-          meta="Playbooks · Files"
-          icon={<BookIcon />}
-        />
+        {systems.map(sys => {
+          const Icon = iconMap[sys.icon] || BookIcon
+          return (
+            <SystemCard
+              key={sys.id}
+              name={sys.name}
+              path={`/system/${sys.id}`}
+              gradient={sys.gradient}
+              meta={sys.folderPath ? 'Connected' : 'Not connected'}
+              icon={<Icon />}
+            />
+          )
+        })}
       </div>
+
+      {drafts.length > 0 && (
+        <>
+          <div className="section-label">Jump Back In</div>
+          <div className="drafts-list">
+            {drafts.map(draft => (
+              <Link
+                key={`${draft.systemId}-${draft.branchName}`}
+                to={`/system/${draft.systemId}`}
+                className="draft-card"
+              >
+                <div className="draft-card-left">
+                  <span className="draft-card-dot" />
+                  <div>
+                    <div className="draft-card-name">Draft: {draft.displayName}</div>
+                    <div className="draft-card-system">{draft.systemName}{draft.modifiedCount > 0 ? ` · ${draft.modifiedCount} edited` : ''}</div>
+                  </div>
+                </div>
+                <div className="draft-card-right">
+                  {draft.prStatus === 'OPEN' ? (
+                    <span className={`draft-card-badge ${draft.reviewDecision === 'APPROVED' ? 'approved' : draft.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
+                      {draft.reviewDecision === 'APPROVED' ? 'Approved' : draft.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
+                    </span>
+                  ) : (
+                    <span className="draft-card-badge editing">Editing</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

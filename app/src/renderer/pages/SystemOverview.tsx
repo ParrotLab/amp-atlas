@@ -6,6 +6,7 @@ import StatusBar from '../components/StatusBar'
 import TabBar, { Tab } from '../components/TabBar'
 import { useState, useEffect, useCallback } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
+import NewDraftModal from '../components/NewDraftModal'
 
 export default function SystemOverview() {
   const { systemId } = useParams<{ systemId: string }>()
@@ -62,6 +63,7 @@ export default function SystemOverview() {
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [rawContent, setRawContent] = useState('')
+  const [showNewDraft, setShowNewDraft] = useState(false)
 
   const rootPath = system?.folderPath || ''
 
@@ -166,12 +168,13 @@ export default function SystemOverview() {
     }
   }
 
-  const handleNewDraft = async () => {
-    if (!rootPath) return
-    const name = prompt('Name your draft:')
-    if (!name || !name.trim()) return
+  const handleNewDraft = () => {
+    setShowNewDraft(true)
+  }
 
-    const result = await window.api.git.createDraft(rootPath, name.trim())
+  const handleCreateDraft = async (name: string) => {
+    if (!rootPath) return
+    const result = await window.api.git.createDraft(rootPath, name)
     if (result.ok) {
       setTabs([])
       setSelectedFile(undefined)
@@ -251,6 +254,11 @@ export default function SystemOverview() {
           onNewDraft={handleNewDraft}
         />
       </div>
+      <NewDraftModal
+        isOpen={showNewDraft}
+        onClose={() => setShowNewDraft(false)}
+        onCreate={handleCreateDraft}
+      />
     </div>
   )
 }

@@ -3,14 +3,25 @@ import { getSystems, updateSystemFolder, addSystem, removeSystem, updateSystem, 
 import './Settings.css'
 
 const gradientOptions = [
-  { label: 'Violet', value: 'linear-gradient(135deg, #8B2BFF, #A855FF)', color: '#8B2BFF' },
-  { label: 'Orange', value: 'linear-gradient(135deg, #FF7B00, #FFB875)', color: '#FF7B00' },
-  { label: 'Plum', value: 'linear-gradient(135deg, #3D0052, #7A3D8F)', color: '#3D0052' },
-  { label: 'Green', value: 'linear-gradient(135deg, #16A34A, #22C55E)', color: '#16A34A' },
-  { label: 'Blue', value: 'linear-gradient(135deg, #2563EB, #60A5FA)', color: '#2563EB' },
-  { label: 'Rose', value: 'linear-gradient(135deg, #E11D48, #FB7185)', color: '#E11D48' },
-  { label: 'Amber', value: 'linear-gradient(135deg, #D97706, #FCD34D)', color: '#D97706' },
-  { label: 'Teal', value: 'linear-gradient(135deg, #0D9488, #5EEAD4)', color: '#0D9488' },
+  { value: 'linear-gradient(135deg, #8B2BFF, #A855FF)' },
+  { value: 'linear-gradient(135deg, #FF7B00, #FFB875)' },
+  { value: 'linear-gradient(135deg, #3D0052, #7A3D8F)' },
+  { value: 'linear-gradient(135deg, #16A34A, #22C55E)' },
+  { value: 'linear-gradient(135deg, #2563EB, #60A5FA)' },
+  { value: 'linear-gradient(135deg, #E11D48, #FB7185)' },
+  { value: 'linear-gradient(135deg, #D97706, #FCD34D)' },
+  { value: 'linear-gradient(135deg, #0D9488, #5EEAD4)' },
+]
+
+const iconOptions = [
+  { value: 'book', label: '📖' },
+  { value: 'monitor', label: '🖥' },
+  { value: 'layers', label: '📚' },
+  { value: 'star', label: '⭐' },
+  { value: 'gear', label: '⚙️' },
+  { value: 'doc', label: '📄' },
+  { value: 'rocket', label: '🚀' },
+  { value: 'light', label: '💡' },
 ]
 
 export default function Settings() {
@@ -33,7 +44,11 @@ export default function Settings() {
   const handleChangeColor = (systemId: string, gradient: string) => {
     const updated = updateSystem(systemId, { gradient })
     setSystems(updated)
-    setColorPickerFor(null)
+  }
+
+  const handleChangeIcon = (systemId: string, icon: string) => {
+    const updated = updateSystem(systemId, { icon })
+    setSystems(updated)
   }
 
   const handleChangeName = (systemId: string, name: string) => {
@@ -79,21 +94,36 @@ export default function Settings() {
                   style={{ background: sys.gradient }}
                   onClick={() => setColorPickerFor(colorPickerFor === sys.id ? null : sys.id)}
                 >
-                  {sys.name.charAt(0)}
-                  <div className="settings-system-color-edit">&#x270E;</div>
+                  {iconOptions.find(i => i.value === sys.icon)?.label || sys.name.charAt(0)}
+                  <div className="settings-system-color-edit">✎</div>
 
                   {colorPickerFor === sys.id && (
                     <>
-                      <div className="color-picker-overlay" onClick={(e) => { e.stopPropagation(); setColorPickerFor(null) }} />
-                      <div className="color-picker" onClick={e => e.stopPropagation()}>
-                        {gradientOptions.map(opt => (
-                          <div
-                            key={opt.value}
-                            className={`color-picker-swatch ${sys.gradient === opt.value ? 'active' : ''}`}
-                            style={{ background: opt.value }}
-                            onClick={() => handleChangeColor(sys.id, opt.value)}
-                          />
-                        ))}
+                      <div className="appearance-picker-overlay" onClick={(e) => { e.stopPropagation(); setColorPickerFor(null) }} />
+                      <div className="appearance-picker" onClick={e => e.stopPropagation()}>
+                        <div className="appearance-picker-label">Color</div>
+                        <div className="appearance-picker-grid">
+                          {gradientOptions.map(opt => (
+                            <div
+                              key={opt.value}
+                              className={`appearance-swatch ${sys.gradient === opt.value ? 'active' : ''}`}
+                              style={{ background: opt.value }}
+                              onClick={() => handleChangeColor(sys.id, opt.value)}
+                            />
+                          ))}
+                        </div>
+                        <div className="appearance-picker-label">Icon</div>
+                        <div className="appearance-picker-grid">
+                          {iconOptions.map(opt => (
+                            <div
+                              key={opt.value}
+                              className={`appearance-icon ${sys.icon === opt.value ? 'active' : ''}`}
+                              onClick={() => handleChangeIcon(sys.id, opt.value)}
+                            >
+                              {opt.label}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </>
                   )}

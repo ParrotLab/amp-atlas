@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getSystems, updateSystemFolder, addSystem, removeSystem, updateSystem, SystemConfig } from '../utils/systemStore'
+import { iconMap, iconList } from '../components/SystemIcons'
 import './Settings.css'
 
 const gradientOptions = [
@@ -11,17 +12,6 @@ const gradientOptions = [
   { value: 'linear-gradient(135deg, #E11D48, #FB7185)' },
   { value: 'linear-gradient(135deg, #D97706, #FCD34D)' },
   { value: 'linear-gradient(135deg, #0D9488, #5EEAD4)' },
-]
-
-const iconOptions = [
-  { value: 'book', label: '📖' },
-  { value: 'monitor', label: '🖥' },
-  { value: 'layers', label: '📚' },
-  { value: 'star', label: '⭐' },
-  { value: 'gear', label: '⚙️' },
-  { value: 'doc', label: '📄' },
-  { value: 'rocket', label: '🚀' },
-  { value: 'light', label: '💡' },
 ]
 
 export default function Settings() {
@@ -94,7 +84,7 @@ export default function Settings() {
                   style={{ background: sys.gradient }}
                   onClick={() => setColorPickerFor(colorPickerFor === sys.id ? null : sys.id)}
                 >
-                  {iconOptions.find(i => i.value === sys.icon)?.label || sys.name.charAt(0)}
+                  {(() => { const Icon = iconMap[sys.icon]; return Icon ? <Icon size={20} /> : sys.name.charAt(0) })()}
                   <div className="settings-system-color-edit">✎</div>
 
                   {colorPickerFor === sys.id && (
@@ -114,15 +104,19 @@ export default function Settings() {
                         </div>
                         <div className="appearance-picker-label">Icon</div>
                         <div className="appearance-picker-grid">
-                          {iconOptions.map(opt => (
-                            <div
-                              key={opt.value}
-                              className={`appearance-icon ${sys.icon === opt.value ? 'active' : ''}`}
-                              onClick={() => handleChangeIcon(sys.id, opt.value)}
-                            >
-                              {opt.label}
-                            </div>
-                          ))}
+                          {iconList.map(opt => {
+                            const Icon = iconMap[opt.value]
+                            return (
+                              <div
+                                key={opt.value}
+                                className={`appearance-icon ${sys.icon === opt.value ? 'active' : ''}`}
+                                onClick={() => handleChangeIcon(sys.id, opt.value)}
+                                title={opt.label}
+                              >
+                                {Icon && <Icon size={16} />}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     </>

@@ -79,6 +79,11 @@ export default function StatusBar({
               >
                 <span className={`status-dot ${isMain ? 'green' : 'violet'}`} />
                 <span className="branch-label">{displayBranch}</span>
+                {prStatus?.hasPR && prStatus.state === 'OPEN' && (
+                  <span className={`status-pr-badge-inline ${prStatus.reviewDecision === 'APPROVED' ? 'approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
+                    {prStatus.reviewDecision === 'APPROVED' ? 'Approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
+                  </span>
+                )}
                 <span className="status-branch-chevron">▾</span>
               </button>
 
@@ -123,6 +128,11 @@ export default function StatusBar({
                               <span className="status-dropdown-item-name" onClick={() => { onSwitchBranch?.(b.name); setShowDropdown(false) }}>
                                 Draft: {humanize(b.name)}
                               </span>
+                              {b.current && prStatus?.hasPR && prStatus.state === 'OPEN' && (
+                                <span className={`status-pr-badge-inline ${prStatus.reviewDecision === 'APPROVED' ? 'approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
+                                  {prStatus.reviewDecision === 'APPROVED' ? 'Approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
+                                </span>
+                              )}
                               {b.current && <span className="status-dropdown-check">✓</span>}
                               {!b.current && (
                                 <button className="status-archive-btn" title="Archive this draft" onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(b.name); setShowDropdown(false) }}>
@@ -170,14 +180,6 @@ export default function StatusBar({
                 )
               })()}
             </div>
-            <span className="status-sep">&middot;</span>
-          </>
-        )}
-        {prStatus?.hasPR && prStatus.state === 'OPEN' && (
-          <>
-            <span className={`status-pr-badge ${prStatus.reviewDecision === 'APPROVED' ? 'approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
-              {prStatus.reviewDecision === 'APPROVED' ? 'Approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
-            </span>
             <span className="status-sep">&middot;</span>
           </>
         )}

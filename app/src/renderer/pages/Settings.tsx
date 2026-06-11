@@ -78,7 +78,7 @@ export default function Settings() {
           </div>
           <div className="settings-systems">
             {systems.map(sys => (
-              <div key={sys.id} className="settings-system">
+              <div key={sys.id} className={`settings-system ${colorPickerFor === sys.id ? 'picker-open' : ''}`}>
                 <div
                   className="settings-system-color"
                   style={{ background: sys.gradient }}

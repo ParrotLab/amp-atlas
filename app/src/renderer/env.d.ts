@@ -71,6 +71,7 @@ interface ElectronAPI {
     draftChanges: (repoPath: string) => Promise<{ ok: boolean; error?: string; commits?: GitLogEntry[]; filesChanged?: string[] }>
     save: (repoPath: string, message: string) => Promise<{ ok: boolean; error?: string; summary?: { changes: number; insertions: number; deletions: number } }>
     publish: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
+    createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string; url?: string; alreadyExists?: boolean }>
     createDraft: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string }>
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>

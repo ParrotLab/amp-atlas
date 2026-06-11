@@ -48,7 +48,7 @@ export default function StatusBar({
                 onClick={() => setShowDropdown(!showDropdown)}
               >
                 <span className={`status-dot ${isMain ? 'green' : 'violet'}`} />
-                {displayBranch}
+                <span className="branch-label">{displayBranch}</span>
                 <span className="status-branch-chevron">▾</span>
               </button>
 

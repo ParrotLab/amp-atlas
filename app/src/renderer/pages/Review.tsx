@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
 import { getSystem } from '../utils/systemStore'
+import { markdownToHtml } from '../utils/markdown'
 import './Review.css'
 
 interface DiffLine {
@@ -31,6 +34,7 @@ export default function Review() {
   const [files, setFiles] = useState<string[]>([])
   const [expandedFile, setExpandedFile] = useState<string | null>(null)
   const [fileDiffs, setFileDiffs] = useState<Record<string, DiffLine[]>>({})
+  const [fileContents, setFileContents] = useState<Record<string, string>>({})
   const [viewMode, setViewMode] = useState<Record<string, 'changes' | 'final'>>({})
   const [comment, setComment] = useState('')
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
@@ -39,6 +43,13 @@ export default function Review() {
   const system = systemId ? getSystem(systemId) : undefined
   const repoPath = system?.folderPath || ''
   const prNum = parseInt(prNumber || '0')
+
+  // TipTap editor for Final view
+  const editor = useEditor({
+    extensions: [StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } })],
+    editable: false,
+    content: '',
+  })
 
   useEffect(() => {
     if (!repoPath || !prNum) return
@@ -49,53 +60,78 @@ export default function Review() {
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
-      if (result.ok) {
+      if (result.ok && result.files.length > 0) {
         setFiles(result.files)
-        // Auto-expand first file
-        if (result.files.length > 0) {
-          setExpandedFile(result.files[0])
-        }
+        setExpandedFile(result.files[0])
       }
     })
   }, [repoPath, prNum])
 
-  // Load diff when a file is expanded
+  // Load diff and content when a file is expanded
   useEffect(() => {
-    if (!expandedFile || !repoPath || !prNum || fileDiffs[expandedFile]) return
-    window.api.git.prFileDiff(repoPath, prNum, expandedFile).then(result => {
-      if (result.ok) {
-        setFileDiffs(prev => ({ ...prev, [expandedFile]: result.lines }))
+    if (!expandedFile || !repoPath || !prNum) return
+
+    // Load diff if not cached
+    if (!fileDiffs[expandedFile]) {
+      window.api.git.prFileDiff(repoPath, prNum, expandedFile).then(result => {
+        if (result.ok) setFileDiffs(prev => ({ ...prev, [expandedFile]: result.lines }))
+      })
+    }
+
+    // Load file content if not cached (for Final view)
+    if (!fileContents[expandedFile]) {
+      window.api.git.prFileContent(repoPath, prNum, expandedFile).then(result => {
+        if (result.ok) {
+          setFileContents(prev => ({ ...prev, [expandedFile]: result.content }))
+          // If we're on Final view, update the editor
+          if (getViewMode(expandedFile) === 'final' && editor) {
+            const isMarkdown = expandedFile.endsWith('.md') || expandedFile.endsWith('.mdx')
+            if (isMarkdown) {
+              let md = result.content
+              const fmMatch = md.match(/^---\n[\s\S]*?\n---\n?/)
+              if (fmMatch) md = md.substring(fmMatch[0].length)
+              editor.commands.setContent(markdownToHtml(md))
+            } else {
+              editor.commands.setContent(`<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
+            }
+          }
+        }
+      })
+    }
+  }, [expandedFile, repoPath, prNum])
+
+  // Update TipTap when switching to Final view
+  useEffect(() => {
+    if (!expandedFile || !editor) return
+    const mode = getViewMode(expandedFile)
+    const content = fileContents[expandedFile]
+    if (mode === 'final' && content) {
+      const isMarkdown = expandedFile.endsWith('.md') || expandedFile.endsWith('.mdx')
+      if (isMarkdown) {
+        let md = content
+        const fmMatch = md.match(/^---\n[\s\S]*?\n---\n?/)
+        if (fmMatch) md = md.substring(fmMatch[0].length)
+        editor.commands.setContent(markdownToHtml(md))
+      } else {
+        editor.commands.setContent(`<pre><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
       }
-    })
-  }, [expandedFile, repoPath, prNum, fileDiffs])
+    }
+  }, [viewMode, expandedFile, fileContents, editor])
 
-  const toggleFile = (file: string) => {
-    setExpandedFile(expandedFile === file ? null : file)
-  }
-
-  const getViewMode = (file: string) => viewMode[file] || 'changes'
-  const toggleViewMode = (file: string) => {
-    setViewMode(prev => ({ ...prev, [file]: prev[file] === 'final' ? 'changes' : 'final' }))
-  }
+  const toggleFile = (file: string) => setExpandedFile(expandedFile === file ? null : file)
+  const getViewMode = (file: string) => viewMode[file] || 'final'
+  const toggleViewMode = (file: string) => setViewMode(prev => ({ ...prev, [file]: prev[file] === 'changes' ? 'final' : 'changes' }))
 
   const handleSubmitReview = async (reviewAction: 'approve' | 'request-changes') => {
     if (!repoPath) return
     setAction(reviewAction)
     setStatus('submitting')
     const result = await window.api.git.reviewPR(repoPath, prNum, reviewAction, comment)
-    if (result.ok) {
-      setStatus('done')
-    } else {
-      alert(`Couldn't submit review: ${result.error}`)
-      setStatus('idle')
-    }
+    if (result.ok) { setStatus('done') } else { alert(`Couldn't submit review: ${result.error}`); setStatus('idle') }
   }
 
-  const fileName = (path: string) => path.split('/').pop() || path
-  const filePath = (path: string) => {
-    const parts = path.split('/')
-    return parts.length > 1 ? parts.slice(0, -1).join('/') + '/' : ''
-  }
+  const fileNameOf = (path: string) => path.split('/').pop() || path
+  const filePathOf = (path: string) => { const p = path.split('/'); return p.length > 1 ? p.slice(0, -1).join('/') + '/' : '' }
 
   return (
     <div className="review-page">
@@ -150,35 +186,32 @@ export default function Review() {
                     <div className="review-file-header" onClick={() => toggleFile(file)}>
                       <span className="review-file-chevron">{isExpanded ? '▾' : '▸'}</span>
                       <div className="review-file-info">
-                        <span className="review-file-name">{fileName(file)}</span>
-                        <span className="review-file-path">{filePath(file)}</span>
+                        <span className="review-file-name-label">{fileNameOf(file)}</span>
+                        <span className="review-file-path">{filePathOf(file)}</span>
                       </div>
                     </div>
 
                     {isExpanded && (
                       <div className="review-file-content">
                         <div className="review-file-toolbar">
-                          <button className={`review-view-toggle ${mode === 'changes' ? 'active' : ''}`} onClick={() => toggleViewMode(file)}>Changes</button>
-                          <button className={`review-view-toggle ${mode === 'final' ? 'active' : ''}`} onClick={() => toggleViewMode(file)}>Final</button>
+                          <button className={`review-view-toggle ${mode === 'final' ? 'active' : ''}`} onClick={() => { if (mode !== 'final') toggleViewMode(file) }}>Final</button>
+                          <button className={`review-view-toggle ${mode === 'changes' ? 'active' : ''}`} onClick={() => { if (mode !== 'changes') toggleViewMode(file) }}>Changes</button>
                         </div>
 
-                        {!diff && <div style={{ padding: '20px', color: '#B5B1AC', fontSize: '13px' }}>Loading diff...</div>}
-
-                        {diff && (
-                          <div className="review-diff">
-                            {diff.filter(line => {
-                              if (mode === 'final') return line.type !== 'removed' && line.type !== 'header'
-                              return true
-                            }).map((line, i) => (
-                              <div key={i} className={`review-diff-line ${line.type}`}>
-                                {mode === 'changes' && line.type === 'added' && <span className="review-diff-marker">+</span>}
-                                {mode === 'changes' && line.type === 'removed' && <span className="review-diff-marker">−</span>}
-                                {mode === 'changes' && line.type === 'context' && <span className="review-diff-marker"> </span>}
-                                {line.type === 'header' ? (
-                                  <span className="review-diff-header-text">{line.content}</span>
-                                ) : (
-                                  <span className="review-diff-text">{line.content || ' '}</span>
-                                )}
+                        {mode === 'final' ? (
+                          <div className="review-tiptap-container">
+                            {fileContents[file] ? (
+                              <EditorContent editor={editor} className="review-tiptap-body" />
+                            ) : (
+                              <div style={{ padding: '20px', color: '#B5B1AC' }}>Loading...</div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="review-diff-doc">
+                            {!diff && <div style={{ padding: '20px', color: '#B5B1AC' }}>Loading...</div>}
+                            {diff && diff.filter(l => l.type !== 'header').map((line, i) => (
+                              <div key={i} className={`review-diff-doc-line ${line.type}`}>
+                                {line.content || '\u00A0'}
                               </div>
                             ))}
                           </div>

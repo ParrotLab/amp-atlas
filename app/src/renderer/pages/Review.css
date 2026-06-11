@@ -156,7 +156,8 @@
   min-width: 0;
 }
 
-.review-file-name {
+.review-file-name,
+.review-file-name-label {
   font-size: 13px;
   font-weight: 500;
   color: #1a1a2e;
@@ -205,64 +206,66 @@
   background: #F0EBE5;
 }
 
-/* Diff lines */
-.review-diff {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.6;
-  overflow-x: auto;
+/* TipTap Final view */
+.review-tiptap-container {
+  padding: 24px 28px;
+  max-height: 500px;
+  overflow-y: auto;
 }
 
-.review-diff-line {
-  display: flex;
-  padding: 1px 18px;
-  min-height: 22px;
+.review-tiptap-body .tiptap {
+  outline: none;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #5C5955;
 }
 
-.review-diff-line.added {
+.review-tiptap-body .tiptap h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin-top: 28px; margin-bottom: 10px; }
+.review-tiptap-body .tiptap h2 { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-top: 24px; margin-bottom: 8px; }
+.review-tiptap-body .tiptap h3 { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-top: 20px; margin-bottom: 6px; }
+.review-tiptap-body .tiptap p { margin-bottom: 10px; }
+.review-tiptap-body .tiptap strong { color: #1a1a2e; font-weight: 600; }
+.review-tiptap-body .tiptap ul, .review-tiptap-body .tiptap ol { padding-left: 24px; margin-bottom: 10px; }
+.review-tiptap-body .tiptap li { margin-bottom: 4px; }
+.review-tiptap-body .tiptap blockquote { border-left: 3px solid #8B2BFF; padding: 10px 16px; margin: 12px 0; background: rgba(139,43,255,0.04); border-radius: 0 8px 8px 0; }
+.review-tiptap-body .tiptap code { background: #F5F0EB; padding: 2px 5px; border-radius: 4px; font-size: 0.9em; }
+.review-tiptap-body .tiptap pre { background: #1a1a2e; color: #e0ddd8; padding: 16px; border-radius: 10px; margin: 12px 0; font-size: 12px; overflow-x: auto; }
+.review-tiptap-body .tiptap pre code { background: none; color: inherit; padding: 0; }
+.review-tiptap-body .tiptap > *:first-child { margin-top: 0; }
+
+/* Document-style diff (Changes view) */
+.review-diff-doc {
+  padding: 20px 28px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #5C5955;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.review-diff-doc-line {
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 1px;
+}
+
+.review-diff-doc-line.added {
   background: rgba(22, 163, 74, 0.08);
+  border-left: 3px solid rgba(22, 163, 74, 0.4);
+  padding-left: 12px;
+  color: #1a1a2e;
 }
 
-.review-diff-line.removed {
-  background: rgba(220, 38, 38, 0.08);
-}
-
-.review-diff-line.header {
-  background: rgba(139, 43, 255, 0.04);
-  padding: 4px 18px;
-  margin-top: 4px;
-}
-
-.review-diff-marker {
-  width: 18px;
-  flex-shrink: 0;
-  text-align: center;
-  color: #B5B1AC;
-  user-select: none;
-}
-
-.review-diff-line.added .review-diff-marker {
-  color: #16A34A;
-}
-
-.review-diff-line.removed .review-diff-marker {
-  color: #DC2626;
-}
-
-.review-diff-text {
-  white-space: pre;
-  flex: 1;
-}
-
-.review-diff-line.removed .review-diff-text {
+.review-diff-doc-line.removed {
+  background: rgba(220, 38, 38, 0.06);
+  border-left: 3px solid rgba(220, 38, 38, 0.3);
+  padding-left: 12px;
   text-decoration: line-through;
-  opacity: 0.6;
+  color: #B5B1AC;
 }
 
-.review-diff-header-text {
-  color: #8B2BFF;
-  font-size: 11px;
-  font-weight: 500;
+.review-diff-doc-line.context {
+  color: #6B6966;
 }
 
 .review-comment {

@@ -81,6 +81,7 @@ interface ElectronAPI {
     listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewDecision: string | null; url: string; additions: number; deletions: number; changedFiles: number }> }>
     prDiff: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; files: string[]; error?: string }>
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; lines: Array<{ type: string; content: string }>; error?: string }>
+    prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>
   }
 }

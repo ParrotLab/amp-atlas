@@ -74,6 +74,7 @@ export default function SystemOverview() {
   const [rawContent, setRawContent] = useState('')
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -105,6 +106,44 @@ export default function SystemOverview() {
     const interval = setInterval(fetchGitStatus, 3000)
     return () => clearInterval(interval)
   }, [fetchGitStatus])
+
+  useEffect(() => {
+    if (!rootPath || !branch || isMainBranch) {
+      setPrStatus({ hasPR: false })
+      return
+    }
+    // Check PR status when branch changes
+    window.api.git.prStatus(rootPath).then(result => {
+      if (result.ok) {
+        setPrStatus({
+          hasPR: result.hasPR,
+          state: result.pr?.state,
+          reviewDecision: result.pr?.reviewDecision
+        })
+      }
+    })
+  }, [rootPath, branch, isMainBranch])
+
+  useEffect(() => {
+    if (!rootPath || isMainBranch) return
+    const checkMerged = async () => {
+      const result = await window.api.git.checkMerged(rootPath)
+      if (result.ok && result.merged && result.branch) {
+        // Branch was merged! Clean up.
+        alert(`"${humanize(result.branch)}" has been merged into the Live Version!`)
+        // Switch to main and delete the merged branch
+        await window.api.git.switchBranch(rootPath, 'main')
+        await window.api.git.deleteBranch(rootPath, result.branch)
+        setTabs([])
+        setSelectedFile(undefined)
+        setTreeKey(k => k + 1)
+        await fetchGitStatus()
+      }
+    }
+    // Check every 30 seconds
+    const interval = setInterval(checkMerged, 30000)
+    return () => clearInterval(interval)
+  }, [rootPath, isMainBranch, branch, fetchGitStatus])
 
   // "Save" = git add + commit. File edits are already written to disk by the editor's autosave.
   const handleSave = async () => {
@@ -298,6 +337,7 @@ export default function SystemOverview() {
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
+          prStatus={prStatus}
         />
       </div>
       <NewDraftModal

@@ -22,6 +22,8 @@ const api = {
     switchBranch: (repoPath: string, branch: string) => ipcRenderer.invoke('git:switchBranch', repoPath, branch),
     deleteBranch: (repoPath: string, branch: string) => ipcRenderer.invoke('git:deleteBranch', repoPath, branch),
     discard: (repoPath: string) => ipcRenderer.invoke('git:discard', repoPath),
+    prStatus: (repoPath: string) => ipcRenderer.invoke('git:prStatus', repoPath),
+    checkMerged: (repoPath: string) => ipcRenderer.invoke('git:checkMerged', repoPath),
   }
 }
 

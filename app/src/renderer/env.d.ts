@@ -76,6 +76,8 @@ interface ElectronAPI {
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     deleteBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
+    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null } }>
+    checkMerged: (repoPath: string) => Promise<{ ok: boolean; merged: boolean; branch?: string }>
   }
 }
 

@@ -14,6 +14,7 @@ const api = {
     status: (repoPath: string) => ipcRenderer.invoke('git:status', repoPath),
     branches: (repoPath: string) => ipcRenderer.invoke('git:branches', repoPath),
     log: (repoPath: string, maxCount?: number) => ipcRenderer.invoke('git:log', repoPath, maxCount),
+    draftChanges: (repoPath: string) => ipcRenderer.invoke('git:draftChanges', repoPath),
     save: (repoPath: string, message: string) => ipcRenderer.invoke('git:save', repoPath, message),
     publish: (repoPath: string) => ipcRenderer.invoke('git:publish', repoPath),
     createDraft: (repoPath: string, draftName: string) => ipcRenderer.invoke('git:createDraft', repoPath, draftName),

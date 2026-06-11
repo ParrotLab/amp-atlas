@@ -285,7 +285,7 @@ export default function SystemOverview() {
         draftName={humanize(branch)}
         modifiedCount={gitModified.size}
         newCount={gitNew.size}
-        aheadCount={ahead}
+        repoPath={rootPath}
       />
     </div>
   )

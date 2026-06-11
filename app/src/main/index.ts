@@ -171,6 +171,74 @@ ipcMain.handle('git:log', async (_event, repoPath: string, maxCount: number = 20
   }
 })
 
+ipcMain.handle('git:save', async (_event, repoPath: string, message: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    await git.add('-A')
+    const result = await git.commit(message)
+    return { ok: true, summary: { changes: result.summary.changes, insertions: result.summary.insertions, deletions: result.summary.deletions } }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:publish', async (_event, repoPath: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    const status = await git.status()
+    const branch = status.current
+    if (!branch) return { ok: false, error: 'No branch found' }
+    // Set upstream if needed, then push
+    await git.push('origin', branch, ['--set-upstream'])
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:createDraft', async (_event, repoPath: string, draftName: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    // Slugify: "My Cool Draft" -> "draft/my-cool-draft"
+    const slug = 'draft/' + draftName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    await git.checkoutLocalBranch(slug)
+    return { ok: true, branch: slug }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:switchBranch', async (_event, repoPath: string, branch: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    // Stash any uncommitted changes
+    const status = await git.status()
+    const hadChanges = !status.isClean()
+    if (hadChanges) {
+      await git.stash()
+    }
+    await git.checkout(branch)
+    // Try to restore stash for this branch
+    if (hadChanges) {
+      try { await git.stash(['pop']) } catch { /* stash pop may conflict, ignore */ }
+    }
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:discard', async (_event, repoPath: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    await git.checkout(['.'])
+    await git.clean('f', ['-d'])
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')
   app.on('browser-window-created', (_, window) => {

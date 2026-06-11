@@ -89,36 +89,84 @@ export default function SystemOverview() {
     return () => clearInterval(interval)
   }, [rootPath])
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!rootPath) return
+    // First save the file content to disk (trigger Cmd+S on editor)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', metaKey: true }))
+
+    // Then git add + commit with auto-generated message
+    setTimeout(async () => {
+      const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+      const result = await window.api.git.save(rootPath, message)
+      if (result.ok) {
+        setIsDirty(false)
+      }
+    }, 200) // Small delay to let file write complete first
   }
 
-  const handleDiscard = () => {
-    if (window.confirm('Discard unsaved edits? You\'ll lose changes since your last save.')) {
+  const handleDiscard = async () => {
+    if (!rootPath) return
+    const confirmed = window.confirm('Discard all unsaved edits? This will revert your files to the last save.')
+    if (!confirmed) return
+
+    const result = await window.api.git.discard(rootPath)
+    if (result.ok) {
+      // Reload current file
       if (selectedFile) {
         const current = selectedFile
         setSelectedFile(undefined)
-        setTimeout(() => setSelectedFile(current), 50)
+        setTimeout(() => setSelectedFile(current), 100)
       }
       setIsDirty(false)
     }
   }
 
   const handlePublish = async () => {
-    // TODO: Implement git push
-    alert('Publish coming soon — this will push your saves to GitHub.')
+    if (!rootPath) return
+
+    // Save first if there are unsaved changes
+    if (isDirty) {
+      const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+      await window.api.git.save(rootPath, message)
+    }
+
+    const result = await window.api.git.publish(rootPath)
+    if (result.ok) {
+      setIsDirty(false)
+      // Could show a success toast here in the future
+      alert('Published! Your team can now see your changes.')
+    } else {
+      alert(`Couldn't publish: ${result.error}`)
+    }
   }
 
-  const handleSwitchBranch = (branchName: string) => {
-    // TODO: Implement git checkout
-    alert(`Switching to "${branchName}" — coming soon.`)
+  const handleSwitchBranch = async (branchName: string) => {
+    if (!rootPath) return
+    const result = await window.api.git.switchBranch(rootPath, branchName)
+    if (result.ok) {
+      // Close all tabs and clear selection — we're on a new branch
+      setTabs([])
+      setSelectedFile(undefined)
+      setIsDirty(false)
+      // Git status will auto-refresh via polling
+    } else {
+      alert(`Couldn't switch: ${result.error}`)
+    }
   }
 
-  const handleNewDraft = () => {
-    // TODO: Implement create branch
+  const handleNewDraft = async () => {
+    if (!rootPath) return
     const name = prompt('Name your draft:')
-    if (name) {
-      alert(`Creating draft "${name}" — coming soon.`)
+    if (!name || !name.trim()) return
+
+    const result = await window.api.git.createDraft(rootPath, name.trim())
+    if (result.ok) {
+      // Close tabs, clear selection — we're on the new draft now
+      setTabs([])
+      setSelectedFile(undefined)
+      setIsDirty(false)
+    } else {
+      alert(`Couldn't create draft: ${result.error}`)
     }
   }
 

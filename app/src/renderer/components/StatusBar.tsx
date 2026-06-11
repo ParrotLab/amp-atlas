@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './StatusBar.css'
 
 interface BranchInfo {
@@ -28,6 +28,24 @@ function humanize(branch: string): string {
     .replace(/\b\w/g, c => c.toUpperCase())
 }
 
+const RECENT_BRANCHES_KEY = 'amp-up-recent-branches'
+
+function getRecentBranches(): Set<string> {
+  try {
+    const stored = localStorage.getItem(RECENT_BRANCHES_KEY)
+    if (stored) return new Set(JSON.parse(stored))
+  } catch { /* ignore */ }
+  return new Set()
+}
+
+function addRecentBranch(branch: string): void {
+  const recent = getRecentBranches()
+  if (branch !== 'main' && branch !== 'master') {
+    recent.add(branch)
+    localStorage.setItem(RECENT_BRANCHES_KEY, JSON.stringify([...recent]))
+  }
+}
+
 export default function StatusBar({
   editedCount, savedCount, newCount, isDirty,
   branchName, isMain, branches,
@@ -37,6 +55,15 @@ export default function StatusBar({
   const [showAllBranches, setShowAllBranches] = useState(false)
   const hasChanges = editedCount > 0 || savedCount > 0 || newCount > 0
   const displayBranch = isMain ? 'Current Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
+  const recentBranches = useRef(getRecentBranches())
+
+  // Track current branch as recently used
+  useEffect(() => {
+    if (branchName && branchName !== 'main' && branchName !== 'master') {
+      addRecentBranch(branchName)
+      recentBranches.current = getRecentBranches()
+    }
+  }, [branchName])
 
   return (
     <div className="status-bar">
@@ -54,10 +81,17 @@ export default function StatusBar({
               </button>
 
               {showDropdown && (() => {
-                // Separate main, drafts (draft/ prefix), and other branches
+                const recent = recentBranches.current
                 const mainBranches = branches?.filter(b => b.name === 'main' || b.name === 'master') || []
-                const draftBranches = branches?.filter(b => b.name !== 'main' && b.name !== 'master' && (b.name.startsWith('draft/') || b.current)) || []
-                const otherBranches = branches?.filter(b => b.name !== 'main' && b.name !== 'master' && !b.name.startsWith('draft/') && !b.current) || []
+                // "Your Drafts" = draft/ prefix OR recently used OR currently active
+                const draftBranches = branches?.filter(b =>
+                  b.name !== 'main' && b.name !== 'master' &&
+                  (b.name.startsWith('draft/') || b.current || recent.has(b.name))
+                ) || []
+                const draftNames = new Set(draftBranches.map(b => b.name))
+                const otherBranches = branches?.filter(b =>
+                  b.name !== 'main' && b.name !== 'master' && !draftNames.has(b.name)
+                ) || []
 
                 return (
                   <>

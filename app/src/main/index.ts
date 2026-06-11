@@ -228,11 +228,40 @@ ipcMain.handle('git:publish', async (_event, repoPath: string) => {
     const status = await git.status()
     const branch = status.current
     if (!branch) return { ok: false, error: 'No branch found' }
-    // Set upstream if needed, then push
     await git.push('origin', branch, ['--set-upstream'])
     return { ok: true }
   } catch (error) {
     return { ok: false, error: String(error) }
+  }
+})
+
+// Create a GitHub PR using the gh CLI
+// TODO: Replace with GitHub OAuth + REST API before shipping to non-technical users
+ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    const args = ['pr', 'create', '--title', title, '--body', body || '']
+
+    // Add reviewers if specified (need GitHub usernames — for now we skip if names don't map)
+    // TODO: Map display names to GitHub usernames via team config
+    if (reviewers.length > 0) {
+      // For now, skip reviewers since we'd need GitHub usernames
+      // args.push('--reviewer', reviewers.join(','))
+    }
+
+    const result = await exec('/opt/homebrew/bin/gh', args, { cwd: repoPath })
+    const prUrl = result.stdout.trim()
+    return { ok: true, url: prUrl }
+  } catch (error: unknown) {
+    const err = error as { stderr?: string; message?: string }
+    // gh might say "already exists" if a PR is already open
+    if (err.stderr?.includes('already exists')) {
+      return { ok: true, url: '', alreadyExists: true }
+    }
+    return { ok: false, error: err.stderr || err.message || String(error) }
   }
 })
 

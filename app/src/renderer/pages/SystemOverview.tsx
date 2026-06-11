@@ -156,9 +156,17 @@ export default function SystemOverview() {
       return
     }
 
-    // TODO: Create GitHub PR with title, description, and reviewers
-    // This requires GitHub OAuth which is part of the onboarding flow
-    console.log('PR would be created:', { title, description, reviewers })
+    // Create PR via gh CLI (TODO: replace with GitHub OAuth API before shipping)
+    if (!isMainBranch) {
+      const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
+      if (prResult.ok && prResult.url) {
+        console.log('PR created:', prResult.url)
+      } else if (prResult.alreadyExists) {
+        console.log('PR already exists for this branch')
+      } else if (!prResult.ok) {
+        console.warn('PR creation failed:', prResult.error)
+      }
+    }
 
     await fetchGitStatus()
   }

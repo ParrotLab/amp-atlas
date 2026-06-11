@@ -17,6 +17,7 @@ const api = {
     draftChanges: (repoPath: string) => ipcRenderer.invoke('git:draftChanges', repoPath),
     save: (repoPath: string, message: string) => ipcRenderer.invoke('git:save', repoPath, message),
     publish: (repoPath: string) => ipcRenderer.invoke('git:publish', repoPath),
+    createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => ipcRenderer.invoke('git:createPR', repoPath, title, body, reviewers),
     createDraft: (repoPath: string, draftName: string) => ipcRenderer.invoke('git:createDraft', repoPath, draftName),
     switchBranch: (repoPath: string, branch: string) => ipcRenderer.invoke('git:switchBranch', repoPath, branch),
     discard: (repoPath: string) => ipcRenderer.invoke('git:discard', repoPath),

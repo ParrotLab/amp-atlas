@@ -12,6 +12,12 @@ const gradientOptions = [
   { value: 'linear-gradient(135deg, #E11D48, #FB7185)' },
   { value: 'linear-gradient(135deg, #D97706, #FCD34D)' },
   { value: 'linear-gradient(135deg, #0D9488, #5EEAD4)' },
+  { value: 'linear-gradient(135deg, #7C3AED, #C084FC)' },
+  { value: 'linear-gradient(135deg, #0EA5E9, #7DD3FC)' },
+  { value: 'linear-gradient(135deg, #1A1A2E, #4A4743)' },
+  { value: 'linear-gradient(135deg, #BE185D, #F9A8D4)' },
+  { value: 'linear-gradient(135deg, #059669, #A7F3D0)' },
+  { value: 'linear-gradient(135deg, #DC2626, #FCA5A5)' },
 ]
 
 export default function Settings() {

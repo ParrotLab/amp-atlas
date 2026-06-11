@@ -38,6 +38,12 @@ export const SparkleIcon = ({ size = 18 }: { size?: number }) => <I size={size}>
 export const FlaskIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M7 2h6M8 2v6l-5 8a1 1 0 00.9 1.5h12.2a1 1 0 00.9-1.5L12 8V2"/><path d="M5 13h10"/></I>
 export const MegaphoneIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M17 4v12l-6-2.5V6.5L17 4z"/><path d="M11 6.5H5a2 2 0 00-2 2v1a2 2 0 002 2h1l1.5 5H10l-1.5-5H11"/></I>
 export const TrophyIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M6 2h8v6a4 4 0 01-8 0V2z"/><path d="M6 4H3v2a3 3 0 003 3M14 4h3v2a3 3 0 01-3 3"/><path d="M10 12v3M7 17h6"/></I>
+export const WrenchIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M15.5 2.5a4.5 4.5 0 00-5.6 5.3L3 14.7V17h2.3l6.9-6.9a4.5 4.5 0 005.3-5.6l-2.8 2.8-2-2 2.8-2.8z"/></I>
+export const LeafIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M17 3S8 4 5 10c-2 4-1 7-1 7"/><path d="M3 17c4-1 7-4 9-7"/><path d="M17 3c-2 6-6 10-14 14"/></I>
+export const DiamondIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M5 3h10l3 5-8 10L2 8l3-5z"/><path d="M2 8h16"/></I>
+export const HomeIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 10l7-7 7 7"/><path d="M5 8v8a1 1 0 001 1h3v-4h2v4h3a1 1 0 001-1V8"/></I>
+export const AnchorIcon = ({ size = 18 }: { size?: number }) => <I size={size}><circle cx="10" cy="5" r="3"/><path d="M10 8v10"/><path d="M3 13a7 7 0 0014 0"/><path d="M7 12h6"/></I>
+export const CrownIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 16h14l-2-10-3.5 4L10 4 8.5 10 5 6 3 16z"/><path d="M3 16a1 1 0 001 1h12a1 1 0 001-1"/></I>
 
 export const iconMap: Record<string, React.FC<{ size?: number }>> = {
   book: BookIcon,
@@ -69,6 +75,12 @@ export const iconMap: Record<string, React.FC<{ size?: number }>> = {
   flask: FlaskIcon,
   megaphone: MegaphoneIcon,
   trophy: TrophyIcon,
+  wrench: WrenchIcon,
+  leaf: LeafIcon,
+  diamond: DiamondIcon,
+  home: HomeIcon,
+  anchor: AnchorIcon,
+  crown: CrownIcon,
 }
 
 export const iconList = [
@@ -101,4 +113,10 @@ export const iconList = [
   { value: 'flask', label: 'Flask' },
   { value: 'megaphone', label: 'Megaphone' },
   { value: 'trophy', label: 'Trophy' },
+  { value: 'wrench', label: 'Wrench' },
+  { value: 'leaf', label: 'Leaf' },
+  { value: 'diamond', label: 'Diamond' },
+  { value: 'home', label: 'Home' },
+  { value: 'anchor', label: 'Anchor' },
+  { value: 'crown', label: 'Crown' },
 ]

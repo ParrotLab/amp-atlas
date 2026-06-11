@@ -8,7 +8,7 @@ interface PublishModalProps {
   draftName: string
   modifiedCount: number
   newCount: number
-  aheadCount: number
+  repoPath: string
 }
 
 const teamMembers = [
@@ -18,10 +18,12 @@ const teamMembers = [
   { name: 'Hannah', initial: 'H', color: '#16A34A' },
 ]
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, aheadCount }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath }: PublishModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
+  const [draftCommits, setDraftCommits] = useState<{ hash: string; message: string; date: string }[]>([])
+  const [draftFiles, setDraftFiles] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'publishing' | 'done'>('idle')
   const titleRef = useRef<HTMLInputElement>(null)
 
@@ -31,9 +33,21 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       setDescription('')
       setSelectedReviewers([])
       setStatus('idle')
+      setDraftCommits([])
+      setDraftFiles([])
       setTimeout(() => titleRef.current?.focus(), 100)
+
+      // Fetch what this draft adds vs Live Version
+      if (repoPath) {
+        window.api.git.draftChanges(repoPath).then(result => {
+          if (result.ok) {
+            setDraftCommits(result.commits || [])
+            setDraftFiles(result.filesChanged || [])
+          }
+        })
+      }
     }
-  }, [isOpen, draftName])
+  }, [isOpen, draftName, repoPath])
 
   useEffect(() => {
     if (!isOpen) return
@@ -82,30 +96,47 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
             </div>
 
             <div className="publish-summary">
-              <div className="publish-summary-label">Changes in this draft</div>
-              <div className="publish-summary-stats">
-                {aheadCount > 0 && (
-                  <span className="publish-summary-stat">
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#8B2BFF' }} />
-                    {aheadCount} save{aheadCount !== 1 ? 's' : ''} not yet published
-                  </span>
-                )}
-                {modifiedCount > 0 && (
-                  <span className="publish-summary-stat">
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#C47A0A' }} />
-                    {modifiedCount} unsaved edit{modifiedCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {newCount > 0 && (
-                  <span className="publish-summary-stat">
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#16A34A' }} />
-                    {newCount} new file{newCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {aheadCount === 0 && modifiedCount === 0 && newCount === 0 && (
-                  <span style={{ color: '#B5B1AC' }}>Everything is already published</span>
-                )}
-              </div>
+              <div className="publish-summary-label">What you're publishing</div>
+              {draftCommits.length > 0 || draftFiles.length > 0 || modifiedCount > 0 || newCount > 0 ? (
+                <>
+                  <div className="publish-summary-stats">
+                    {draftCommits.length > 0 && (
+                      <span className="publish-summary-stat">
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#8B2BFF' }} />
+                        {draftCommits.length} save{draftCommits.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {draftFiles.length > 0 && (
+                      <span className="publish-summary-stat">
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#16A34A' }} />
+                        {draftFiles.length} file{draftFiles.length !== 1 ? 's' : ''} changed
+                      </span>
+                    )}
+                    {modifiedCount > 0 && (
+                      <span className="publish-summary-stat">
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#C47A0A' }} />
+                        {modifiedCount} unsaved edit{modifiedCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  {draftCommits.length > 0 && (
+                    <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {draftCommits.slice(0, 5).map(c => (
+                        <div key={c.hash} style={{ fontSize: '12px', color: '#6B6966', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#D4D0CC', flexShrink: 0 }} />
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.message}</span>
+                          <span style={{ color: '#B5B1AC', fontSize: '11px', flexShrink: 0 }}>{new Date(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      ))}
+                      {draftCommits.length > 5 && (
+                        <div style={{ fontSize: '11px', color: '#B5B1AC' }}>+ {draftCommits.length - 5} more</div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ color: '#B5B1AC', fontSize: '13px' }}>No changes to publish</div>
+              )}
             </div>
 
             <div className="publish-field">

@@ -150,6 +150,44 @@ ipcMain.handle('git:branches', async (_event, repoPath: string) => {
   }
 })
 
+// Get commits in the current branch that aren't in main (i.e. what this draft adds)
+ipcMain.handle('git:draftChanges', async (_event, repoPath: string) => {
+  try {
+    const git = simpleGit(repoPath)
+    const status = await git.status()
+    const currentBranch = status.current
+    if (!currentBranch) return { ok: false, error: 'No branch' }
+    if (currentBranch === 'main' || currentBranch === 'master') {
+      return { ok: true, commits: [], filesChanged: [] }
+    }
+
+    // Find the base branch (main or master)
+    const branches = await git.branch()
+    const baseBranch = branches.all.includes('main') ? 'main' : branches.all.includes('master') ? 'master' : null
+    if (!baseBranch) return { ok: true, commits: [], filesChanged: [] }
+
+    // Get commits in current branch that aren't in base
+    const log = await git.log({ from: baseBranch, to: currentBranch })
+    const commits = log.all.map(entry => ({
+      hash: entry.hash.substring(0, 8),
+      date: entry.date,
+      message: entry.message,
+      author_name: entry.author_name
+    }))
+
+    // Get files changed between base and current
+    let filesChanged: string[] = []
+    try {
+      const diff = await git.diff(['--name-only', `${baseBranch}...${currentBranch}`])
+      filesChanged = diff.split('\n').filter(Boolean)
+    } catch { /* ignore */ }
+
+    return { ok: true, commits, filesChanged }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
 ipcMain.handle('git:log', async (_event, repoPath: string, maxCount: number = 20) => {
   try {
     const git = simpleGit(repoPath)

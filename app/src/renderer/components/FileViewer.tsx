@@ -27,8 +27,6 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
   const currentFilePath = useRef<string | undefined>()
   const isLoadingContent = useRef(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
-  const onDirtyChangeRef = useRef(onDirtyChange)
-  onDirtyChangeRef.current = onDirtyChange
   const onContentLoadRef = useRef(onContentLoad)
   onContentLoadRef.current = onContentLoad
 
@@ -50,7 +48,7 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
     if (result.ok) {
       setWriteStatus('written')
       setLastModified('Just now')
-      onDirtyChangeRef.current?.(true) // Mark as dirty = uncommitted changes exist
+      // Git status polling in SystemOverview will detect the file change
       setTimeout(() => setWriteStatus('idle'), 1500)
     } else {
       setWriteStatus('idle')

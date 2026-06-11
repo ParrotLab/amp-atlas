@@ -7,6 +7,14 @@ import TabBar, { Tab } from '../components/TabBar'
 import { useState, useEffect, useCallback } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
+import PublishModal from '../components/PublishModal'
+
+function humanize(branch: string): string {
+  return branch
+    .replace(/^(draft|feature|fix|hotfix)\//i, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
 
 export default function SystemOverview() {
   const { systemId } = useParams<{ systemId: string }>()
@@ -64,6 +72,7 @@ export default function SystemOverview() {
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [rawContent, setRawContent] = useState('')
   const [showNewDraft, setShowNewDraft] = useState(false)
+  const [showPublish, setShowPublish] = useState(false)
 
   const rootPath = system?.folderPath || ''
 
@@ -125,24 +134,32 @@ export default function SystemOverview() {
     }
   }
 
-  // "Publish" = commit any outstanding changes + push to GitHub
-  const handlePublish = async () => {
+  // "Publish" = open modal to commit + push to GitHub + create PR
+  const handlePublish = () => {
+    setShowPublish(true)
+  }
+
+  const handleDoPublish = async (title: string, description: string, reviewers: string[]) => {
     if (!rootPath) return
 
-    // Auto-commit any uncommitted changes first
+    // First commit any uncommitted changes
     const status = await window.api.git.status(rootPath)
     if (status.ok && status.status && !status.status.isClean) {
-      const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
-      await window.api.git.save(rootPath, message)
+      await window.api.git.save(rootPath, title)
     }
 
-    const result = await window.api.git.publish(rootPath)
-    if (result.ok) {
-      await fetchGitStatus()
-      alert('Published! Your team can now see your changes.')
-    } else {
-      alert(`Couldn't publish: ${result.error}`)
+    // Push to GitHub
+    const pushResult = await window.api.git.publish(rootPath)
+    if (!pushResult.ok) {
+      alert(`Couldn't publish: ${pushResult.error}`)
+      return
     }
+
+    // TODO: Create GitHub PR with title, description, and reviewers
+    // This requires GitHub OAuth which is part of the onboarding flow
+    console.log('PR would be created:', { title, description, reviewers })
+
+    await fetchGitStatus()
   }
 
   const handleSwitchBranch = async (branchName: string) => {
@@ -259,6 +276,14 @@ export default function SystemOverview() {
         isOpen={showNewDraft}
         onClose={() => setShowNewDraft(false)}
         onCreate={handleCreateDraft}
+      />
+      <PublishModal
+        isOpen={showPublish}
+        onClose={() => setShowPublish(false)}
+        onPublish={handleDoPublish}
+        draftName={humanize(branch)}
+        modifiedCount={gitModified.size}
+        newCount={gitNew.size}
       />
     </div>
   )

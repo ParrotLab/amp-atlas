@@ -24,6 +24,9 @@ const api = {
     discard: (repoPath: string) => ipcRenderer.invoke('git:discard', repoPath),
     prStatus: (repoPath: string) => ipcRenderer.invoke('git:prStatus', repoPath),
     checkMerged: (repoPath: string) => ipcRenderer.invoke('git:checkMerged', repoPath),
+    listPRs: (repoPath: string) => ipcRenderer.invoke('git:listPRs', repoPath),
+    prDiff: (repoPath: string, prNumber: number) => ipcRenderer.invoke('git:prDiff', repoPath, prNumber),
+    reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => ipcRenderer.invoke('git:reviewPR', repoPath, prNumber, action, body),
   }
 }
 

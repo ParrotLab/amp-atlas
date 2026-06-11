@@ -40,4 +40,24 @@ export function getSystem(systemId: string): SystemConfig | undefined {
   return getSystems().find(s => s.id === systemId)
 }
 
+export function addSystem(name: string, icon: string, gradient: string): SystemConfig[] {
+  const systems = getSystems()
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  systems.push({ id, name, folderPath: '', icon, gradient })
+  saveSystems(systems)
+  return systems
+}
+
+export function removeSystem(systemId: string): SystemConfig[] {
+  const systems = getSystems().filter(s => s.id !== systemId)
+  saveSystems(systems)
+  return systems
+}
+
+export function updateSystem(systemId: string, updates: Partial<SystemConfig>): SystemConfig[] {
+  const systems = getSystems().map(s => s.id === systemId ? { ...s, ...updates } : s)
+  saveSystems(systems)
+  return systems
+}
+
 export type { SystemConfig }

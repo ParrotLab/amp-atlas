@@ -53,6 +53,13 @@ export default function Dashboard() {
           meta="12 playbooks · 112 files · 3 updates"
           icon={<LayersIcon />}
         />
+        <SystemCard
+          name="Delivery System"
+          path="/system/delivery"
+          gradient="linear-gradient(135deg, #16A34A, #22C55E)"
+          meta="Playbooks · Files"
+          icon={<BookIcon />}
+        />
       </div>
     </div>
   )

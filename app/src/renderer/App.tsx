@@ -3,6 +3,8 @@ import AppLayout from './layouts/AppLayout'
 import Dashboard from './pages/Dashboard'
 import SystemOverview from './pages/SystemOverview'
 import Settings from './pages/Settings'
+import Inbox from './pages/Inbox'
+import Review from './pages/Review'
 
 export default function App() {
   return (
@@ -10,7 +12,8 @@ export default function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/inbox" element={<div style={{ padding: '40px 48px' }}><h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a2e' }}>Inbox</h1></div>} />
+          <Route path="/inbox" element={<Inbox />} />
+          <Route path="/review/:systemId/:prNumber" element={<Review />} />
           <Route path="/system/:systemId" element={<SystemOverview />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

@@ -408,6 +408,59 @@ ipcMain.handle('git:checkMerged', async (_event, repoPath: string) => {
   }
 })
 
+// List open PRs for a repo
+ipcMain.handle('git:listPRs', async (_event, repoPath: string) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    const result = await exec('/opt/homebrew/bin/gh', [
+      'pr', 'list', '--json', 'number,title,state,author,createdAt,headRefName,reviewDecision,url,additions,deletions,changedFiles',
+      '--limit', '20'
+    ], { cwd: repoPath })
+
+    const prs = JSON.parse(result.stdout.trim())
+    return { ok: true, prs }
+  } catch {
+    return { ok: true, prs: [] }
+  }
+})
+
+// Get files changed in a PR
+ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    const result = await exec('/opt/homebrew/bin/gh', [
+      'pr', 'diff', String(prNumber), '--name-only'
+    ], { cwd: repoPath })
+
+    const files = result.stdout.trim().split('\n').filter(Boolean)
+    return { ok: true, files }
+  } catch (error: unknown) {
+    return { ok: false, error: String((error as {message?: string}).message || error), files: [] }
+  }
+})
+
+// Approve or request changes on a PR
+ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
+  const { execFile } = await import('child_process')
+  const { promisify } = await import('util')
+  const exec = promisify(execFile)
+
+  try {
+    const args = ['pr', 'review', String(prNumber), `--${action}`]
+    if (body) args.push('--body', body)
+    await exec('/opt/homebrew/bin/gh', args, { cwd: repoPath })
+    return { ok: true }
+  } catch (error: unknown) {
+    return { ok: false, error: String((error as {message?: string}).message || error) }
+  }
+})
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')
   app.on('browser-window-created', (_, window) => {

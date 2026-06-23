@@ -21,6 +21,24 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 140ms ease' }}
+    >
+      <path d="M7 5l6 5-6 5" />
+    </svg>
+  )
+}
+
 function avatarColor(name: string): string {
   const colors = ['#8B2BFF', '#FF7B00', '#3D0052', '#16A34A', '#2563EB', '#E11D48']
   let hash = 0
@@ -36,6 +54,7 @@ export default function Review() {
   const [fileDiffs, setFileDiffs] = useState<Record<string, DiffLine[]>>({})
   const [fileContents, setFileContents] = useState<Record<string, string>>({})
   const [viewMode, setViewMode] = useState<Record<string, 'changes' | 'final'>>({})
+  const [reviewedFiles, setReviewedFiles] = useState<Set<string>>(new Set())
   const [comment, setComment] = useState('')
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
   const [action, setAction] = useState<'approve' | 'request-changes' | null>(null)
@@ -122,6 +141,25 @@ export default function Review() {
   const getViewMode = (file: string) => viewMode[file] || 'final'
   const toggleViewMode = (file: string) => setViewMode(prev => ({ ...prev, [file]: prev[file] === 'changes' ? 'final' : 'changes' }))
 
+  const toggleReviewed = (file: string) => {
+    setReviewedFiles(prev => {
+      const next = new Set(prev)
+      if (next.has(file)) {
+        next.delete(file)
+      } else {
+        next.add(file)
+        // Auto-advance to next unreviewed file (or collapse if none)
+        const remaining = files.find(f => f !== file && !next.has(f))
+        setExpandedFile(remaining ?? null)
+      }
+      return next
+    })
+  }
+
+  const allReviewed = files.length > 0 && files.every(f => reviewedFiles.has(f))
+  const hasComment = comment.trim().length > 0
+  const intent: 'approve' | 'request-changes' = hasComment ? 'request-changes' : 'approve'
+
   const handleSubmitReview = async (reviewAction: 'approve' | 'request-changes') => {
     if (!repoPath) return
     setAction(reviewAction)
@@ -164,14 +202,6 @@ export default function Review() {
                 <span style={{ color: '#16A34A' }}>+{pr.additions}</span>
                 <span style={{ color: '#DC2626' }}>-{pr.deletions}</span>
               </div>
-              <div className="review-actions">
-                <button className="review-action-btn approve" onClick={() => handleSubmitReview('approve')} disabled={status === 'submitting'}>
-                  {status === 'submitting' && action === 'approve' ? 'Approving...' : '✓ Approve'}
-                </button>
-                <button className="review-action-btn request-changes" onClick={() => handleSubmitReview('request-changes')} disabled={status === 'submitting'}>
-                  {status === 'submitting' && action === 'request-changes' ? 'Submitting...' : 'Request Changes'}
-                </button>
-              </div>
             </div>
 
             <div className="review-files-label">{files.length} file{files.length !== 1 ? 's' : ''} changed</div>
@@ -184,11 +214,17 @@ export default function Review() {
                 return (
                   <div key={file} className={`review-file-card ${isExpanded ? 'expanded' : ''}`}>
                     <div className="review-file-header" onClick={() => toggleFile(file)}>
-                      <span className="review-file-chevron">{isExpanded ? '▾' : '▸'}</span>
+                      <span className="review-file-chevron"><Chevron open={isExpanded} /></span>
                       <div className="review-file-info">
                         <span className="review-file-name-label">{fileNameOf(file)}</span>
                         <span className="review-file-path">{filePathOf(file)}</span>
                       </div>
+                      <button
+                        className={`review-file-reviewed ${reviewedFiles.has(file) ? 'reviewed' : ''}`}
+                        onClick={e => { e.stopPropagation(); toggleReviewed(file) }}
+                      >
+                        {reviewedFiles.has(file) ? '✓ Reviewed' : 'Mark reviewed'}
+                      </button>
                     </div>
 
                     {isExpanded && (
@@ -224,7 +260,42 @@ export default function Review() {
             </div>
 
             <div className="review-comment">
-              <textarea placeholder="Leave a comment (optional)..." value={comment} onChange={e => setComment(e.target.value)} />
+              <textarea
+                placeholder={allReviewed ? "Add a note — or describe what should change..." : "What should change? (required to request changes)"}
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+              />
+              <div className="review-comment-actions">
+                <div className="review-comment-hint">
+                  {!allReviewed
+                    ? `${reviewedFiles.size} of ${files.length} file${files.length === 1 ? '' : 's'} reviewed`
+                    : hasComment
+                      ? 'You have a note — requesting changes'
+                      : 'All files reviewed — ready to approve'}
+                </div>
+                <div className="review-comment-buttons">
+                  <button
+                    className={`review-action-btn request-changes ${intent === 'request-changes' ? 'primary' : ''}`}
+                    onClick={() => handleSubmitReview('request-changes')}
+                    disabled={!hasComment || status === 'submitting'}
+                    title={!hasComment ? 'Add a note above describing what should change' : ''}
+                  >
+                    {status === 'submitting' && action === 'request-changes' ? 'Submitting...' : 'Request Changes'}
+                  </button>
+                  <button
+                    className={`review-action-btn approve ${intent !== 'approve' ? 'ghost' : ''}`}
+                    onClick={() => handleSubmitReview('approve')}
+                    disabled={!allReviewed || status === 'submitting' || hasComment}
+                    title={!allReviewed ? 'Mark all files as reviewed first' : hasComment ? 'Clear the comment to approve, or click Request Changes' : ''}
+                  >
+                    {status === 'submitting' && action === 'approve'
+                      ? 'Approving...'
+                      : allReviewed
+                        ? '✓ Approve'
+                        : `Approve (${reviewedFiles.size}/${files.length})`}
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         ) : (

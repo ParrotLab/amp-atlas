@@ -491,20 +491,11 @@ ipcMain.handle('git:prFileDiff', async (_event, repoPath: string, prNumber: numb
 
 // Get the content of a file from a PR's branch
 ipcMain.handle('git:prFileContent', async (_event, repoPath: string, prNumber: number, filePath: string) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
-    // Get the branch name for this PR
-    const prInfo = await exec('/opt/homebrew/bin/gh', [
-      'pr', 'view', String(prNumber), '--json', 'headRefName', '--jq', '.headRefName'
-    ], { cwd: repoPath })
-    const branch = prInfo.stdout.trim()
-
-    // Get the file content from that branch
     const git = simpleGit(repoPath)
-    const content = await git.show([`${branch}:${filePath}`])
+    // Fetch the PR head into FETCH_HEAD — works for fork PRs too, no branch pollution
+    await git.fetch(['origin', `pull/${prNumber}/head`])
+    const content = await git.show([`FETCH_HEAD:${filePath}`])
     return { ok: true, content }
   } catch (error: unknown) {
     return { ok: false, content: '', error: String((error as {message?: string}).message || error) }

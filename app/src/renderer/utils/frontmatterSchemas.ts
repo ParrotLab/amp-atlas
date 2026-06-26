@@ -1,0 +1,36 @@
+export type Widget = 'text' | 'select' | 'tags'
+
+export interface FieldSchema {
+  key: string
+  label: string
+  widget: Widget
+  options?: string[]
+}
+
+export const STATUS_OPTIONS = ['Draft', 'Active', 'Archived']
+
+const SCHEMAS: Record<string, FieldSchema[]> = {
+  playbook: [
+    { key: 'name', label: 'Name', widget: 'text' },
+    { key: 'description', label: 'Description', widget: 'text' },
+    { key: 'process', label: 'Process', widget: 'text' },
+    { key: 'status', label: 'Status', widget: 'select', options: STATUS_OPTIONS },
+  ],
+}
+
+export function getSchema(type: string | null): FieldSchema[] | null {
+  if (!type) return null
+  return SCHEMAS[type] ?? null
+}
+
+/** Determine a file's type: explicit `type` frontmatter wins, else SKILL.md under .claude/skills. */
+export function detectFileType(filePath: string, data: Record<string, unknown>): string | null {
+  const explicit = data?.type
+  if (typeof explicit === 'string' && explicit.trim()) return explicit.trim()
+
+  const normalized = filePath.replace(/\\/g, '/')
+  if (/\/\.claude\/skills\/.*\/SKILL\.md$/.test(normalized) || /\/\.claude\/skills\/SKILL\.md$/.test(normalized)) {
+    return 'playbook'
+  }
+  return null
+}

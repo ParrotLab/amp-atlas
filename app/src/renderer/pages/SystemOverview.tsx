@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
+import { useFileDocument } from '../hooks/useFileDocument'
 
 function humanize(branch: string): string {
   return branch
@@ -71,12 +72,13 @@ export default function SystemOverview() {
   const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
-  const [rawContent, setRawContent] = useState('')
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
   const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
+
+  const { data, body, status: writeStatus, updateBody, updateData } = useFileDocument(selectedFile, isMainBranch)
 
   const fetchGitStatus = useCallback(async () => {
     if (!rootPath) return
@@ -317,11 +319,20 @@ export default function SystemOverview() {
             filePath={selectedFile}
             rootPath={rootPath}
             readOnly={isMainBranch}
-            onContentLoad={setRawContent}
+            body={body}
+            onBodyChange={updateBody}
+            writeStatus={writeStatus}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}
           />
-          <PropertiesPanel isOpen={propsOpen} onClose={() => setPropsOpen(false)} filePath={selectedFile} rawContent={rawContent} />
+          <PropertiesPanel
+            isOpen={propsOpen}
+            onClose={() => setPropsOpen(false)}
+            filePath={selectedFile}
+            data={data}
+            onChange={updateData}
+            readOnly={isMainBranch}
+          />
         </div>
         <StatusBar
           editedCount={gitModified.size}

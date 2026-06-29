@@ -3,6 +3,7 @@ import { join } from 'path'
 import { readdir, readFile, writeFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { simpleGit } from 'simple-git'
+import { runGh, ghAvailable, ghAuthed } from './gh'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -238,10 +239,6 @@ ipcMain.handle('git:publish', async (_event, repoPath: string) => {
 // Create a GitHub PR using the gh CLI
 // TODO: Replace with GitHub OAuth + REST API before shipping to non-technical users
 ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
     const args = ['pr', 'create', '--title', title, '--body', body || '']
 
@@ -252,7 +249,7 @@ ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, b
       // args.push('--reviewer', reviewers.join(','))
     }
 
-    const result = await exec('/opt/homebrew/bin/gh', args, { cwd: repoPath })
+    const result = await runGh(args, repoPath)
     const prUrl = result.stdout.trim()
     return { ok: true, url: prUrl }
   } catch (error: unknown) {
@@ -347,10 +344,6 @@ ipcMain.handle('git:discard', async (_event, repoPath: string) => {
 
 // Check PR status for the current branch
 ipcMain.handle('git:prStatus', async (_event, repoPath: string) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
     const git = simpleGit(repoPath)
     const status = await git.status()
@@ -360,9 +353,9 @@ ipcMain.handle('git:prStatus', async (_event, repoPath: string) => {
     }
 
     // Check for open PR on this branch
-    const result = await exec('/opt/homebrew/bin/gh', [
+    const result = await runGh([
       'pr', 'view', '--json', 'state,title,url,reviewDecision,number', '--jq', '.'
-    ], { cwd: repoPath })
+    ], repoPath)
 
     const pr = JSON.parse(result.stdout.trim())
     return {
@@ -384,10 +377,6 @@ ipcMain.handle('git:prStatus', async (_event, repoPath: string) => {
 
 // Check if the current branch has been merged and clean up
 ipcMain.handle('git:checkMerged', async (_event, repoPath: string) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
     const git = simpleGit(repoPath)
     const status = await git.status()
@@ -397,9 +386,9 @@ ipcMain.handle('git:checkMerged', async (_event, repoPath: string) => {
     }
 
     // Check if PR was merged
-    const result = await exec('/opt/homebrew/bin/gh', [
+    const result = await runGh([
       'pr', 'view', '--json', 'state', '--jq', '.state'
-    ], { cwd: repoPath })
+    ], repoPath)
 
     const state = result.stdout.trim()
     return { ok: true, merged: state === 'MERGED', branch }
@@ -410,15 +399,11 @@ ipcMain.handle('git:checkMerged', async (_event, repoPath: string) => {
 
 // List open PRs for a repo
 ipcMain.handle('git:listPRs', async (_event, repoPath: string) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
-    const result = await exec('/opt/homebrew/bin/gh', [
+    const result = await runGh([
       'pr', 'list', '--json', 'number,title,state,author,createdAt,headRefName,reviewDecision,url,additions,deletions,changedFiles',
       '--limit', '20'
-    ], { cwd: repoPath })
+    ], repoPath)
 
     const prs = JSON.parse(result.stdout.trim())
     return { ok: true, prs }
@@ -429,14 +414,10 @@ ipcMain.handle('git:listPRs', async (_event, repoPath: string) => {
 
 // Get files changed in a PR
 ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
-    const result = await exec('/opt/homebrew/bin/gh', [
+    const result = await runGh([
       'pr', 'diff', String(prNumber), '--name-only'
-    ], { cwd: repoPath })
+    ], repoPath)
 
     const files = result.stdout.trim().split('\n').filter(Boolean)
     return { ok: true, files }
@@ -447,15 +428,11 @@ ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) 
 
 // Get the diff content for a specific file in a PR
 ipcMain.handle('git:prFileDiff', async (_event, repoPath: string, prNumber: number, filePath: string) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
     // Get the full diff, then extract the portion for this file
-    const result = await exec('/opt/homebrew/bin/gh', [
+    const result = await runGh([
       'pr', 'diff', String(prNumber)
-    ], { cwd: repoPath, maxBuffer: 10 * 1024 * 1024 })
+    ], repoPath)
 
     const fullDiff = result.stdout
     // Parse out just this file's diff
@@ -504,18 +481,23 @@ ipcMain.handle('git:prFileContent', async (_event, repoPath: string, prNumber: n
 
 // Approve or request changes on a PR
 ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
-  const { execFile } = await import('child_process')
-  const { promisify } = await import('util')
-  const exec = promisify(execFile)
-
   try {
     const args = ['pr', 'review', String(prNumber), `--${action}`]
     if (body) args.push('--body', body)
-    await exec('/opt/homebrew/bin/gh', args, { cwd: repoPath })
+    await runGh(args, repoPath)
     return { ok: true }
   } catch (error: unknown) {
     return { ok: false, error: String((error as {message?: string}).message || error) }
   }
+})
+
+// Probe what this system can do: is it a git repo, and is GitHub (gh) available + authed?
+ipcMain.handle('system:capabilities', async (_event, repoPath: string) => {
+  let isGitRepo = false
+  try { isGitRepo = await simpleGit(repoPath).checkIsRepo() } catch { isGitRepo = false }
+  const available = await ghAvailable()
+  const authed = available ? await ghAuthed() : false
+  return { ok: true, isGitRepo, ghAvailable: available, ghAuthed: authed }
 })
 
 app.whenReady().then(() => {

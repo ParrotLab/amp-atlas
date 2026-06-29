@@ -142,7 +142,7 @@ export default function SystemOverview() {
       const result = await window.api.git.checkMerged(rootPath)
       if (result.ok && result.merged && result.branch) {
         // Branch was merged! Clean up.
-        alert(`"${humanize(result.branch)}" has been merged into the Live Version!`)
+        showToast(`"${humanize(result.branch)}" has been merged into the Live Version!`)
         // Switch to main and delete the merged branch
         await window.api.git.switchBranch(rootPath, 'main')
         await window.api.git.deleteBranch(rootPath, result.branch)
@@ -203,7 +203,7 @@ export default function SystemOverview() {
     // Push to GitHub
     const pushResult = await window.api.git.publish(rootPath)
     if (!pushResult.ok) {
-      alert(`Couldn't publish: ${pushResult.error}`)
+      showToast(`Couldn't publish: ${pushResult.error}`)
       return
     }
 
@@ -241,7 +241,7 @@ export default function SystemOverview() {
       setTreeKey(k => k + 1)
     } else {
       console.error('Branch switch failed:', result.error)
-      alert(`Couldn't switch: ${result.error}`)
+      showToast(`Couldn't switch: ${result.error}`)
       await fetchGitStatus()
     }
   }
@@ -260,7 +260,7 @@ export default function SystemOverview() {
       setTreeKey(k => k + 1)
       await fetchGitStatus()
     } else {
-      alert(`Couldn't archive: ${result.error}`)
+      showToast(`Couldn't archive: ${result.error}`)
     }
   }
 
@@ -278,7 +278,7 @@ export default function SystemOverview() {
       setTreeKey(k => k + 1)
       await fetchGitStatus()
     } else {
-      alert(`Couldn't create draft: ${result.error}`)
+      showToast(`Couldn't create draft: ${result.error}`)
     }
   }
 

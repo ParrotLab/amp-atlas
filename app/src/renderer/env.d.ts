@@ -1,3 +1,8 @@
+declare module '*.css' {
+  const css: string
+  export default css
+}
+
 declare module '*.svg' {
   const src: string
   export default src
@@ -83,6 +88,11 @@ interface ElectronAPI {
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; lines: Array<{ type: string; content: string }>; error?: string }>
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>
+  }
+  system: {
+    capabilities: (repoPath: string) => Promise<{
+      ok: boolean; isGitRepo: boolean; ghAvailable: boolean; ghAuthed: boolean
+    }>
   }
 }
 

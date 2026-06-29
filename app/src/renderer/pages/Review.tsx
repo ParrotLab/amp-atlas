@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import { getSystem } from '../utils/systemStore'
-import { markdownToHtml } from '../utils/markdown'
+import { editorExtensions } from '../utils/markdownSerializer'
+import { parseDocument } from '../utils/fileDocument'
 import './Review.css'
 
 interface DiffLine {
@@ -65,7 +65,7 @@ export default function Review() {
 
   // TipTap editor for Final view
   const editor = useEditor({
-    extensions: [StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } })],
+    extensions: editorExtensions(),
     editable: false,
     content: '',
   })
@@ -106,10 +106,7 @@ export default function Review() {
           if (getViewMode(expandedFile) === 'final' && editor) {
             const isMarkdown = expandedFile.endsWith('.md') || expandedFile.endsWith('.mdx')
             if (isMarkdown) {
-              let md = result.content
-              const fmMatch = md.match(/^---\n[\s\S]*?\n---\n?/)
-              if (fmMatch) md = md.substring(fmMatch[0].length)
-              editor.commands.setContent(markdownToHtml(md))
+              editor.commands.setContent(parseDocument(result.content).body, { contentType: 'markdown' })
             } else {
               editor.commands.setContent(`<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
             }
@@ -127,10 +124,7 @@ export default function Review() {
     if (mode === 'final' && content) {
       const isMarkdown = expandedFile.endsWith('.md') || expandedFile.endsWith('.mdx')
       if (isMarkdown) {
-        let md = content
-        const fmMatch = md.match(/^---\n[\s\S]*?\n---\n?/)
-        if (fmMatch) md = md.substring(fmMatch[0].length)
-        editor.commands.setContent(markdownToHtml(md))
+        editor.commands.setContent(parseDocument(content).body, { contentType: 'markdown' })
       } else {
         editor.commands.setContent(`<pre><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
       }

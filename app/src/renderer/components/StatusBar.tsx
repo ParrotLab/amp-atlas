@@ -21,6 +21,10 @@ interface StatusBarProps {
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
   prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
+  canUseGit?: boolean
+  canUseGitHub?: boolean
+  onNeedGit?: () => void
+  onNeedGitHub?: () => void
 }
 
 function humanize(branch: string): string {
@@ -51,7 +55,8 @@ function addRecentBranch(branch: string): void {
 export default function StatusBar({
   editedCount, savedCount, newCount, isDirty,
   branchName, isMain, branches,
-  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch, prStatus
+  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch, prStatus,
+  canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAllBranches, setShowAllBranches] = useState(false)
@@ -211,18 +216,33 @@ export default function StatusBar({
         )}
       </div>
       <div className="status-right">
-        <button className="status-btn secondary" disabled={!isDirty} onClick={onDiscard}>
+        <button
+          className={`status-btn secondary ${!canUseGit ? 'disabled' : ''}`}
+          disabled={canUseGit && !isDirty}
+          onClick={() => canUseGit ? onDiscard() : onNeedGit?.()}
+        >
           Discard
         </button>
-        <button className="status-btn primary" disabled={!isDirty} onClick={onSave}>
+        <button
+          className={`status-btn primary ${!canUseGit ? 'disabled' : ''}`}
+          disabled={canUseGit && !isDirty}
+          onClick={() => canUseGit ? onSave() : onNeedGit?.()}
+        >
           Save
         </button>
         {prStatus?.hasPR && prStatus.state === 'OPEN' ? (
-          <button className="status-btn outline" onClick={onPublish} disabled={!isDirty}>
+          <button
+            className={`status-btn outline ${!canUseGitHub ? 'disabled' : ''}`}
+            disabled={canUseGitHub && !isDirty}
+            onClick={() => canUseGitHub ? onPublish() : onNeedGitHub?.()}
+          >
             Update Review
           </button>
         ) : (
-          <button className="status-btn outline" onClick={onPublish}>
+          <button
+            className={`status-btn outline ${!canUseGitHub ? 'disabled' : ''}`}
+            onClick={() => canUseGitHub ? onPublish() : onNeedGitHub?.()}
+          >
             Publish
           </button>
         )}

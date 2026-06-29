@@ -1,111 +1,54 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
-import { Table } from '@tiptap/extension-table'
-import { TableRow } from '@tiptap/extension-table'
-import { TableCell } from '@tiptap/extension-table'
-import { TableHeader } from '@tiptap/extension-table'
-import { markdownToHtml } from '../utils/markdown'
-import { htmlToMarkdown } from '../utils/htmlToMarkdown'
+import { editorExtensions } from '../utils/markdownSerializer'
 import './FileViewer.css'
 
 interface FileViewerProps {
   filePath: string | undefined
   rootPath?: string
   readOnly?: boolean
-  onContentLoad?: (content: string) => void
+  body: string
+  onBodyChange: (markdown: string) => void
+  writeStatus: 'idle' | 'writing' | 'written'
   onToggleProperties?: () => void
   propsOpen?: boolean
 }
 
-export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad, onToggleProperties, propsOpen }: FileViewerProps) {
-  const [loading, setLoading] = useState(false)
+export default function FileViewer({
+  filePath, rootPath, readOnly, body, onBodyChange, writeStatus, onToggleProperties, propsOpen,
+}: FileViewerProps) {
   const [lastModified, setLastModified] = useState<string>('')
-  const [writeStatus, setWriteStatus] = useState<'idle' | 'writing' | 'written'>('idle')
-  const currentFilePath = useRef<string | undefined>()
-  const isLoadingContent = useRef(false)
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
-  const lastWrittenMarkdown = useRef<string>('') // Track what we last wrote to prevent loops
-  const onContentLoadRef = useRef(onContentLoad)
-  onContentLoadRef.current = onContentLoad
-
-  const writeToDisk = async (editorInstance: ReturnType<typeof useEditor>) => {
-    if (!currentFilePath.current || !editorInstance || readOnly) return
-    const path = currentFilePath.current
-    const isMarkdown = path.endsWith('.md') || path.endsWith('.mdx')
-
-    let content: string
-    if (isMarkdown) {
-      content = htmlToMarkdown(editorInstance.getHTML())
-    } else {
-      content = editorInstance.getHTML()
-    }
-
-    // Don't write if content hasn't changed from what's on disk
-    if (content === lastWrittenMarkdown.current) return
-
-    setWriteStatus('writing')
-    const result = await window.api.fs.writeFile(path, content)
-    if (result.ok) {
-      lastWrittenMarkdown.current = content
-      setWriteStatus('written')
-      setLastModified('Just now')
-      setTimeout(() => setWriteStatus('idle'), 1500)
-    } else {
-      setWriteStatus('idle')
-    }
-  }
 
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3, 4, 5, 6] },
-        link: { openOnClick: false },
-      }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Table.configure({ resizable: false }),
-      TableRow,
-      TableCell,
-      TableHeader,
-    ],
+    extensions: editorExtensions(),
     editable: !readOnly,
     content: '',
     onUpdate: ({ editor: ed }) => {
-      if (isLoadingContent.current || readOnly) return
-
-      if (debounceTimer.current) clearTimeout(debounceTimer.current)
-      debounceTimer.current = setTimeout(() => {
-        writeToDisk(ed)
-      }, 800)
+      if (readOnly) return
+      onBodyChange(ed.getMarkdown())
     },
   })
 
-  // Update editable state when readOnly changes
+  useEffect(() => { editor?.setEditable(!readOnly) }, [readOnly, editor])
+
+  // Sync the editor when the loaded body changes (file switch, discard, branch switch).
   useEffect(() => {
-    if (editor) editor.setEditable(!readOnly)
-  }, [readOnly, editor])
+    if (!editor) return
+    const current = editor.getMarkdown()
+    if (current.trim() === body.trim()) return
+    editor.commands.setContent(body, { contentType: 'markdown' })
+  }, [body, editor])
 
-  // Load file content when filePath changes
+  // Display-only: show "Last edited" from file metadata (does not read content).
   useEffect(() => {
-    if (!filePath || !editor) return
-    currentFilePath.current = filePath
-    setLoading(true)
-    setWriteStatus('idle')
-
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
-
+    if (!filePath) { setLastModified(''); return }
     window.api.fs.stat(filePath).then(statResult => {
       if (statResult.ok && statResult.stats) {
         const date = new Date(statResult.stats.modified)
         const now = new Date()
-        const diffMs = now.getTime() - date.getTime()
-        const diffMins = Math.floor(diffMs / 60000)
-        const diffHours = Math.floor(diffMs / 3600000)
-        const diffDays = Math.floor(diffMs / 86400000)
-
+        const diffMins = Math.floor((now.getTime() - date.getTime()) / 60000)
+        const diffHours = Math.floor(diffMins / 60)
+        const diffDays = Math.floor(diffHours / 24)
         if (diffMins < 1) setLastModified('Just now')
         else if (diffMins < 60) setLastModified(`${diffMins} min ago`)
         else if (diffHours < 24) setLastModified(`${diffHours}h ago`)
@@ -113,46 +56,7 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
         else setLastModified(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }))
       }
     })
-
-    window.api.fs.readFile(filePath).then(result => {
-      if (result.ok && result.content !== undefined) {
-        onContentLoadRef.current?.(result.content)
-        const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.mdx')
-
-        // Store what's currently on disk so we don't re-write identical content
-        if (isMarkdown) {
-          lastWrittenMarkdown.current = result.content
-        }
-
-        isLoadingContent.current = true
-        if (isMarkdown) {
-          let markdownContent = result.content
-          const fmMatch = markdownContent.match(/^---\n[\s\S]*?\n---\n?/)
-          if (fmMatch) {
-            markdownContent = markdownContent.substring(fmMatch[0].length)
-          }
-          editor.commands.setContent(markdownToHtml(markdownContent))
-        } else {
-          editor.commands.setContent(
-            `<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
-          )
-        }
-        requestAnimationFrame(() => {
-          isLoadingContent.current = false
-        })
-      } else {
-        editor.commands.setContent(`<p>Error reading file: ${result.error}</p>`)
-        onContentLoadRef.current?.('')
-      }
-      setLoading(false)
-    })
-  }, [filePath, editor])
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current)
-    }
-  }, [])
+  }, [filePath, writeStatus])
 
   if (!filePath) {
     return (
@@ -191,11 +95,7 @@ export default function FileViewer({ filePath, rootPath, readOnly, onContentLoad
           {writeStatus === 'writing' && <span className="file-viewer-saving">· Saving...</span>}
           {writeStatus === 'written' && <span className="file-viewer-saved">· Saved</span>}
         </div>
-        {loading ? (
-          <div style={{ color: '#B5B1AC' }}>Loading...</div>
-        ) : (
-          <EditorContent editor={editor} className="file-viewer-body" />
-        )}
+        <EditorContent editor={editor} className="file-viewer-body" />
       </div>
     </div>
   )

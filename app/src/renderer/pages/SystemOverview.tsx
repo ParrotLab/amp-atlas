@@ -9,6 +9,7 @@ import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStor
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
 import { useFileDocument } from '../hooks/useFileDocument'
+import { useToast } from '../components/Toast'
 
 function humanize(branch: string): string {
   return branch
@@ -79,6 +80,15 @@ export default function SystemOverview() {
   const rootPath = system?.folderPath || ''
 
   const { data, body, status: writeStatus, updateBody, updateData } = useFileDocument(selectedFile, isMainBranch)
+  const { showToast } = useToast()
+  const [caps, setCaps] = useState({ isGitRepo: true, ghAvailable: true, ghAuthed: true })
+
+  useEffect(() => {
+    if (!rootPath) return
+    window.api.system.capabilities(rootPath).then(r => {
+      if (r.ok) setCaps({ isGitRepo: r.isGitRepo, ghAvailable: r.ghAvailable, ghAuthed: r.ghAuthed })
+    })
+  }, [rootPath])
 
   const fetchGitStatus = useCallback(async () => {
     if (!rootPath) return
@@ -349,6 +359,10 @@ export default function SystemOverview() {
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
           prStatus={prStatus}
+          canUseGit={caps.isGitRepo}
+          canUseGitHub={caps.isGitRepo && caps.ghAuthed}
+          onNeedGit={() => showToast("This folder isn't connected to version control.")}
+          onNeedGitHub={() => showToast('Connect to GitHub in Settings to publish and review.')}
         />
       </div>
       <NewDraftModal

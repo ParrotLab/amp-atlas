@@ -89,6 +89,11 @@ interface ElectronAPI {
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>
   }
+  system: {
+    capabilities: (repoPath: string) => Promise<{
+      ok: boolean; isGitRepo: boolean; ghAvailable: boolean; ghAuthed: boolean
+    }>
+  }
 }
 
 interface Window {

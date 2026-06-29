@@ -1,77 +1,48 @@
-import { useState, useEffect } from 'react'
 import './PropertiesPanel.css'
+import { detectFileType, getSchema, FieldSchema } from '../utils/frontmatterSchemas'
 
 interface PropertiesPanelProps {
   isOpen: boolean
   onClose: () => void
   filePath: string | undefined
-  rawContent: string
+  data: Record<string, unknown>
+  onChange: (next: Record<string, unknown>) => void
+  readOnly?: boolean
 }
 
-interface Properties {
-  status?: string
-  description?: string
-  owner?: string
-  tags?: string[]
-  priority?: string
-}
+export default function PropertiesPanel({ isOpen, onClose, filePath, data, onChange, readOnly }: PropertiesPanelProps) {
+  const type = filePath ? detectFileType(filePath, data) : null
+  const schema = getSchema(type)
 
-function parseFrontmatter(content: string): Properties {
-  const match = content.match(/^---\n([\s\S]*?)\n---/)
-  if (!match) return {}
-
-  const yaml = match[1]
-  const props: Properties = {}
-
-  // Simple YAML parser for our specific fields
-  const lines = yaml.split('\n')
-  for (const line of lines) {
-    const colonIdx = line.indexOf(':')
-    if (colonIdx === -1) continue
-    const key = line.substring(0, colonIdx).trim().toLowerCase()
-    const value = line.substring(colonIdx + 1).trim()
-
-    switch (key) {
-      case 'status':
-        props.status = value
-        break
-      case 'description':
-        props.description = value
-        break
-      case 'owner':
-        props.owner = value
-        break
-      case 'priority':
-        props.priority = value
-        break
-      case 'tags':
-        // Handle both "tags: foo, bar" and "tags: [foo, bar]"
-        props.tags = value
-          .replace(/^\[/, '').replace(/\]$/, '')
-          .split(',')
-          .map(t => t.trim().replace(/^["']|["']$/g, ''))
-          .filter(Boolean)
-        break
-    }
+  const setField = (key: string, value: unknown) => {
+    onChange({ ...data, [key]: value })
   }
 
-  return props
-}
-
-export default function PropertiesPanel({ isOpen, onClose, filePath, rawContent }: PropertiesPanelProps) {
-  const [properties, setProperties] = useState<Properties>({})
-
-  useEffect(() => {
-    if (rawContent) {
-      setProperties(parseFrontmatter(rawContent))
-    } else {
-      setProperties({})
+  const renderField = (f: FieldSchema) => {
+    const value = data[f.key]
+    if (f.widget === 'select') {
+      return (
+        <select className="prop-select" value={String(value ?? '')} disabled={readOnly}
+          onChange={e => setField(f.key, e.target.value)}>
+          <option value="">None</option>
+          {f.options?.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      )
     }
-  }, [rawContent, filePath])
+    if (f.widget === 'tags') {
+      const tags = Array.isArray(value) ? (value as string[]) : []
+      return (
+        <input className="prop-input" type="text" value={tags.join(', ')} disabled={readOnly}
+          onChange={e => setField(f.key, e.target.value.split(',').map(t => t.trim()).filter(Boolean))} />
+      )
+    }
+    return (
+      <input className="prop-input" type="text" value={String(value ?? '')} disabled={readOnly}
+        onChange={e => setField(f.key, e.target.value)} />
+    )
+  }
 
-  const hasProperties = Object.values(properties).some(v => v !== undefined && v !== '' && (!Array.isArray(v) || v.length > 0))
   const fileName = filePath?.split('/').pop() || ''
-  const dirPath = filePath?.split('/').slice(-3, -1).join('/') || ''
 
   return (
     <div className={`properties-panel ${isOpen ? 'open' : ''}`}>
@@ -80,64 +51,25 @@ export default function PropertiesPanel({ isOpen, onClose, filePath, rawContent 
         <button className="properties-close" onClick={onClose}>&times;</button>
       </div>
       <div className="properties-body">
-        {hasProperties ? (
-          <>
-            {properties.status !== undefined && (
-              <div className="prop-group">
-                <div className="prop-label">Status</div>
-                <select className="prop-select" value={properties.status} readOnly>
-                  <option>{properties.status || 'None'}</option>
-                </select>
-              </div>
-            )}
-            {properties.description !== undefined && (
-              <div className="prop-group">
-                <div className="prop-label">Description</div>
-                <input className="prop-input" type="text" value={properties.description} readOnly />
-              </div>
-            )}
-            {properties.owner !== undefined && (
-              <div className="prop-group">
-                <div className="prop-label">Owner</div>
-                <input className="prop-input" type="text" value={properties.owner} readOnly />
-              </div>
-            )}
-            {properties.tags && properties.tags.length > 0 && (
-              <div className="prop-group">
-                <div className="prop-label">Tags</div>
-                <div>
-                  {properties.tags.map(tag => (
-                    <span key={tag} className="prop-tag">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {properties.priority !== undefined && (
-              <div className="prop-group">
-                <div className="prop-label">Priority</div>
-                <select className="prop-select" value={properties.priority} readOnly>
-                  <option>{properties.priority || 'None'}</option>
-                </select>
-              </div>
-            )}
-          </>
+        {schema ? (
+          schema.map(f => (
+            <div className="prop-group" key={f.key}>
+              <div className="prop-label">{f.label}</div>
+              {renderField(f)}
+            </div>
+          ))
         ) : (
           <div className="prop-empty">
-            No properties found in this file.
+            No properties for this file.
             <div style={{ marginTop: '8px', fontSize: '11px' }}>
-              Add YAML frontmatter to set properties.
+              Properties appear for known file types (e.g. playbooks).
             </div>
           </div>
         )}
-
         <div className="prop-divider" />
-
         <div className="prop-group">
           <div className="prop-label">File Info</div>
-          <div className="prop-meta">
-            {fileName}<br />
-            Path: {dirPath}/{fileName}
-          </div>
+          <div className="prop-meta">{fileName}</div>
         </div>
       </div>
     </div>

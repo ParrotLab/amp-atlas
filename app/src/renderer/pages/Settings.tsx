@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getSystems, updateSystemFolder, addSystem, removeSystem, updateSystem, SystemConfig } from '../utils/systemStore'
 import { iconMap, iconList } from '../components/SystemIcons'
+import { useToast } from '../components/Toast'
 import './Settings.css'
 
 const gradientOptions = [
@@ -24,6 +25,7 @@ export default function Settings() {
   const [systems, setSystems] = useState<SystemConfig[]>([])
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   useEffect(() => {
     setSystems(getSystems())
@@ -34,7 +36,18 @@ export default function Settings() {
     if (result.ok && result.path) {
       const updated = updateSystemFolder(systemId, result.path)
       setSystems(updated)
+
+      const caps = await window.api.system.capabilities(result.path)
+      if (caps.ok && !caps.isGitRepo) {
+        showToast("Connected for local editing. This folder isn't a git repository, so publishing and review are unavailable.")
+      } else if (caps.ok && !caps.ghAuthed) {
+        showToast('Connected. Use "Connect to GitHub" below to enable publishing and review.')
+      }
     }
+  }
+
+  const handleConnectGitHub = () => {
+    showToast('GitHub sign-in is coming soon. For now, install GitHub CLI and run: gh auth login')
   }
 
   const handleChangeColor = (systemId: string, gradient: string) => {
@@ -166,6 +179,17 @@ export default function Settings() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title" style={{ marginBottom: '14px' }}>GitHub</div>
+          <div className="settings-info-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div className="settings-info-label">Publishing &amp; review</div>
+              <div className="settings-info-value">Connect GitHub to publish drafts and review changes.</div>
+            </div>
+            <button className="settings-btn primary" onClick={handleConnectGitHub}>Connect to GitHub</button>
           </div>
         </div>
 

@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
+import { useFileDocument } from '../hooks/useFileDocument'
+import { useToast } from '../components/Toast'
 
 function humanize(branch: string): string {
   return branch
@@ -71,12 +73,22 @@ export default function SystemOverview() {
   const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
-  const [rawContent, setRawContent] = useState('')
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
   const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
+
+  const { data, body, status: writeStatus, updateBody, updateData } = useFileDocument(selectedFile, isMainBranch)
+  const { showToast } = useToast()
+  const [caps, setCaps] = useState({ isGitRepo: true, ghAvailable: true, ghAuthed: true })
+
+  useEffect(() => {
+    if (!rootPath) return
+    window.api.system.capabilities(rootPath).then(r => {
+      if (r.ok) setCaps({ isGitRepo: r.isGitRepo, ghAvailable: r.ghAvailable, ghAuthed: r.ghAuthed })
+    })
+  }, [rootPath])
 
   const fetchGitStatus = useCallback(async () => {
     if (!rootPath) return
@@ -130,7 +142,7 @@ export default function SystemOverview() {
       const result = await window.api.git.checkMerged(rootPath)
       if (result.ok && result.merged && result.branch) {
         // Branch was merged! Clean up.
-        alert(`"${humanize(result.branch)}" has been merged into the Live Version!`)
+        showToast(`"${humanize(result.branch)}" has been merged into the Live Version!`)
         // Switch to main and delete the merged branch
         await window.api.git.switchBranch(rootPath, 'main')
         await window.api.git.deleteBranch(rootPath, result.branch)
@@ -191,7 +203,7 @@ export default function SystemOverview() {
     // Push to GitHub
     const pushResult = await window.api.git.publish(rootPath)
     if (!pushResult.ok) {
-      alert(`Couldn't publish: ${pushResult.error}`)
+      showToast(`Couldn't publish: ${pushResult.error}`)
       return
     }
 
@@ -229,7 +241,7 @@ export default function SystemOverview() {
       setTreeKey(k => k + 1)
     } else {
       console.error('Branch switch failed:', result.error)
-      alert(`Couldn't switch: ${result.error}`)
+      showToast(`Couldn't switch: ${result.error}`)
       await fetchGitStatus()
     }
   }
@@ -248,7 +260,7 @@ export default function SystemOverview() {
       setTreeKey(k => k + 1)
       await fetchGitStatus()
     } else {
-      alert(`Couldn't archive: ${result.error}`)
+      showToast(`Couldn't archive: ${result.error}`)
     }
   }
 
@@ -266,7 +278,7 @@ export default function SystemOverview() {
       setTreeKey(k => k + 1)
       await fetchGitStatus()
     } else {
-      alert(`Couldn't create draft: ${result.error}`)
+      showToast(`Couldn't create draft: ${result.error}`)
     }
   }
 
@@ -317,11 +329,20 @@ export default function SystemOverview() {
             filePath={selectedFile}
             rootPath={rootPath}
             readOnly={isMainBranch}
-            onContentLoad={setRawContent}
+            body={body}
+            onBodyChange={updateBody}
+            writeStatus={writeStatus}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}
           />
-          <PropertiesPanel isOpen={propsOpen} onClose={() => setPropsOpen(false)} filePath={selectedFile} rawContent={rawContent} />
+          <PropertiesPanel
+            isOpen={propsOpen}
+            onClose={() => setPropsOpen(false)}
+            filePath={selectedFile}
+            data={data}
+            onChange={updateData}
+            readOnly={isMainBranch}
+          />
         </div>
         <StatusBar
           editedCount={gitModified.size}
@@ -338,6 +359,10 @@ export default function SystemOverview() {
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
           prStatus={prStatus}
+          canUseGit={caps.isGitRepo}
+          canUseGitHub={caps.isGitRepo && caps.ghAuthed}
+          onNeedGit={() => showToast("This folder isn't connected to version control.")}
+          onNeedGitHub={() => showToast('Connect to GitHub in Settings to publish and review.')}
         />
       </div>
       <NewDraftModal

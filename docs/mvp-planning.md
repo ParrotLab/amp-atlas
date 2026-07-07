@@ -170,16 +170,17 @@
 
 **My take:** Keep the type set small for MVP (playbook + maybe one more), lock the status vocabulary, and treat wikilinks as the first fast-follow after MVP unless a user's core loop depends on cross-linking.
 
-**Answers (2026-07-06):**
+**Answers (2026-07-06; sub-system update from PR #2 review):**
 - **File types (recognized):**
-  - **Playbook** — a *skill folder* under `.claude/skills/<name>/` with a `SKILL.md` (already built: `type:`/`SKILL.md` detection + Draft/Active/Archived status).
+  - **Playbook** — a *skill folder* under `.claude/skills/<name>/` with a `SKILL.md` (already built: `type:`/`SKILL.md` detection + Draft/Active/Archived status). **Add an *optional* `sub-system` frontmatter field** (which sub-system, if any, the playbook belongs to).
   - **Instructions** — `README.md` and `CLAUDE.md` markdown files. Recognized type, but **not user-creatable in v1** (§2); editable as normal markdown.
   - **Plain markdown** — any other `.md` inside the top-level folders; no special schema.
 - **"New" actions scaffold folders + starter templates, shipped in the app** (the opinionated core of §6):
   - **New Playbook** → `.claude/skills/<name>/SKILL.md` (from template).
   - **New Project** → `work/<project-name>/` containing `pitch.md` + `braindump.md` (from templates).
-  - **New Domain** → a new knowledge-domain folder under `reference/` (with its starter doc[s]).
+  - **New Sub-system** → a new sub-system folder under `reference/` (with its starter doc[s]). *(Renamed from "Domain" per PR #2 review.)*
   - Decision: **do the structured templates** (not just a bare "new folder" button) — Kristi will provide the actual template file contents at build time. *(Placeholder: template bodies TBD.)*
+- **Sub-systems (from PR #2 review):** a **sub-system** is an organizing grouping within a system. Playbooks carry an **optional `sub-system` field**; **possibly organize skills by sub-system** (grouping playbooks under the sub-system they belong to, if any). Exact folder placement / grouping mechanics = a detail to lock at build time.
 - **Status vocabulary:** **playbooks only** → Draft / Active / Archived. **No status field on other types** for now.
 - **Wikilinks / file-linking:** **NOT MVP** — candidate for **v2**.
 - **Enforced conventions:** **loose for v1.** In-app *creation/editing* is guided/opinionated (templates + fixed top-level folders), but users can still edit files *outside* the app and those changes flow through the branch/commit normally. Don't restrict that yet.
@@ -292,7 +293,7 @@ Already scoped-out during the content-integrity work; slot these into the roadma
 
 **In scope for MVP:**
 - **Onboarding & auth:** first-run **OAuth device-flow** connect (required); **manually add a system** (pick a cloned folder → verify GitHub remote + access → reject if none); **per-user vaults**.
-- **Editor & content:** markdown-native editing *(shipped in PR #1)*; opinionated **top-level folders** (`readmes/ reference/ work/ .claude/`); **Obsidian-grade file/folder create + move** (2nd-level and deeper only); **New Playbook / New Project / New Domain** scaffolds with shipped templates; schema-driven **playbook** frontmatter *(shipped)*; hide files outside the structure.
+- **Editor & content:** markdown-native editing *(shipped in PR #1)*; opinionated **top-level folders** (`readmes/ reference/ work/ .claude/`); **Obsidian-grade file/folder create + move** (2nd-level and deeper only); **New Playbook / New Project / New Sub-system** scaffolds with shipped templates; schema-driven **playbook** frontmatter *(shipped; add optional `sub-system` field)*; hide files outside the structure.
 - **Draft/version lifecycle:** branch **from Live Version only**, **fresh-pull on create**; Save → Submit → Update → Publish; **legible persistent status**; **Save-or-Discard prompt on switch** (replaces silent stash); **merged drafts auto-retire**; **backup-before-archive**.
 - **Review:** submit + tag reviewer (**collaborators from the GitHub API**); review others (**approve / request-changes / PR-level comment**, **can't edit their branch**); **≥1 non-author approval** required to publish.
 - **Sync & external edits:** **file-watch → IDE-like live reflection**; external-change vs. unsaved-edit prompt.
@@ -311,7 +312,7 @@ Each becomes its own **spec → plan → build** cycle (same flow as the content
 2. **OAuth device-flow auth + first-run onboarding** — gates the whole GitHub half; also unlocks API-driven reviewers/repo lists.
 3. **Draft lifecycle + work-loss safety** — the trust core (fresh-from-main branching, Save-or-Discard on switch, backup-before-archive, legible status, merged auto-retire).
 4. **File-watch / IDE-like external-edit sync.**
-5. **Content creation** — folder/file create + move, New Playbook/Project/Domain templates.
+5. **Content creation** — folder/file create + move, New Playbook/Project/Sub-system templates.
 6. **Review polish** — API-driven reviewers, ≥1-non-author-approval gate, PR comments.
 7. **Collision prevention** — soft-awareness banner, update-before-publish, conflict escalation.
 8. **Safety/support surface** — Diagnostics panel, Retry/Re-sync, Report-a-problem.

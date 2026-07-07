@@ -4,6 +4,7 @@ import { readdir, readFile, writeFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { simpleGit } from 'simple-git'
 import { runGh, ghAvailable, ghAuthed } from './gh'
+import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches } from './draftOps'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -264,49 +265,39 @@ ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, b
 
 ipcMain.handle('git:createDraft', async (_event, repoPath: string, draftName: string) => {
   try {
-    const git = simpleGit(repoPath)
-    // Slugify: "My Cool Draft" -> "draft/my-cool-draft"
-    const slug = 'draft/' + draftName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    await git.checkoutLocalBranch(slug)
-    return { ok: true, branch: slug }
+    const { branch, pulled } = await createDraftFromMain(repoPath, draftName)
+    return { ok: true, branch, pulled }
   } catch (error) {
     return { ok: false, error: String(error) }
   }
 })
 
+// Plain checkout — the renderer resolves any unsaved edits (Save-or-Discard) first; no silent stash.
 ipcMain.handle('git:switchBranch', async (_event, repoPath: string, branch: string) => {
   try {
-    const git = simpleGit(repoPath)
-    const statusBefore = await git.status()
-    const fromBranch = statusBefore.current || 'unknown'
-
-    // Stash any uncommitted changes tagged with the branch name
-    if (!statusBefore.isClean()) {
-      await git.add('-A')
-      try {
-        await git.stash(['push', '--include-untracked', '-m', `amp-auto:${fromBranch}`])
-      } catch {
-        // If stash fails, try to continue anyway
-      }
-    }
-
-    await git.checkout(branch)
-
-    // Look for a stash belonging to the target branch and restore it
-    try {
-      const stashList = await git.stashList()
-      const matchIdx = stashList.all.findIndex(s => s.message.includes(`amp-auto:${branch}`))
-      if (matchIdx >= 0) {
-        await git.stash(['pop', `stash@{${matchIdx}}`])
-      }
-    } catch {
-      // Stash pop might conflict — that's okay, changes are still in the stash
-    }
-
-    const statusAfter = await git.status()
-    return { ok: true, branch: statusAfter.current }
+    await switchDraft(repoPath, branch)
+    return { ok: true, branch }
   } catch (error) {
     return { ok: false, error: String(error) }
+  }
+})
+
+// Move uncommitted edits made on the Live Version into a new draft (Flow 2).
+ipcMain.handle('git:createDraftFromChanges', async (_event, repoPath: string, draftName: string) => {
+  try {
+    const { branch } = await createDraftFromChanges(repoPath, draftName)
+    return { ok: true, branch }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+// Branches the app could adopt as drafts (local + origin/*), excluding main/master.
+ipcMain.handle('git:listAdoptableBranches', async (_event, repoPath: string) => {
+  try {
+    return { ok: true, branches: await listAdoptableBranches(repoPath) }
+  } catch (error) {
+    return { ok: false, error: String(error), branches: [] }
   }
 })
 

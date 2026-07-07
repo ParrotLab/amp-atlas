@@ -10,6 +10,8 @@ import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
 import { useFileDocument } from '../hooks/useFileDocument'
 import { useToast } from '../components/Toast'
+import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
+import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
   return branch
@@ -70,7 +72,6 @@ export default function SystemOverview() {
   const [isMainBranch, setIsMainBranch] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
   const [ahead, setAhead] = useState(0)
-  const [allBranches, setAllBranches] = useState<{ name: string; current: boolean }[]>([])
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [showNewDraft, setShowNewDraft] = useState(false)
@@ -90,6 +91,20 @@ export default function SystemOverview() {
     })
   }, [rootPath])
 
+  const [activeDrafts, setActiveDrafts] = useState<DraftEntry[]>([])
+  const [archivedDrafts, setArchivedDrafts] = useState<DraftEntry[]>([])
+  const [lastSaved, setLastSaved] = useState<string>('')
+  // pending action awaiting Save/Discard resolution when the tree is dirty
+  const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
+
+  const refreshDrafts = useCallback(() => {
+    if (!systemId) return
+    setActiveDrafts(listActive(systemId))
+    setArchivedDrafts(listArchived(systemId))
+  }, [systemId])
+
+  useEffect(() => { refreshDrafts() }, [refreshDrafts, branch])
+
   const fetchGitStatus = useCallback(async () => {
     if (!rootPath) return
     const result = await window.api.git.status(rootPath)
@@ -101,16 +116,25 @@ export default function SystemOverview() {
       setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
       setIsDirty(!result.status.isClean)
       setAhead(result.status.ahead)
+
+      // Register the current draft so it appears in the app's draft list.
+      const cur = result.status.current
+      if (systemId && cur && cur !== 'main' && cur !== 'master') {
+        registerDraft(systemId, cur, humanize(cur))
+        touchDraft(systemId, cur)
+        setActiveDrafts(listActive(systemId))
+        setArchivedDrafts(listArchived(systemId))
+      }
     }
-    const branchResult = await window.api.git.branches(rootPath)
-    if (branchResult.ok && branchResult.branches) {
-      setAllBranches(
-        branchResult.branches.all
-          .filter(b => !b.startsWith('remotes/'))
-          .map(b => ({ name: b, current: b === branchResult.branches!.current }))
-      )
+
+    // Last-saved (latest commit) time for the legible status line.
+    const logResult = await window.api.git.log(rootPath, 1)
+    if (logResult.ok && logResult.log && logResult.log[0]) {
+      const d = new Date(logResult.log[0].date)
+      const mins = Math.floor((Date.now() - d.getTime()) / 60000)
+      setLastSaved(mins < 1 ? 'just now' : mins < 60 ? `${mins} min ago` : `${Math.floor(mins / 60)}h ago`)
     }
-  }, [rootPath])
+  }, [rootPath, systemId])
 
   useEffect(() => {
     fetchGitStatus()
@@ -141,15 +165,16 @@ export default function SystemOverview() {
     const checkMerged = async () => {
       const result = await window.api.git.checkMerged(rootPath)
       if (result.ok && result.merged && result.branch) {
-        // Branch was merged! Clean up.
-        showToast(`"${humanize(result.branch)}" has been merged into the Live Version!`)
-        // Switch to main and delete the merged branch
+        // Published & merged — retire the draft (this is the ONLY place a branch is deleted).
+        showToast(`"${humanize(result.branch)}" has been published and archived. You're now on the Live Version.`)
         await window.api.git.switchBranch(rootPath, 'main')
         await window.api.git.deleteBranch(rootPath, result.branch)
+        if (systemId) removeDraft(systemId, result.branch)
         setTabs([])
         setSelectedFile(undefined)
         setTreeKey(k => k + 1)
         await fetchGitStatus()
+        refreshDrafts()
       }
     }
     // Check every 30 seconds
@@ -222,65 +247,89 @@ export default function SystemOverview() {
     await fetchGitStatus()
   }
 
-  const handleSwitchBranch = async (branchName: string) => {
-    if (!rootPath) return
-    // Clear everything immediately
-    setGitModified(new Set())
-    setGitNew(new Set())
-    setGitDeleted(new Set())
-    setTabs([])
-    setSelectedFile(undefined)
-    setIsDirty(false)
-
-    const result = await window.api.git.switchBranch(rootPath, branchName)
-    if (result.ok) {
-      console.log(`Switched to branch: ${(result as { branch?: string }).branch}`)
-      // Wait for filesystem to settle, then refresh everything
-      await new Promise(r => setTimeout(r, 500))
-      await fetchGitStatus()
-      setTreeKey(k => k + 1)
+  // Run `action`, but if there are unsaved edits in a draft, prompt Save/Discard first.
+  const guarded = (action: () => Promise<void>) => {
+    if (isDirty && !isMainBranch) {
+      setPending(() => action)
     } else {
-      console.error('Branch switch failed:', result.error)
-      showToast(`Couldn't switch: ${result.error}`)
-      await fetchGitStatus()
+      void action()
     }
   }
 
-  const handleArchiveBranch = async (branchName: string) => {
-    if (!rootPath) return
-    const confirmed = window.confirm(`Archive "${humanize(branchName)}"?\n\nThis will delete the local branch. If it hasn't been published, those changes will be lost.\n\nThis cannot be undone.`)
-    if (!confirmed) return
-
-    const result = await window.api.git.deleteBranch(rootPath, branchName)
-    if (result.ok) {
-      // If we were on that branch, we've been switched to main
-      setTabs([])
-      setSelectedFile(undefined)
-      setIsDirty(false)
-      setTreeKey(k => k + 1)
-      await fetchGitStatus()
+  const resolvePending = async (mode: 'save' | 'discard' | 'cancel') => {
+    const action = pending
+    setPending(null)
+    if (!action || mode === 'cancel') return
+    if (mode === 'save') {
+      await window.api.git.save(rootPath, `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)
     } else {
-      showToast(`Couldn't archive: ${result.error}`)
+      await window.api.git.discard(rootPath)
     }
+    await action()
+  }
+
+  const doSwitch = async (branchName: string) => {
+    if (!rootPath) return
+    setGitModified(new Set()); setGitNew(new Set()); setGitDeleted(new Set())
+    setTabs([]); setSelectedFile(undefined); setIsDirty(false)
+    const result = await window.api.git.switchBranch(rootPath, branchName)
+    if (result.ok) {
+      if (systemId && branchName !== 'main' && branchName !== 'master') {
+        registerDraft(systemId, branchName, humanize(branchName)); touchDraft(systemId, branchName)
+      }
+      await new Promise(r => setTimeout(r, 500))
+      await fetchGitStatus(); setTreeKey(k => k + 1); refreshDrafts()
+    } else {
+      showToast(`Couldn't switch: ${result.error}`); await fetchGitStatus()
+    }
+  }
+  const handleSwitchBranch = (branchName: string) => guarded(() => doSwitch(branchName))
+
+  // Archive = mark archived in the registry (keep the branch); switch off it first if current.
+  const handleArchiveBranch = (branchName: string) => guarded(async () => {
+    if (!systemId) return
+    if (branch === branchName) await doSwitch('main')
+    setDraftState(systemId, branchName, 'archived')
+    refreshDrafts()
+    showToast(`Archived "${humanize(branchName)}". You can restore it anytime.`)
+  })
+
+  const handleUnarchive = (branchName: string) => {
+    if (!systemId) return
+    setDraftState(systemId, branchName, 'active'); refreshDrafts()
   }
 
   const handleNewDraft = () => {
     setShowNewDraft(true)
   }
 
-  const handleCreateDraft = async (name: string) => {
+  const doCreateDraft = async (name: string) => {
     if (!rootPath) return
     const result = await window.api.git.createDraft(rootPath, name)
-    if (result.ok) {
-      setTabs([])
-      setSelectedFile(undefined)
-      setIsDirty(false)
-      setTreeKey(k => k + 1)
-      await fetchGitStatus()
+    if (result.ok && result.branch) {
+      if (systemId) registerDraft(systemId, result.branch, humanize(result.branch))
+      setTabs([]); setSelectedFile(undefined); setIsDirty(false); setTreeKey(k => k + 1)
+      await fetchGitStatus(); refreshDrafts()
+      if (result.pulled === false) showToast("Draft created from your local Live Version (offline — couldn't pull latest).")
     } else {
       showToast(`Couldn't create draft: ${result.error}`)
     }
   }
+  const handleCreateDraft = async (name: string) => { guarded(() => doCreateDraft(name)) }
+
+  const handleMoveChangesToDraft = async (name: string) => {
+    if (!rootPath) return
+    const result = await window.api.git.createDraftFromChanges(rootPath, name)
+    if (result.ok && result.branch) {
+      if (systemId) registerDraft(systemId, result.branch, humanize(result.branch))
+      setTabs([]); setSelectedFile(undefined); setTreeKey(k => k + 1)
+      await fetchGitStatus(); refreshDrafts()
+    } else {
+      showToast(`Couldn't move changes into a draft: ${result.error}`)
+    }
+  }
+
+  const handleAddExistingWork = (branchName: string) => guarded(() => doSwitch(branchName))
 
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
@@ -351,13 +400,19 @@ export default function SystemOverview() {
           isDirty={isDirty}
           branchName={branch}
           isMain={isMainBranch}
-          branches={allBranches}
+          activeDrafts={activeDrafts}
+          archivedDrafts={archivedDrafts}
+          lastSaved={lastSaved}
           onSave={handleSave}
           onDiscard={handleDiscard}
           onPublish={handlePublish}
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
+          onUnarchive={handleUnarchive}
+          onAddExistingWork={handleAddExistingWork}
+          onMoveChangesToDraft={handleMoveChangesToDraft}
+          repoPath={rootPath}
           prStatus={prStatus}
           canUseGit={caps.isGitRepo}
           canUseGitHub={caps.isGitRepo && caps.ghAuthed}
@@ -365,6 +420,12 @@ export default function SystemOverview() {
           onNeedGitHub={() => showToast('Connect to GitHub in Settings to publish and review.')}
         />
       </div>
+      <ConfirmSwitchModal
+        isOpen={!!pending}
+        onSave={() => resolvePending('save')}
+        onDiscard={() => resolvePending('discard')}
+        onCancel={() => resolvePending('cancel')}
+      />
       <NewDraftModal
         isOpen={showNewDraft}
         onClose={() => setShowNewDraft(false)}

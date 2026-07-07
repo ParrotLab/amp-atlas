@@ -23,8 +23,9 @@ The goal: replace **Obsidian + GitHub Desktop** for the internal leadership team
 - Markdown-native editing *(shipped — PR #1)*.
 - Opinionated top-level folders: `readmes/`, `reference/`, `work/`, `.claude/` (static; users create folders 2nd-level and deeper only).
 - **Obsidian-grade file/folder create + move.**
-- **Scaffolds with shipped templates:** New **Playbook** (`.claude/skills/<name>/SKILL.md`), New **Project** (`work/<name>/` with `pitch.md` + `braindump.md`), New **Domain** (`reference/<name>/`).
-- Schema-driven **playbook** frontmatter with Draft/Active/Archived status *(shipped — PR #1)*.
+- **Scaffolds with shipped templates:** New **Playbook** (`.claude/skills/<name>/SKILL.md`), New **Project** (`work/<name>/` with `pitch.md` + `braindump.md`), New **Sub-system** (`reference/<name>/`).
+- Schema-driven **playbook** frontmatter with Draft/Active/Archived status *(shipped — PR #1)*, plus an **optional `sub-system` field**.
+- **Sub-systems:** an organizing grouping within a system; playbooks can belong to one via the optional `sub-system` field. *Possible:* organize skills by sub-system (grouping mechanics TBD at build time).
 - Files outside the structure are not loaded into the viewer.
 
 ### Draft / version lifecycle

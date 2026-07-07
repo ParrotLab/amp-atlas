@@ -31,3 +31,17 @@ export async function listAdoptableBranches(repoPath: string): Promise<Adoptable
   }
   return result
 }
+
+/** Create a new draft that carries the current uncommitted working-tree changes (Flow 2). */
+export async function createDraftFromChanges(repoPath: string, draftName: string): Promise<{ branch: string }> {
+  const git = simpleGit(repoPath)
+  const branch = slugifyDraft(draftName)
+  // checkoutLocalBranch keeps the dirty working tree; changes follow onto the new branch.
+  await git.checkoutLocalBranch(branch)
+  return { branch }
+}
+
+/** Plain checkout of an existing branch (no stashing — the renderer resolves dirty state first). */
+export async function switchDraft(repoPath: string, branch: string): Promise<void> {
+  await simpleGit(repoPath).checkout(branch)
+}

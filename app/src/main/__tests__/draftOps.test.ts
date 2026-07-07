@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { simpleGit } from 'simple-git'
-import { slugifyDraft, listAdoptableBranches, createDraftFromChanges, switchDraft } from '../draftOps'
+import { slugifyDraft, listAdoptableBranches, createDraftFromChanges, switchDraft, createDraftFromMain } from '../draftOps'
 
 async function tempRepo(): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), 'amp-'))
@@ -57,5 +57,16 @@ describe('switchDraft', () => {
     await simpleGit(dir).branch(['feature-x'])
     await switchDraft(dir, 'feature-x')
     expect((await simpleGit(dir).status()).current).toBe('feature-x')
+  })
+})
+
+describe('createDraftFromMain', () => {
+  it('branches from main; pulled=false when there is no remote', async () => {
+    const dir = await tempRepo()
+    await simpleGit(dir).checkoutLocalBranch('scratch')
+    const { branch, pulled } = await createDraftFromMain(dir, 'Fresh Draft')
+    expect(branch).toBe('draft/fresh-draft')
+    expect(pulled).toBe(false)
+    expect((await simpleGit(dir).status()).current).toBe('draft/fresh-draft')
   })
 })

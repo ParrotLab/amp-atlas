@@ -45,3 +45,21 @@ export async function createDraftFromChanges(repoPath: string, draftName: string
 export async function switchDraft(repoPath: string, branch: string): Promise<void> {
   await simpleGit(repoPath).checkout(branch)
 }
+
+/** New Draft: switch to the Live Version, pull latest if possible, then branch. */
+export async function createDraftFromMain(repoPath: string, draftName: string): Promise<{ branch: string; pulled: boolean }> {
+  const git = simpleGit(repoPath)
+  const info = await git.branch()
+  const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
+  await git.checkout(base)
+  let pulled = false
+  try {
+    await git.pull(['--ff-only'])
+    pulled = true
+  } catch {
+    // offline / no remote / non-ff — branch from local base with pulled=false
+  }
+  const branch = slugifyDraft(draftName)
+  await git.checkoutLocalBranch(branch)
+  return { branch, pulled }
+}

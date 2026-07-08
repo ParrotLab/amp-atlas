@@ -24,6 +24,8 @@ Today GitHub work depends on the **`gh` CLI** (7 PR handlers shell out to it) an
 
 `src/main/oauthConfig.ts` — exports `CLIENT_ID` (from `process.env.AMP_GITHUB_CLIENT_ID` or the baked-in Parrot Labs client id) and `SCOPES = 'repo read:org'`.
 
+**Registered (2026-07-08):** the Parrot-Labs-owned "AMP Atlas" OAuth App, Device Flow enabled. **`CLIENT_ID = Ov23liMkybAS2pixLoUq`** (public; baked in as the default). Org third-party access policy is "Access restricted" — but org-owned apps *always* have access, so **no approval step is needed** for AMP Atlas.
+
 ## 2. Device-flow auth (`src/main/githubAuth.ts`)
 
 - `startDeviceFlow(): Promise<{ deviceCode, userCode, verificationUri, interval, expiresIn }>` — POST `https://github.com/login/device/code` with `client_id` + `scope`, `Accept: application/json`.

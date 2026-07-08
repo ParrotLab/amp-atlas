@@ -85,7 +85,7 @@ export default function SystemOverview() {
 
   const { data, body, status: writeStatus, updateBody, updateData, externalPrompt, resolveExternal, reconcile } = useFileDocument(selectedFile, isMainBranch)
   const { showToast } = useToast()
-  const [caps, setCaps] = useState({ isGitRepo: true, ghAvailable: true, ghAuthed: true })
+  const [caps, setCaps] = useState({ isGitRepo: true, connected: true })
   const [treeRefresh, setTreeRefresh] = useState(0)
   type Pending =
     | { kind: 'scaffold'; type: ScaffoldType }
@@ -101,7 +101,7 @@ export default function SystemOverview() {
   useEffect(() => {
     if (!rootPath) return
     window.api.system.capabilities(rootPath).then(r => {
-      if (r.ok) setCaps({ isGitRepo: r.isGitRepo, ghAvailable: r.ghAvailable, ghAuthed: r.ghAuthed })
+      if (r.ok) setCaps({ isGitRepo: r.isGitRepo, connected: r.connected })
     })
   }, [rootPath])
 
@@ -558,9 +558,9 @@ export default function SystemOverview() {
           repoPath={rootPath}
           prStatus={prStatus}
           canUseGit={caps.isGitRepo}
-          canUseGitHub={caps.isGitRepo && caps.ghAuthed}
+          canUseGitHub={caps.isGitRepo && caps.connected}
           onNeedGit={() => showToast("This folder isn't connected to version control.")}
-          onNeedGitHub={() => showToast('Connect to GitHub in Settings to publish and review.')}
+          onNeedGitHub={() => showToast(caps.connected ? 'Connect a GitHub-backed system to publish and review.' : 'Reconnect to GitHub in Settings to publish and review.')}
         />
       </div>
       {modalConfig && (

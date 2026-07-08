@@ -25,10 +25,12 @@ export default function Settings() {
   const [systems, setSystems] = useState<SystemConfig[]>([])
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string | null>(null)
+  const [identity, setIdentity] = useState<{ login: string } | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
     setSystems(getSystems())
+    window.api.auth.identity().then(r => setIdentity(r.identity))
   }, [])
 
   const handleSelectFolder = async (systemId: string) => {
@@ -40,15 +42,24 @@ export default function Settings() {
       const caps = await window.api.system.capabilities(result.path)
       if (caps.ok && !caps.isGitRepo) {
         showToast("Connected for local editing. This folder isn't a git repository, so publishing and review are unavailable.")
-      } else if (caps.ok && !caps.ghAuthed) {
+      } else if (caps.ok && !caps.connected) {
         showToast('Connected. Use "Connect to GitHub" below to enable publishing and review.')
       }
     }
   }
 
-  const handleConnectGitHub = () => {
-    showToast('GitHub sign-in is coming soon. For now, install GitHub CLI and run: gh auth login')
+  const handleConnectGitHub = async () => {
+    const d = await window.api.auth.startDeviceFlow()
+    if (!d.ok || !d.deviceCode) { showToast(d.error || "Couldn't start GitHub connection"); return }
+    navigator.clipboard.writeText(d.userCode!)
+    window.open(d.verificationUri!)
+    showToast(`Enter code ${d.userCode} on GitHub (copied). Waiting…`)
+    const r = await window.api.auth.pollToken(d.deviceCode, d.interval || 5)
+    if (r.connected) { const id = await window.api.auth.identity(); setIdentity(id.identity); showToast('Connected to GitHub.') }
+    else showToast('GitHub connection did not complete.')
   }
+
+  const handleSignOut = async () => { await window.api.auth.signOut(); setIdentity(null); showToast('Signed out of GitHub.') }
 
   const handleChangeColor = (systemId: string, gradient: string) => {
     const updated = updateSystem(systemId, { gradient })
@@ -187,9 +198,11 @@ export default function Settings() {
           <div className="settings-info-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div className="settings-info-label">Publishing &amp; review</div>
-              <div className="settings-info-value">Connect GitHub to publish drafts and review changes.</div>
+              <div className="settings-info-value">{identity ? `Connected as @${identity.login}` : 'Connect GitHub to publish drafts and review changes.'}</div>
             </div>
-            <button className="settings-btn primary" onClick={handleConnectGitHub}>Connect to GitHub</button>
+            {identity
+              ? <button className="settings-btn danger" onClick={handleSignOut}>Sign out</button>
+              : <button className="settings-btn primary" onClick={handleConnectGitHub}>Connect to GitHub</button>}
           </div>
         </div>
 

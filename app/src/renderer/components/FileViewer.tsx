@@ -12,10 +12,14 @@ interface FileViewerProps {
   writeStatus: 'idle' | 'writing' | 'written'
   onToggleProperties?: () => void
   propsOpen?: boolean
+  externalPrompt?: boolean
+  onReloadExternal?: () => void
+  onKeepExternal?: () => void
 }
 
 export default function FileViewer({
   filePath, rootPath, readOnly, body, onBodyChange, writeStatus, onToggleProperties, propsOpen,
+  externalPrompt, onReloadExternal, onKeepExternal,
 }: FileViewerProps) {
   const [lastModified, setLastModified] = useState<string>('')
 
@@ -74,6 +78,15 @@ export default function FileViewer({
   return (
     <div className="file-viewer">
       <div className="file-viewer-content">
+        {externalPrompt && (
+          <div className="file-updated-banner">
+            <span>This file was just updated.</span>
+            <div className="file-updated-actions">
+              <button onClick={onReloadExternal}>Reload</button>
+              <button className="ghost" onClick={onKeepExternal}>Keep editing</button>
+            </div>
+          </div>
+        )}
         <div className="file-viewer-header-row">
           <div className="file-viewer-breadcrumb">
             {fullPath}

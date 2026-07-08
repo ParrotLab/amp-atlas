@@ -5,9 +5,12 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { simpleGit } from 'simple-git'
 import { runGh, ghAvailable, ghAuthed } from './gh'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches } from './draftOps'
+import { startWatch, stopWatch } from './watcher'
+
+let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1320,
     height: 860,
     minWidth: 900,
@@ -489,6 +492,23 @@ ipcMain.handle('system:capabilities', async (_event, repoPath: string) => {
   const available = await ghAvailable()
   const authed = available ? await ghAuthed() : false
   return { ok: true, isGitRepo, ghAvailable: available, ghAuthed: authed }
+})
+
+// Watch the active system folder and push change batches to the renderer.
+ipcMain.handle('fs:watch', async (_event, repoPath: string) => {
+  try {
+    await startWatch(repoPath, (paths) => {
+      mainWindow?.webContents.send('fs:changed', paths)
+    })
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('fs:unwatch', async () => {
+  stopWatch()
+  return { ok: true }
 })
 
 app.whenReady().then(() => {

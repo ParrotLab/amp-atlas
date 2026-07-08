@@ -283,3 +283,16 @@
 .file-viewer-body .tiptap ul[data-type="taskList"] li label {
   margin-top: 3px;
 }
+
+.file-updated-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px; padding: 8px 12px;
+  background: #F3ECFF; border: 1px solid #E0CCFF; border-radius: 10px;
+  font-size: 12px; color: #4A2E7A;
+}
+.file-updated-actions { display: flex; gap: 6px; }
+.file-updated-actions button {
+  padding: 4px 12px; font-size: 12px; font-weight: 500; border-radius: 6px;
+  border: none; cursor: pointer; font-family: inherit; background: #8B2BFF; color: #fff;
+}
+.file-updated-actions button.ghost { background: transparent; color: #6B6966; }

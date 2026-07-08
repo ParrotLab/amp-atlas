@@ -4,7 +4,7 @@ import FileViewer from '../components/FileViewer'
 import PropertiesPanel from '../components/PropertiesPanel'
 import StatusBar from '../components/StatusBar'
 import TabBar, { Tab } from '../components/TabBar'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
@@ -80,15 +80,25 @@ export default function SystemOverview() {
 
   const rootPath = system?.folderPath || ''
 
-  const { data, body, status: writeStatus, updateBody, updateData } = useFileDocument(selectedFile, isMainBranch)
+  const { data, body, status: writeStatus, updateBody, updateData, externalPrompt, resolveExternal, reconcile } = useFileDocument(selectedFile, isMainBranch)
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, ghAvailable: true, ghAuthed: true })
+  const [treeRefresh, setTreeRefresh] = useState(0)
+  const changeHandler = useRef<(paths: string[]) => void>(() => {})
 
   useEffect(() => {
     if (!rootPath) return
     window.api.system.capabilities(rootPath).then(r => {
       if (r.ok) setCaps({ isGitRepo: r.isGitRepo, ghAvailable: r.ghAvailable, ghAuthed: r.ghAuthed })
     })
+  }, [rootPath])
+
+  // Watch the active system folder; reflect external edits live.
+  useEffect(() => {
+    if (!rootPath) return
+    window.api.fs.watch(rootPath)
+    const unsub = window.api.fs.onChanged(paths => changeHandler.current(paths))
+    return () => { window.api.fs.unwatch(); unsub() }
   }, [rootPath])
 
   const [activeDrafts, setActiveDrafts] = useState<DraftEntry[]>([])
@@ -331,6 +341,22 @@ export default function SystemOverview() {
 
   const handleAddExistingWork = (branchName: string) => guarded(() => doSwitch(branchName))
 
+  // React to external file changes: refresh status + tree, reconcile the open file.
+  changeHandler.current = (paths: string[]) => {
+    fetchGitStatus()
+    setTreeRefresh(t => t + 1)
+    if (selectedFile && paths.includes(selectedFile)) {
+      window.api.fs.stat(selectedFile).then(s => {
+        if (!s.ok) {
+          showToast('This file was removed.')
+          handleTabClose(selectedFile)
+        } else {
+          reconcile()
+        }
+      })
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flex: 1, height: '100%', overflow: 'hidden' }}>
       {/* File tree panel */}
@@ -344,7 +370,7 @@ export default function SystemOverview() {
         overflow: 'hidden'
       }}>
         {rootPath ? (
-          <FileTree key={treeKey} rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} />
+          <FileTree key={treeKey} rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} refreshToken={treeRefresh} />
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>
@@ -383,6 +409,9 @@ export default function SystemOverview() {
             writeStatus={writeStatus}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}
+            externalPrompt={externalPrompt}
+            onReloadExternal={() => resolveExternal('reload')}
+            onKeepExternal={() => resolveExternal('keep')}
           />
           <PropertiesPanel
             isOpen={propsOpen}

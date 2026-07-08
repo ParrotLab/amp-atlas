@@ -6,6 +6,13 @@ const api = {
     readFile: (path: string) => ipcRenderer.invoke('fs:readFile', path),
     writeFile: (path: string, content: string) => ipcRenderer.invoke('fs:writeFile', path, content),
     stat: (path: string) => ipcRenderer.invoke('fs:stat', path),
+    watch: (path: string) => ipcRenderer.invoke('fs:watch', path),
+    unwatch: () => ipcRenderer.invoke('fs:unwatch'),
+    onChanged: (cb: (paths: string[]) => void) => {
+      const handler = (_e: unknown, paths: string[]) => cb(paths)
+      ipcRenderer.on('fs:changed', handler)
+      return () => ipcRenderer.removeListener('fs:changed', handler)
+    },
   },
   dialog: {
     selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),

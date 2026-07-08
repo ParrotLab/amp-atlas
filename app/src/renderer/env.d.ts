@@ -65,6 +65,9 @@ interface ElectronAPI {
     readFile: (path: string) => Promise<FsResult>
     writeFile: (path: string, content: string) => Promise<{ ok: boolean; error?: string }>
     stat: (path: string) => Promise<FsResult>
+    watch: (path: string) => Promise<{ ok: boolean; error?: string }>
+    unwatch: () => Promise<{ ok: boolean }>
+    onChanged: (cb: (paths: string[]) => void) => () => void
   }
   dialog: {
     selectFolder: () => Promise<{ ok: boolean; canceled?: boolean; path?: string }>

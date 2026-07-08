@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { parseDocument, composeDocument } from '../utils/fileDocument'
+import { reconcileDecision } from '../utils/reconcile'
 
 export type WriteStatus = 'idle' | 'writing' | 'written'
 
@@ -12,6 +13,8 @@ export function useFileDocument(filePath: string | undefined, readOnly: boolean)
   const [data, setData] = useState<Record<string, unknown>>({})
   const [body, setBody] = useState('')
   const [status, setStatus] = useState<WriteStatus>('idle')
+  const [externalPrompt, setExternalPrompt] = useState(false)
+  const pendingDisk = useRef<string>('')
   const lastWritten = useRef<string>('')
   const loading = useRef(false)
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -66,5 +69,36 @@ export function useFileDocument(filePath: string | undefined, readOnly: boolean)
     write(nextData, body)
   }, [body, write])
 
-  return { data, body, status, updateBody, updateData }
+  const adoptDisk = (raw: string) => {
+    const doc = parseDocument(raw)
+    loading.current = true
+    lastWritten.current = raw
+    setData(doc.data)
+    setBody(doc.body)
+    setTimeout(() => { loading.current = false }, 0)
+  }
+
+  // Called when the open file may have changed on disk.
+  const reconcile = useCallback(async () => {
+    if (!filePath) return
+    const res = await window.api.fs.readFile(filePath)
+    if (!res.ok || res.content === undefined) return // deletion handled by the caller
+    const disk = res.content
+    const decision = reconcileDecision(disk, lastWritten.current, composeDocument(data, body))
+    if (decision === 'ignore') return
+    if (decision === 'reload') { adoptDisk(disk); return }
+    pendingDisk.current = disk
+    setExternalPrompt(true)
+  }, [filePath, data, body])
+
+  const resolveExternal = useCallback((mode: 'reload' | 'keep') => {
+    setExternalPrompt(false)
+    const disk = pendingDisk.current
+    pendingDisk.current = ''
+    if (!disk) return
+    if (mode === 'reload') adoptDisk(disk)
+    else lastWritten.current = disk // keep editing; next save overwrites, don't re-prompt
+  }, [])
+
+  return { data, body, status, updateBody, updateData, externalPrompt, resolveExternal, reconcile }
 }

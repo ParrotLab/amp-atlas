@@ -18,6 +18,7 @@ describe('shouldIgnore', () => {
 describe('startWatch', () => {
   afterEach(() => stopWatch())
 
+  // Generous budget: chokidar readiness + awaitWriteFinish can be slow under full-suite load.
   it('fires onChange with the changed path when a file is written', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'amp-watch-'))
     const seen: string[] = []
@@ -27,9 +28,9 @@ describe('startWatch', () => {
       const t0 = Date.now()
       const iv = setInterval(() => {
         if (seen.some(p => p.endsWith('note.md'))) { clearInterval(iv); resolve() }
-        else if (Date.now() - t0 > 4000) { clearInterval(iv); reject(new Error('no event')) }
+        else if (Date.now() - t0 > 12000) { clearInterval(iv); reject(new Error('no event')) }
       }, 50)
     })
     expect(seen.some(p => p.endsWith('note.md'))).toBe(true)
-  })
+  }, 15000)
 })

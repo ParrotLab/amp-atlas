@@ -8,6 +8,11 @@ const api = {
     stat: (path: string) => ipcRenderer.invoke('fs:stat', path),
     watch: (path: string) => ipcRenderer.invoke('fs:watch', path),
     unwatch: () => ipcRenderer.invoke('fs:unwatch'),
+    mkdir: (path: string) => ipcRenderer.invoke('fs:mkdir', path),
+    createFile: (path: string, content: string) => ipcRenderer.invoke('fs:createFile', path, content),
+    move: (from: string, to: string) => ipcRenderer.invoke('fs:move', from, to),
+    delete: (path: string) => ipcRenderer.invoke('fs:delete', path),
+    listFolders: (root: string) => ipcRenderer.invoke('fs:listFolders', root),
     onChanged: (cb: (paths: string[]) => void) => {
       const handler = (_e: unknown, paths: string[]) => cb(paths)
       ipcRenderer.on('fs:changed', handler)

@@ -6,6 +6,7 @@ import { simpleGit } from 'simple-git'
 import { runGh, ghAvailable, ghAuthed } from './gh'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
+import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -509,6 +510,22 @@ ipcMain.handle('fs:watch', async (_event, repoPath: string) => {
 ipcMain.handle('fs:unwatch', async () => {
   stopWatch()
   return { ok: true }
+})
+
+ipcMain.handle('fs:mkdir', async (_event, path: string) => {
+  try { await ensureDir(path); return { ok: true } } catch (error) { return { ok: false, error: String(error) } }
+})
+ipcMain.handle('fs:createFile', async (_event, path: string, content: string) => {
+  try { await createFile(path, content); return { ok: true } } catch (error) { return { ok: false, error: String((error as Error).message || error) } }
+})
+ipcMain.handle('fs:move', async (_event, from: string, to: string) => {
+  try { await movePath(from, to); return { ok: true } } catch (error) { return { ok: false, error: String((error as Error).message || error) } }
+})
+ipcMain.handle('fs:delete', async (_event, path: string) => {
+  try { await delPath(path); return { ok: true } } catch (error) { return { ok: false, error: String((error as Error).message || error) } }
+})
+ipcMain.handle('fs:listFolders', async (_event, root: string) => {
+  try { return { ok: true, folders: await listFolders(root) } } catch (error) { return { ok: false, error: String(error), folders: [] } }
 })
 
 app.whenReady().then(() => {

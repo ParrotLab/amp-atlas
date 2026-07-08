@@ -46,6 +46,16 @@ const api = {
   },
   system: {
     capabilities: (repoPath: string) => ipcRenderer.invoke('system:capabilities', repoPath),
+  },
+  auth: {
+    startDeviceFlow: () => ipcRenderer.invoke('auth:startDeviceFlow'),
+    pollToken: (deviceCode: string, interval: number) => ipcRenderer.invoke('auth:pollToken', deviceCode, interval),
+    identity: () => ipcRenderer.invoke('auth:identity'),
+    status: () => ipcRenderer.invoke('auth:status'),
+    signOut: () => ipcRenderer.invoke('auth:signOut'),
+  },
+  github: {
+    collaborators: (repoPath: string) => ipcRenderer.invoke('github:collaborators', repoPath),
   }
 }
 

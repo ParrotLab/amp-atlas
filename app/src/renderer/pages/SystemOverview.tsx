@@ -11,6 +11,9 @@ import PublishModal from '../components/PublishModal'
 import { useFileDocument } from '../hooks/useFileDocument'
 import { useToast } from '../components/Toast'
 import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
+import NewItemModal from '../components/NewItemModal'
+import MoveToModal from '../components/MoveToModal'
+import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
 import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
@@ -84,6 +87,15 @@ export default function SystemOverview() {
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, ghAvailable: true, ghAuthed: true })
   const [treeRefresh, setTreeRefresh] = useState(0)
+  type Pending =
+    | { kind: 'scaffold'; type: ScaffoldType }
+    | { kind: 'file'; parentAbs: string }
+    | { kind: 'folder'; parentAbs: string }
+    | { kind: 'rename'; absPath: string; isDir: boolean }
+  const [pendingCreate, setPendingCreate] = useState<Pending | null>(null)
+  const [moveSource, setMoveSource] = useState<string | null>(null)
+  const [moveFolders, setMoveFolders] = useState<string[]>([])
+  const canEdit = !isMainBranch && caps.isGitRepo
   const changeHandler = useRef<(paths: string[]) => void>(() => {})
 
   useEffect(() => {
@@ -341,6 +353,91 @@ export default function SystemOverview() {
 
   const handleAddExistingWork = (branchName: string) => guarded(() => doSwitch(branchName))
 
+  const refreshAfterFs = async () => { setTreeRefresh(t => t + 1); await fetchGitStatus() }
+
+  const doCreateConfirm = async (name: string) => {
+    const p = pendingCreate
+    setPendingCreate(null)
+    if (!p) return
+    const date = new Date().toISOString().slice(0, 10)
+    if (p.kind === 'scaffold') {
+      const { files } = scaffoldFor(p.type, name, date)
+      let firstAbs = ''
+      for (const f of files) {
+        const abs = `${rootPath}/${f.path}`
+        const res = await window.api.fs.createFile(abs, f.content)
+        if (!res.ok) { showToast(res.error || "Couldn't create"); return }
+        if (!firstAbs) firstAbs = abs
+      }
+      await refreshAfterFs()
+      if (firstAbs) handleFileSelect(firstAbs)
+    } else if (p.kind === 'file') {
+      const trimmed = name.trim()
+      const abs = `${p.parentAbs}/${trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`}`
+      const res = await window.api.fs.createFile(abs, '')
+      if (!res.ok) { showToast(res.error || "Couldn't create"); return }
+      await refreshAfterFs(); handleFileSelect(abs)
+    } else if (p.kind === 'folder') {
+      const res = await window.api.fs.mkdir(`${p.parentAbs}/${name.trim()}`)
+      if (!res.ok) { showToast(res.error || "Couldn't create"); return }
+      await refreshAfterFs()
+    } else { // rename
+      const parent = p.absPath.replace(/\/[^/]+$/, '')
+      const res = await window.api.fs.move(p.absPath, `${parent}/${name.trim()}`)
+      if (!res.ok) { showToast(res.error || "Couldn't rename"); return }
+      if (selectedFile === p.absPath) setSelectedFile(undefined)
+      await refreshAfterFs()
+    }
+  }
+
+  const handleMove = async (fromAbs: string, toFolderAbs: string) => {
+    if (!toFolderAbs) {
+      // Context-menu "Move to…" → open the folder picker
+      const res = await window.api.fs.listFolders(rootPath)
+      const fromRel = fromAbs.replace(rootPath + '/', '')
+      setMoveFolders((res.ok ? res.folders : []).filter(f => f !== fromRel && !f.startsWith(fromRel + '/')))
+      setMoveSource(fromAbs)
+      return
+    }
+    const name = fromAbs.split('/').pop()
+    const res = await window.api.fs.move(fromAbs, `${toFolderAbs}/${name}`)
+    if (!res.ok) { showToast(res.error || "Couldn't move"); return }
+    if (selectedFile === fromAbs) setSelectedFile(undefined)
+    await refreshAfterFs()
+  }
+
+  const handlePickMoveDest = async (folderRel: string) => {
+    const from = moveSource
+    setMoveSource(null)
+    if (!from) return
+    const name = from.split('/').pop()
+    const res = await window.api.fs.move(from, `${rootPath}/${folderRel}/${name}`)
+    if (!res.ok) { showToast(res.error || "Couldn't move"); return }
+    if (selectedFile === from) setSelectedFile(undefined)
+    await refreshAfterFs()
+  }
+
+  const handleDelete = async (absPath: string) => {
+    const name = absPath.split('/').pop()
+    if (!window.confirm(`Delete "${name}"? This can't be undone (until you Discard the draft).`)) return
+    const res = await window.api.fs.delete(absPath)
+    if (!res.ok) { showToast(res.error || "Couldn't delete"); return }
+    if (selectedFile === absPath) { setSelectedFile(undefined); setTabs(prev => prev.filter(t => t.path !== absPath)) }
+    await refreshAfterFs()
+  }
+
+  const modalConfig = (() => {
+    const p = pendingCreate
+    if (!p) return null
+    if (p.kind === 'scaffold') {
+      const labels = { playbook: 'New Playbook', project: 'New Project', 'sub-system': 'New Sub-system' }
+      return { title: labels[p.type], previewFor: (slug: string) => `will create ${scaffoldFor(p.type, slug, '').folder}/`, initialName: '' }
+    }
+    if (p.kind === 'file') return { title: 'New File', previewFor: (slug: string) => `${p.parentAbs.replace(rootPath + '/', '')}/${slug}.md`, initialName: '' }
+    if (p.kind === 'folder') return { title: 'New Folder', previewFor: (slug: string) => `${p.parentAbs.replace(rootPath + '/', '')}/${slug}`, initialName: '' }
+    return { title: 'Rename', previewFor: (slug: string) => slug, initialName: p.absPath.split('/').pop() || '' }
+  })()
+
   // React to external file changes: refresh status + tree, reconcile the open file.
   changeHandler.current = (paths: string[]) => {
     fetchGitStatus()
@@ -370,7 +467,24 @@ export default function SystemOverview() {
         overflow: 'hidden'
       }}>
         {rootPath ? (
-          <FileTree key={treeKey} rootPath={rootPath} onFileSelect={handleFileSelect} selectedFile={selectedFile} gitModified={gitModified} gitNew={gitNew} gitDeleted={gitDeleted} refreshToken={treeRefresh} />
+          <FileTree
+            key={treeKey}
+            rootPath={rootPath}
+            onFileSelect={handleFileSelect}
+            selectedFile={selectedFile}
+            gitModified={gitModified}
+            gitNew={gitNew}
+            gitDeleted={gitDeleted}
+            refreshToken={treeRefresh}
+            canEdit={canEdit}
+            onNeedDraft={() => showToast('Create a draft to make changes.')}
+            onNewScaffold={(type) => setPendingCreate({ kind: 'scaffold', type })}
+            onNewFile={(parentAbs) => setPendingCreate({ kind: 'file', parentAbs })}
+            onNewFolder={(parentAbs) => setPendingCreate({ kind: 'folder', parentAbs })}
+            onRename={(absPath, isDir) => setPendingCreate({ kind: 'rename', absPath, isDir })}
+            onMove={handleMove}
+            onDelete={(absPath) => handleDelete(absPath)}
+          />
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>
@@ -449,6 +563,23 @@ export default function SystemOverview() {
           onNeedGitHub={() => showToast('Connect to GitHub in Settings to publish and review.')}
         />
       </div>
+      {modalConfig && (
+        <NewItemModal
+          isOpen={!!pendingCreate}
+          title={modalConfig.title}
+          previewFor={modalConfig.previewFor}
+          initialName={modalConfig.initialName}
+          onConfirm={doCreateConfirm}
+          onCancel={() => setPendingCreate(null)}
+        />
+      )}
+      <MoveToModal
+        isOpen={!!moveSource}
+        itemName={moveSource ? (moveSource.split('/').pop() || '') : ''}
+        folders={moveFolders}
+        onPick={handlePickMoveDest}
+        onCancel={() => setMoveSource(null)}
+      />
       <ConfirmSwitchModal
         isOpen={!!pending}
         onSave={() => resolvePending('save')}

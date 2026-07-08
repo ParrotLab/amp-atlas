@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import TreeContextMenu, { ContextTarget } from './TreeContextMenu'
 import './FileTree.css'
 
 interface TreeNode {
@@ -9,6 +10,8 @@ interface TreeNode {
   depth: number
 }
 
+interface Section { key: string; label: string; nodes: TreeNode[]; isPlaybook?: boolean }
+
 interface FileTreeProps {
   rootPath: string
   onFileSelect?: (path: string) => void
@@ -17,18 +20,25 @@ interface FileTreeProps {
   gitNew?: Set<string>
   gitDeleted?: Set<string>
   refreshToken?: number
+  canEdit?: boolean
+  onNeedDraft?: () => void
+  onNewScaffold?: (type: 'playbook' | 'project' | 'sub-system') => void
+  onNewFile?: (parentAbs: string) => void
+  onNewFolder?: (parentAbs: string) => void
+  onRename?: (absPath: string, isDir: boolean) => void
+  onMove?: (fromAbs: string, toFolderAbs: string) => void
+  onDelete?: (absPath: string, isDir: boolean) => void
 }
 
-interface CategorizedTree {
-  instructions: TreeNode[]
-  playbooks: TreeNode[]
-  files: TreeNode[]
-}
-
-export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted, refreshToken }: FileTreeProps) {
-  const [categories, setCategories] = useState<CategorizedTree>({ instructions: [], playbooks: [], files: [] })
+export default function FileTree({
+  rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted, refreshToken,
+  canEdit, onNeedDraft, onNewScaffold, onNewFile, onNewFolder, onRename, onMove, onDelete,
+}: FileTreeProps) {
+  const [sections, setSections] = useState<Section[]>([])
   const [expandedNodes, setExpandedNodes] = useState<Map<string, TreeNode[]>>(new Map())
   const [search, setSearch] = useState('')
+  const [menu, setMenu] = useState<{ x: number; y: number; target: ContextTarget } | null>(null)
+  const [showNew, setShowNew] = useState(false)
 
   const loadDirectory = useCallback(async (dirPath: string): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
@@ -37,32 +47,31 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
   }, [])
 
   const loadCategories = useCallback(async () => {
-    const rootEntries = await loadDirectory(rootPath)
-
-    const instructions: TreeNode[] = []
-    const files: TreeNode[] = []
-    let playbooks: TreeNode[] = []
-
-    for (const entry of rootEntries) {
-      if (!entry.isDirectory) instructions.push(entry)
-      else if (entry.name === '.claude') continue
-      else files.push(entry)
+    const readSection = async (folderRel: string): Promise<TreeNode[]> => {
+      const res = await window.api.fs.readDirectory(`${rootPath}/${folderRel}`)
+      return res.ok && res.entries ? res.entries.map(e => ({ ...e, depth: 0, expanded: false })) : []
     }
-
-    const skillsResult = await window.api.fs.readDirectory(`${rootPath}/.claude/skills`)
-    if (skillsResult.ok && skillsResult.entries) {
-      playbooks = skillsResult.entries
-        .filter(e => e.isDirectory)
-        .map(entry => ({ ...entry, depth: 0, expanded: false }))
-    }
-
-    setCategories({ instructions, playbooks, files })
-  }, [rootPath, loadDirectory])
+    const rootRes = await window.api.fs.readDirectory(rootPath)
+    const instructions = (rootRes.ok && rootRes.entries ? rootRes.entries : [])
+      .filter(e => !e.isDirectory && (e.name === 'README.md' || e.name === 'CLAUDE.md'))
+      .map(e => ({ ...e, depth: 0, expanded: false }))
+    const skills = await readSection('.claude/skills')
+    const readmes = await readSection('readmes')
+    const reference = await readSection('reference')
+    const work = await readSection('work')
+    setSections([
+      { key: 'instructions', label: 'Instructions', nodes: instructions },
+      { key: 'playbooks', label: 'Playbooks', nodes: skills, isPlaybook: true },
+      { key: 'readmes', label: 'Readmes', nodes: readmes },
+      { key: 'reference', label: 'Reference', nodes: reference },
+      { key: 'work', label: 'Work', nodes: work },
+    ])
+  }, [rootPath])
 
   // Initial load
   useEffect(() => { if (rootPath) loadCategories() }, [rootPath, loadCategories])
 
-  // Non-destructive external refresh: re-load categories + re-fetch children of
+  // Non-destructive external refresh: re-load sections + re-fetch children of
   // currently-expanded folders, preserving which folders are open.
   useEffect(() => {
     if (!rootPath || !refreshToken) return
@@ -82,18 +91,15 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
 
   const toggleExpand = useCallback(async (node: TreeNode) => {
     if (expandedNodes.has(node.path)) {
-      // Collapse
       setExpandedNodes(prev => {
         const next = new Map(prev)
         next.delete(node.path)
-        // Also remove any children that were expanded
         for (const key of prev.keys()) {
           if (key.startsWith(node.path + '/')) next.delete(key)
         }
         return next
       })
     } else {
-      // Expand
       const children = await loadDirectory(node.path)
       setExpandedNodes(prev => {
         const next = new Map(prev)
@@ -104,14 +110,10 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
   }, [expandedNodes, loadDirectory])
 
   const handleClick = useCallback((node: TreeNode) => {
-    if (node.isDirectory) {
-      toggleExpand(node)
-    } else {
-      onFileSelect?.(node.path)
-    }
+    if (node.isDirectory) toggleExpand(node)
+    else onFileSelect?.(node.path)
   }, [toggleExpand, onFileSelect])
 
-  // Count git changes in a directory
   const getChangeCount = useCallback((dirRelPath: string): number => {
     let count = 0
     const prefix = dirRelPath + '/'
@@ -120,10 +122,17 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
     return count
   }, [gitModified, gitNew])
 
-  // Render a tree item
-  const renderItem = (node: TreeNode, depth: number, isPlaybook?: boolean) => {
+  const relOf = (abs: string) => abs.replace(rootPath + '/', '')
+
+  const openMenu = (e: React.MouseEvent, node: TreeNode) => {
+    e.preventDefault(); e.stopPropagation()
+    if (!canEdit) { onNeedDraft?.(); return }
+    setMenu({ x: e.clientX, y: e.clientY, target: { path: node.path, isDirectory: node.isDirectory, relPath: relOf(node.path) } })
+  }
+
+  const renderItem = (node: TreeNode, depth: number, isPlaybook?: boolean): React.ReactNode => {
     const isExpanded = expandedNodes.has(node.path)
-    const relativePath = node.path.replace(rootPath + '/', '')
+    const relativePath = relOf(node.path)
     const isGitModified = gitModified?.has(relativePath)
     const isGitNew = gitNew?.has(relativePath)
     const isGitDeleted = gitDeleted?.has(relativePath)
@@ -147,6 +156,16 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
           className={classes}
           style={{ paddingLeft: `${14 + depth * 16}px` }}
           onClick={() => handleClick(node)}
+          onContextMenu={(e) => openMenu(e, node)}
+          draggable={canEdit}
+          onDragStart={(e) => { e.dataTransfer.setData('text/plain', node.path) }}
+          onDragOver={(e) => { if (node.isDirectory && canEdit) e.preventDefault() }}
+          onDrop={(e) => {
+            if (!node.isDirectory || !canEdit) return
+            e.preventDefault(); e.stopPropagation()
+            const from = e.dataTransfer.getData('text/plain')
+            if (from && from !== node.path) onMove?.(from, node.path)
+          }}
         >
           {node.isDirectory ? (
             <span className="tree-item-icon">
@@ -173,12 +192,25 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
     )
   }
 
-  const hasPlaybooks = categories.playbooks.length > 0
-  const hasInstructions = categories.instructions.length > 0
-  const hasFiles = categories.files.length > 0
+  const parentOf = (t: ContextTarget) => (t.isDirectory ? t.path : t.path.replace(/\/[^/]+$/, ''))
 
   return (
     <>
+      <div className="file-tree-header">
+        <div className="file-tree-newwrap">
+          <button className="file-tree-new" onClick={() => canEdit ? setShowNew(v => !v) : onNeedDraft?.()}>+ New</button>
+          {showNew && (
+            <>
+              <div className="tcm-overlay" onClick={() => setShowNew(false)} />
+              <div className="tcm" style={{ left: 12, top: 40 }}>
+                <button className="tcm-item" onClick={() => { setShowNew(false); onNewScaffold?.('playbook') }}>New Playbook</button>
+                <button className="tcm-item" onClick={() => { setShowNew(false); onNewScaffold?.('project') }}>New Project</button>
+                <button className="tcm-item" onClick={() => { setShowNew(false); onNewScaffold?.('sub-system') }}>New Sub-system</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
       <div className="file-tree-search">
         <input
           type="text"
@@ -188,33 +220,27 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
         />
       </div>
       <div className="file-tree">
-        {hasInstructions && (
-          <>
-            <div className="tree-section-label">Instructions</div>
-            {categories.instructions.map(node => renderItem(node, 0))}
-          </>
-        )}
-
-        {hasPlaybooks && (
-          <>
-            <div className="tree-section-label">Playbooks</div>
-            {categories.playbooks.map(node => renderItem(node, 0, true))}
-          </>
-        )}
-
-        {hasFiles && (
-          <>
-            <div className="tree-section-label">Files</div>
-            {categories.files.map(node => renderItem(node, 0))}
-          </>
-        )}
-
-        {!hasInstructions && !hasPlaybooks && !hasFiles && (
-          <div style={{ padding: '18px', fontSize: '13px', color: '#B5B1AC', textAlign: 'center' }}>
-            {search ? 'No matches' : 'No files found'}
+        {sections.map(sec => (
+          <div key={sec.key}>
+            <div className="tree-section-label">{sec.label}</div>
+            {sec.nodes.length > 0
+              ? sec.nodes.map(node => renderItem(node, 0, sec.isPlaybook))
+              : <div className="tree-empty">Nothing here yet</div>}
           </div>
-        )}
+        ))}
       </div>
+      {menu && (
+        <TreeContextMenu
+          x={menu.x} y={menu.y} target={menu.target}
+          onNewFile={(t) => onNewFile?.(parentOf(t))}
+          onNewFolder={(t) => onNewFolder?.(parentOf(t))}
+          onRename={(t) => onRename?.(t.path, t.isDirectory)}
+          onMove={(t) => onMove?.(t.path, '')}
+          onCopyPath={(t) => navigator.clipboard.writeText(t.relPath)}
+          onDelete={(t) => onDelete?.(t.path, t.isDirectory)}
+          onClose={() => setMenu(null)}
+        />
+      )}
     </>
   )
 }

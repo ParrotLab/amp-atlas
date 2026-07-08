@@ -11,17 +11,18 @@ interface PublishModalProps {
   repoPath: string
 }
 
-const teamMembers = [
-  { name: 'Kristi', initial: 'K', color: '#8B2BFF' },
-  { name: 'Rachel', initial: 'R', color: '#FF7B00' },
-  { name: 'Rose', initial: 'R', color: '#7A3D8F' },
-  { name: 'Hannah', initial: 'H', color: '#16A34A' },
-]
+const AVATAR_COLORS = ['#8B2BFF', '#FF7B00', '#7A3D8F', '#16A34A', '#2563EB', '#E11D48']
+function avatarColor(login: string): string {
+  let hash = 0
+  for (let i = 0; i < login.length; i++) hash = login.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
 
 export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath }: PublishModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
+  const [members, setMembers] = useState<{ login: string; name: string }[]>([])
   const [draftCommits, setDraftCommits] = useState<{ hash: string; message: string; date: string }[]>([])
   const [draftFiles, setDraftFiles] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'publishing' | 'done'>('idle')
@@ -45,6 +46,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
             setDraftFiles(result.filesChanged || [])
           }
         })
+        window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
       }
     }
   }, [isOpen, draftName, repoPath])
@@ -164,16 +166,17 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
             <div className="publish-field">
               <div className="publish-label">Request review from</div>
               <div className="publish-reviewers">
-                {teamMembers.map(member => (
+                {members.length === 0 && <div style={{ fontSize: '12px', color: '#B5B1AC' }}>No collaborators found for this system.</div>}
+                {members.map(member => (
                   <button
-                    key={member.name}
-                    className={`publish-reviewer ${selectedReviewers.includes(member.name) ? 'selected' : ''}`}
-                    onClick={() => toggleReviewer(member.name)}
+                    key={member.login}
+                    className={`publish-reviewer ${selectedReviewers.includes(member.login) ? 'selected' : ''}`}
+                    onClick={() => toggleReviewer(member.login)}
                   >
-                    <div className="publish-reviewer-avatar" style={{ background: member.color }}>
-                      {member.initial}
+                    <div className="publish-reviewer-avatar" style={{ background: avatarColor(member.login) }}>
+                      {member.login.charAt(0).toUpperCase()}
                     </div>
-                    {member.name}
+                    @{member.login}
                   </button>
                 ))}
               </div>

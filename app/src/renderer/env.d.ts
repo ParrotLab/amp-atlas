@@ -3,6 +3,11 @@ declare module '*.css' {
   export default css
 }
 
+declare module '*?raw' {
+  const src: string
+  export default src
+}
+
 declare module '*.svg' {
   const src: string
   export default src
@@ -68,6 +73,11 @@ interface ElectronAPI {
     watch: (path: string) => Promise<{ ok: boolean; error?: string }>
     unwatch: () => Promise<{ ok: boolean }>
     onChanged: (cb: (paths: string[]) => void) => () => void
+    mkdir: (path: string) => Promise<{ ok: boolean; error?: string }>
+    createFile: (path: string, content: string) => Promise<{ ok: boolean; error?: string }>
+    move: (from: string, to: string) => Promise<{ ok: boolean; error?: string }>
+    delete: (path: string) => Promise<{ ok: boolean; error?: string }>
+    listFolders: (root: string) => Promise<{ ok: boolean; error?: string; folders: string[] }>
   }
   dialog: {
     selectFolder: () => Promise<{ ok: boolean; canceled?: boolean; path?: string }>

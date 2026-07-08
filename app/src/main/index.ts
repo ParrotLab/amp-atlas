@@ -3,7 +3,10 @@ import { join } from 'path'
 import { readdir, readFile, writeFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { simpleGit } from 'simple-git'
-import { runGh, ghAvailable, ghAuthed } from './gh'
+import { startDeviceFlow, pollForToken, getIdentity } from './githubAuth'
+import { tokenStore } from './tokenStore'
+import { buildAuthHeader } from './authHeader'
+import * as github from './github'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
@@ -228,42 +231,26 @@ ipcMain.handle('git:save', async (_event, repoPath: string, message: string) => 
   }
 })
 
+// Publish = push the current branch, authenticated with the OAuth token via http.extraheader.
 ipcMain.handle('git:publish', async (_event, repoPath: string) => {
   try {
     const git = simpleGit(repoPath)
-    const status = await git.status()
-    const branch = status.current
+    const branch = (await git.status()).current
     if (!branch) return { ok: false, error: 'No branch found' }
-    await git.push('origin', branch, ['--set-upstream'])
+    const token = tokenStore().getToken()
+    if (!token) return { ok: false, error: 'Not connected to GitHub' }
+    await git.raw(['-c', `http.https://github.com/.extraheader=${buildAuthHeader(token)}`, 'push', 'origin', branch, '--set-upstream'])
     return { ok: true }
   } catch (error) {
     return { ok: false, error: String(error) }
   }
 })
 
-// Create a GitHub PR using the gh CLI
-// TODO: Replace with GitHub OAuth + REST API before shipping to non-technical users
 ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
   try {
-    const args = ['pr', 'create', '--title', title, '--body', body || '']
-
-    // Add reviewers if specified (need GitHub usernames — for now we skip if names don't map)
-    // TODO: Map display names to GitHub usernames via team config
-    if (reviewers.length > 0) {
-      // For now, skip reviewers since we'd need GitHub usernames
-      // args.push('--reviewer', reviewers.join(','))
-    }
-
-    const result = await runGh(args, repoPath)
-    const prUrl = result.stdout.trim()
-    return { ok: true, url: prUrl }
-  } catch (error: unknown) {
-    const err = error as { stderr?: string; message?: string }
-    // gh might say "already exists" if a PR is already open
-    if (err.stderr?.includes('already exists')) {
-      return { ok: true, url: '', alreadyExists: true }
-    }
-    return { ok: false, error: err.stderr || err.message || String(error) }
+    return { ok: true, ...(await github.createPR(repoPath, title, body, reviewers)) }
+  } catch (error) {
+    return { ok: false, error: String(error) }
   }
 })
 
@@ -337,162 +324,59 @@ ipcMain.handle('git:discard', async (_event, repoPath: string) => {
   }
 })
 
-// Check PR status for the current branch
+// --- GitHub PR operations, now over the REST API using the OAuth token ---
+
 ipcMain.handle('git:prStatus', async (_event, repoPath: string) => {
-  try {
-    const git = simpleGit(repoPath)
-    const status = await git.status()
-    const branch = status.current
-    if (!branch || branch === 'main' || branch === 'master') {
-      return { ok: true, hasPR: false }
-    }
-
-    // Check for open PR on this branch
-    const result = await runGh([
-      'pr', 'view', '--json', 'state,title,url,reviewDecision,number', '--jq', '.'
-    ], repoPath)
-
-    const pr = JSON.parse(result.stdout.trim())
-    return {
-      ok: true,
-      hasPR: true,
-      pr: {
-        number: pr.number,
-        title: pr.title,
-        url: pr.url,
-        state: pr.state, // OPEN, CLOSED, MERGED
-        reviewDecision: pr.reviewDecision || null // APPROVED, CHANGES_REQUESTED, REVIEW_REQUIRED, null
-      }
-    }
-  } catch {
-    // No PR exists for this branch
-    return { ok: true, hasPR: false }
-  }
+  try { return { ok: true, ...(await github.prStatus(repoPath)) } } catch { return { ok: true, hasPR: false } }
 })
 
-// Check if the current branch has been merged and clean up
 ipcMain.handle('git:checkMerged', async (_event, repoPath: string) => {
-  try {
-    const git = simpleGit(repoPath)
-    const status = await git.status()
-    const branch = status.current
-    if (!branch || branch === 'main' || branch === 'master') {
-      return { ok: true, merged: false }
-    }
-
-    // Check if PR was merged
-    const result = await runGh([
-      'pr', 'view', '--json', 'state', '--jq', '.state'
-    ], repoPath)
-
-    const state = result.stdout.trim()
-    return { ok: true, merged: state === 'MERGED', branch }
-  } catch {
-    return { ok: true, merged: false }
-  }
+  try { return { ok: true, ...(await github.checkMerged(repoPath)) } } catch { return { ok: true, merged: false } }
 })
 
-// List open PRs for a repo
 ipcMain.handle('git:listPRs', async (_event, repoPath: string) => {
-  try {
-    const result = await runGh([
-      'pr', 'list', '--json', 'number,title,state,author,createdAt,headRefName,reviewDecision,url,additions,deletions,changedFiles',
-      '--limit', '20'
-    ], repoPath)
-
-    const prs = JSON.parse(result.stdout.trim())
-    return { ok: true, prs }
-  } catch {
-    return { ok: true, prs: [] }
-  }
+  try { return { ok: true, prs: await github.listPRs(repoPath) } } catch { return { ok: true, prs: [] } }
 })
 
-// Get files changed in a PR
 ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) => {
-  try {
-    const result = await runGh([
-      'pr', 'diff', String(prNumber), '--name-only'
-    ], repoPath)
-
-    const files = result.stdout.trim().split('\n').filter(Boolean)
-    return { ok: true, files }
-  } catch (error: unknown) {
-    return { ok: false, error: String((error as {message?: string}).message || error), files: [] }
-  }
+  try { return { ok: true, files: await github.prFiles(repoPath, prNumber) } } catch (error) { return { ok: false, error: String(error), files: [] } }
 })
 
-// Get the diff content for a specific file in a PR
 ipcMain.handle('git:prFileDiff', async (_event, repoPath: string, prNumber: number, filePath: string) => {
-  try {
-    // Get the full diff, then extract the portion for this file
-    const result = await runGh([
-      'pr', 'diff', String(prNumber)
-    ], repoPath)
-
-    const fullDiff = result.stdout
-    // Parse out just this file's diff
-    const fileHeader = `diff --git a/${filePath} b/${filePath}`
-    const startIdx = fullDiff.indexOf(fileHeader)
-    if (startIdx === -1) return { ok: true, lines: [] }
-
-    // Find the end (next file's diff or end of string)
-    const nextDiffIdx = fullDiff.indexOf('\ndiff --git ', startIdx + 1)
-    const fileDiff = nextDiffIdx === -1
-      ? fullDiff.substring(startIdx)
-      : fullDiff.substring(startIdx, nextDiffIdx)
-
-    // Parse into lines with type (added/removed/context)
-    const lines: Array<{ type: 'added' | 'removed' | 'context' | 'header'; content: string }> = []
-    for (const line of fileDiff.split('\n')) {
-      if (line.startsWith('@@')) {
-        lines.push({ type: 'header', content: line })
-      } else if (line.startsWith('+') && !line.startsWith('+++')) {
-        lines.push({ type: 'added', content: line.substring(1) })
-      } else if (line.startsWith('-') && !line.startsWith('---')) {
-        lines.push({ type: 'removed', content: line.substring(1) })
-      } else if (!line.startsWith('diff ') && !line.startsWith('index ') && !line.startsWith('---') && !line.startsWith('+++')) {
-        if (line.length > 0) lines.push({ type: 'context', content: line.startsWith(' ') ? line.substring(1) : line })
-      }
-    }
-
-    return { ok: true, lines }
-  } catch (error: unknown) {
-    return { ok: false, error: String((error as {message?: string}).message || error), lines: [] }
-  }
+  try { return { ok: true, ...(await github.prFileDiff(repoPath, prNumber, filePath)) } } catch (error) { return { ok: false, error: String(error), lines: [] } }
 })
 
-// Get the content of a file from a PR's branch
 ipcMain.handle('git:prFileContent', async (_event, repoPath: string, prNumber: number, filePath: string) => {
-  try {
-    const git = simpleGit(repoPath)
-    // Fetch the PR head into FETCH_HEAD — works for fork PRs too, no branch pollution
-    await git.fetch(['origin', `pull/${prNumber}/head`])
-    const content = await git.show([`FETCH_HEAD:${filePath}`])
-    return { ok: true, content }
-  } catch (error: unknown) {
-    return { ok: false, content: '', error: String((error as {message?: string}).message || error) }
-  }
+  try { return { ok: true, ...(await github.prFileContent(repoPath, prNumber, filePath)) } } catch (error) { return { ok: false, content: '', error: String(error) } }
 })
 
-// Approve or request changes on a PR
 ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
-  try {
-    const args = ['pr', 'review', String(prNumber), `--${action}`]
-    if (body) args.push('--body', body)
-    await runGh(args, repoPath)
-    return { ok: true }
-  } catch (error: unknown) {
-    return { ok: false, error: String((error as {message?: string}).message || error) }
-  }
+  try { await github.reviewPR(repoPath, prNumber, action, body); return { ok: true } } catch (error) { return { ok: false, error: String(error) } }
 })
 
-// Probe what this system can do: is it a git repo, and is GitHub (gh) available + authed?
+// --- GitHub OAuth device flow ---
+
+ipcMain.handle('auth:startDeviceFlow', async () => {
+  try { return { ok: true, ...(await startDeviceFlow()) } } catch (e) { return { ok: false, error: String(e) } }
+})
+ipcMain.handle('auth:pollToken', async (_e, deviceCode: string, interval: number) => {
+  try { const r = await pollForToken(deviceCode, interval); return { ...r, connected: r.ok } } catch (e) { return { ok: false, error: String(e) } }
+})
+ipcMain.handle('auth:identity', async () => {
+  try { return { ok: true, identity: await getIdentity() } } catch { return { ok: true, identity: null } }
+})
+ipcMain.handle('auth:status', async () => ({ connected: tokenStore().getToken() !== null, everConnected: tokenStore().hasEverConnected() }))
+ipcMain.handle('auth:signOut', async () => { tokenStore().clearToken(); return { ok: true } })
+
+ipcMain.handle('github:collaborators', async (_e, repoPath: string) => {
+  try { return { ok: true, collaborators: await github.collaborators(repoPath) } } catch (e) { return { ok: false, error: String(e), collaborators: [] } }
+})
+
+// Probe what this system can do: is it a git repo, and is GitHub connected (token present)?
 ipcMain.handle('system:capabilities', async (_event, repoPath: string) => {
   let isGitRepo = false
   try { isGitRepo = await simpleGit(repoPath).checkIsRepo() } catch { isGitRepo = false }
-  const available = await ghAvailable()
-  const authed = available ? await ghAuthed() : false
-  return { ok: true, isGitRepo, ghAvailable: available, ghAuthed: authed }
+  return { ok: true, isGitRepo, connected: tokenStore().getToken() !== null }
 })
 
 // Watch the active system folder and push change batches to the renderer.

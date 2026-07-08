@@ -16,6 +16,7 @@ interface FileTreeProps {
   gitModified?: Set<string>
   gitNew?: Set<string>
   gitDeleted?: Set<string>
+  refreshToken?: number
 }
 
 interface CategorizedTree {
@@ -24,7 +25,7 @@ interface CategorizedTree {
   files: TreeNode[]
 }
 
-export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted }: FileTreeProps) {
+export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted, refreshToken }: FileTreeProps) {
   const [categories, setCategories] = useState<CategorizedTree>({ instructions: [], playbooks: [], files: [] })
   const [expandedNodes, setExpandedNodes] = useState<Map<string, TreeNode[]>>(new Map())
   const [search, setSearch] = useState('')
@@ -35,42 +36,49 @@ export default function FileTree({ rootPath, onFileSelect, selectedFile, gitModi
     return result.entries.map(entry => ({ ...entry, depth: 0, expanded: false }))
   }, [])
 
-  // Initial load: categorize root entries
-  useEffect(() => {
-    if (!rootPath) return
+  const loadCategories = useCallback(async () => {
+    const rootEntries = await loadDirectory(rootPath)
 
-    const load = async () => {
-      const rootEntries = await loadDirectory(rootPath)
+    const instructions: TreeNode[] = []
+    const files: TreeNode[] = []
+    let playbooks: TreeNode[] = []
 
-      const instructions: TreeNode[] = []
-      const files: TreeNode[] = []
-      let playbooks: TreeNode[] = []
-
-      for (const entry of rootEntries) {
-        if (!entry.isDirectory) {
-          instructions.push(entry)
-        } else if (entry.name === '.claude') {
-          // Skip .claude from files — we'll load playbooks from .claude/skills
-          continue
-        } else {
-          files.push(entry)
-        }
-      }
-
-      // Try to load playbooks from .claude/skills/
-      const skillsPath = `${rootPath}/.claude/skills`
-      const skillsResult = await window.api.fs.readDirectory(skillsPath)
-      if (skillsResult.ok && skillsResult.entries) {
-        playbooks = skillsResult.entries
-          .filter(e => e.isDirectory)
-          .map(entry => ({ ...entry, depth: 0, expanded: false }))
-      }
-
-      setCategories({ instructions, playbooks, files })
+    for (const entry of rootEntries) {
+      if (!entry.isDirectory) instructions.push(entry)
+      else if (entry.name === '.claude') continue
+      else files.push(entry)
     }
 
-    load()
+    const skillsResult = await window.api.fs.readDirectory(`${rootPath}/.claude/skills`)
+    if (skillsResult.ok && skillsResult.entries) {
+      playbooks = skillsResult.entries
+        .filter(e => e.isDirectory)
+        .map(entry => ({ ...entry, depth: 0, expanded: false }))
+    }
+
+    setCategories({ instructions, playbooks, files })
   }, [rootPath, loadDirectory])
+
+  // Initial load
+  useEffect(() => { if (rootPath) loadCategories() }, [rootPath, loadCategories])
+
+  // Non-destructive external refresh: re-load categories + re-fetch children of
+  // currently-expanded folders, preserving which folders are open.
+  useEffect(() => {
+    if (!rootPath || !refreshToken) return
+    loadCategories()
+    setExpandedNodes(prev => {
+      const paths = [...prev.keys()]
+      Promise.all(paths.map(async p => [p, await loadDirectory(p)] as const)).then(pairs => {
+        setExpandedNodes(cur => {
+          const next = new Map(cur)
+          for (const [p, children] of pairs) if (next.has(p)) next.set(p, children)
+          return next
+        })
+      })
+      return prev
+    })
+  }, [refreshToken, rootPath, loadCategories, loadDirectory])
 
   const toggleExpand = useCallback(async (node: TreeNode) => {
     if (expandedNodes.has(node.path)) {

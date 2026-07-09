@@ -10,6 +10,7 @@ import * as github from './github'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
+import { setupAutoUpdate } from './updater'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -418,6 +419,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
   createWindow()
+  setupAutoUpdate(mainWindow)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

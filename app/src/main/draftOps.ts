@@ -63,3 +63,39 @@ export async function createDraftFromMain(repoPath: string, draftName: string): 
   await git.checkoutLocalBranch(branch)
   return { branch, pulled }
 }
+
+export type UpdateFromLiveResult =
+  | { ok: true; updated: boolean }
+  | { ok: false; conflicted: true; files: string[] }
+
+/**
+ * Bring the current draft up to date with the Live Version (origin base branch) before publishing.
+ * Merges cleanly when possible; on a real overlap it aborts the merge so the draft is left untouched.
+ */
+export async function updateFromLive(repoPath: string): Promise<UpdateFromLiveResult> {
+  const git = simpleGit(repoPath)
+  const info = await git.branch()
+  const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
+
+  // Fetch the latest Live Version. Offline / no remote => nothing to merge, proceed.
+  try {
+    await git.fetch('origin', base)
+  } catch {
+    return { ok: true, updated: false }
+  }
+
+  // Anything new on origin/base the draft doesn't already have?
+  const behind = (await git.raw(['rev-list', '--count', `HEAD..origin/${base}`])).trim()
+  if (behind === '0') return { ok: true, updated: false }
+
+  try {
+    await git.merge([`origin/${base}`])
+    return { ok: true, updated: true }
+  } catch {
+    // Conflict: capture overlapping files, then abort so the working tree is exactly as the user left it.
+    const files = (await git.raw(['diff', '--name-only', '--diff-filter=U']))
+      .split('\n').map(s => s.trim()).filter(Boolean)
+    await git.merge(['--abort'])
+    return { ok: false, conflicted: true, files }
+  }
+}

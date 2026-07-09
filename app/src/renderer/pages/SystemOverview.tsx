@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
+import ConflictModal from '../components/ConflictModal'
 import { useFileDocument } from '../hooks/useFileDocument'
 import { useToast } from '../components/Toast'
 import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
@@ -79,6 +80,7 @@ export default function SystemOverview() {
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
+  const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
@@ -245,6 +247,13 @@ export default function SystemOverview() {
     const status = await window.api.git.status(rootPath)
     if (status.ok && status.status && !status.status.isClean) {
       await window.api.git.save(rootPath, title)
+    }
+
+    // Bring the draft up to date with the Live Version before pushing.
+    const update = await window.api.git.updateFromLive(rootPath)
+    if (!update.ok) {
+      setConflictFiles(update.files)   // real overlap — escalate calmly, do not push
+      return
     }
 
     // Push to GitHub
@@ -599,6 +608,11 @@ export default function SystemOverview() {
         modifiedCount={gitModified.size}
         newCount={gitNew.size}
         repoPath={rootPath}
+      />
+      <ConflictModal
+        isOpen={conflictFiles !== null}
+        files={conflictFiles ?? []}
+        onClose={() => setConflictFiles(null)}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { editorExtensions } from '../utils/markdownSerializer'
+import { useFileWatchers } from '../hooks/useFileWatchers'
 import './FileViewer.css'
 
 interface FileViewerProps {
@@ -22,6 +23,10 @@ export default function FileViewer({
   externalPrompt, onReloadExternal, onKeepExternal,
 }: FileViewerProps) {
   const [lastModified, setLastModified] = useState<string>('')
+
+  const watchers = useFileWatchers(filePath, rootPath ?? '')
+  const [dismissedFile, setDismissedFile] = useState<string>('')
+  const showWatchers = watchers.length > 0 && dismissedFile !== filePath
 
   const editor = useEditor({
     extensions: editorExtensions(),
@@ -85,6 +90,27 @@ export default function FileViewer({
               <button onClick={onReloadExternal}>Reload</button>
               <button className="ghost" onClick={onKeepExternal}>Keep editing</button>
             </div>
+          </div>
+        )}
+        {showWatchers && (
+          <div className="file-watchers-banner">
+            <span>
+              👀{' '}
+              {watchers.length === 1 ? (
+                <>
+                  <strong>{watchers[0].author}</strong> also has edits to this file in review
+                  {watchers[0].title ? <> (“{watchers[0].title}”)</> : null}. Coordinate before
+                  publishing so your changes don’t clash.
+                </>
+              ) : (
+                <>
+                  <strong>{watchers[0].author}</strong> and{' '}
+                  <strong>{watchers.length - 1} {watchers.length - 1 === 1 ? 'other' : 'others'}</strong>{' '}
+                  also have edits to this file in review. Coordinate before publishing.
+                </>
+              )}
+            </span>
+            <button className="ghost" onClick={() => setDismissedFile(filePath || '')}>Dismiss</button>
           </div>
         )}
         <div className="file-viewer-header-row">

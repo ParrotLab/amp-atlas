@@ -89,6 +89,10 @@ interface ElectronAPI {
     draftChanges: (repoPath: string) => Promise<{ ok: boolean; error?: string; commits?: GitLogEntry[]; filesChanged?: string[] }>
     save: (repoPath: string, message: string) => Promise<{ ok: boolean; error?: string; summary?: { changes: number; insertions: number; deletions: number } }>
     publish: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
+    updateFromLive: (repoPath: string) => Promise<
+      | { ok: true; updated: boolean }
+      | { ok: false; conflicted: true; files: string[] }
+    >
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string; url?: string; alreadyExists?: boolean }>
     createDraft: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string; pulled?: boolean }>
     createDraftFromChanges: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string }>
@@ -100,6 +104,10 @@ interface ElectronAPI {
     checkMerged: (repoPath: string) => Promise<{ ok: boolean; merged: boolean; branch?: string }>
     listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewDecision: string | null; url: string; additions: number; deletions: number; changedFiles: number }> }>
     prDiff: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; files: string[]; error?: string }>
+    fileWatchers: (repoPath: string, relPath: string) => Promise<{
+      ok: boolean
+      watchers: Array<{ number: number; author: string; title: string; branch: string }>
+    }>
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; lines: Array<{ type: string; content: string }>; error?: string }>
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>

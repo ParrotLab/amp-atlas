@@ -112,3 +112,51 @@ export async function collaborators(repoPath: string) {
 }
 
 export function isTokenError(e: unknown): boolean { return e instanceof TokenError }
+
+export type FileWatcher = { number: number; author: string; title: string; branch: string }
+
+type WatcherPR = { number: number; title: string; headRefName: string; author: { login: string } }
+
+/** Pure: open PRs not on `currentBranch` whose file set includes `relPath` (author kept as login). */
+export function selectWatchers(
+  prs: WatcherPR[],
+  filesByPr: Record<number, string[]>,
+  currentBranch: string | null,
+  relPath: string,
+): { number: number; login: string; title: string; branch: string }[] {
+  return prs
+    .filter(p => p.headRefName !== currentBranch)
+    .filter(p => (filesByPr[p.number] || []).includes(relPath))
+    .map(p => ({ number: p.number, login: p.author.login, title: p.title, branch: p.headRefName }))
+}
+
+// Display name for a GitHub login, falling back to the login. Cached per login for the process lifetime.
+const nameCache = new Map<string, string>()
+async function resolveUserName(login: string): Promise<string> {
+  const cached = nameCache.get(login)
+  if (cached) return cached
+  let name = login
+  try {
+    const u = await gh(`/users/${login}`) as { name: string | null }
+    if (u.name) name = u.name
+  } catch { /* offline / rate-limited — fall back to login */ }
+  nameCache.set(login, name)
+  return name
+}
+
+/** Open PRs by others that already touch `relPath`, with author display names resolved. */
+export async function fileWatchers(repoPath: string, relPath: string): Promise<FileWatcher[]> {
+  const currentBranch = (await simpleGit(repoPath).status()).current
+  const prs = await listPRs(repoPath)
+  const others = prs.filter(p => p.headRefName !== currentBranch)
+
+  const filesByPr: Record<number, string[]> = {}
+  for (const p of others) filesByPr[p.number] = await prFiles(repoPath, p.number)
+
+  const picked = selectWatchers(prs as unknown as WatcherPR[], filesByPr, currentBranch, relPath)
+  const out: FileWatcher[] = []
+  for (const w of picked) {
+    out.push({ number: w.number, author: await resolveUserName(w.login), title: w.title, branch: w.branch })
+  }
+  return out
+}

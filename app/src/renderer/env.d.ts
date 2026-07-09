@@ -117,6 +117,10 @@ interface ElectronAPI {
       ok: boolean; isGitRepo: boolean; connected: boolean
     }>
   }
+  diagnostics: {
+    recent: () => Promise<{ ok: boolean; text: string; error?: string }>
+    reveal: () => Promise<{ ok: boolean; error?: string }>
+  }
   auth: {
     startDeviceFlow: () => Promise<{ ok: boolean; error?: string; deviceCode?: string; userCode?: string; verificationUri?: string; interval?: number; expiresIn?: number }>
     pollToken: (deviceCode: string, interval: number) => Promise<{ ok: boolean; connected?: boolean; error?: string }>

@@ -1,0 +1,25 @@
+appId: com.parrotlabs.amp-up
+productName: AMP Atlas
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.productivity
+  icon: build/icon.png
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: true
+publish:
+  provider: github
+  owner: ParrotLab
+  repo: amp-atlas-releases
+  private: true
+  releaseType: release

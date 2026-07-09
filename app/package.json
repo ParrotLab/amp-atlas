@@ -8,7 +8,9 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "release": "dotenv -e .env -- npm run release:build",
+    "release:build": "electron-vite build && electron-builder --mac --publish always"
   },
   "keywords": [],
   "author": "",

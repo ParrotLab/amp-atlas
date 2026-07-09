@@ -1,7 +1,6 @@
 import { app, dialog, BrowserWindow } from 'electron'
-import electronUpdater from 'electron-updater'
-
-const { autoUpdater } = electronUpdater
+// electron-updater is CommonJS (no default export) — use a named import.
+import { autoUpdater } from 'electron-updater'
 
 /** Wire auto-updates. Only meaningful in a packaged build. */
 export function setupAutoUpdate(win: BrowserWindow | null): void {

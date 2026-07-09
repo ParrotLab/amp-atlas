@@ -45,9 +45,15 @@ const api = {
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => ipcRenderer.invoke('git:prFileDiff', repoPath, prNumber, filePath),
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => ipcRenderer.invoke('git:prFileContent', repoPath, prNumber, filePath),
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => ipcRenderer.invoke('git:reviewPR', repoPath, prNumber, action, body),
+    hasUnpublishedWork: (repoPath: string) => ipcRenderer.invoke('git:hasUnpublishedWork', repoPath),
+    resyncFromLive: (repoPath: string) => ipcRenderer.invoke('git:resyncFromLive', repoPath),
   },
   system: {
     capabilities: (repoPath: string) => ipcRenderer.invoke('system:capabilities', repoPath),
+  },
+  diagnostics: {
+    recent: () => ipcRenderer.invoke('diagnostics:recent'),
+    reveal: () => ipcRenderer.invoke('diagnostics:reveal'),
   },
   auth: {
     startDeviceFlow: () => ipcRenderer.invoke('auth:startDeviceFlow'),

@@ -259,7 +259,10 @@ export default function SystemOverview() {
     // Push to GitHub
     const pushResult = await window.api.git.publish(rootPath)
     if (!pushResult.ok) {
-      showToast(`Couldn't publish: ${pushResult.error}`)
+      showToast("Couldn't publish — check your connection.", {
+        label: 'Retry',
+        onClick: () => { void handleDoPublish(title, description, reviewers) },
+      })
       return
     }
 

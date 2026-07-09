@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { getSystems, updateSystemFolder, addSystem, removeSystem, updateSystem, SystemConfig } from '../utils/systemStore'
 import { iconMap, iconList } from '../components/SystemIcons'
 import { useToast } from '../components/Toast'
+import { SUPPORT_FORM_URL, shouldOpenForm } from '../utils/support'
+import ResyncModal from '../components/ResyncModal'
 import './Settings.css'
 
 const gradientOptions = [
@@ -26,6 +28,7 @@ export default function Settings() {
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string | null>(null)
   const [identity, setIdentity] = useState<{ login: string } | null>(null)
+  const [resyncFor, setResyncFor] = useState<SystemConfig | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -60,6 +63,42 @@ export default function Settings() {
   }
 
   const handleSignOut = async () => { await window.api.auth.signOut(); setIdentity(null); showToast('Signed out of GitHub.') }
+
+  const handleCopyLogs = async () => {
+    const r = await window.api.diagnostics.recent()
+    if (r.ok) { await navigator.clipboard.writeText(r.text); showToast('Logs copied to clipboard.') }
+    else showToast("Couldn't read logs.")
+  }
+
+  const handleRevealLogs = () => { window.api.diagnostics.reveal() }
+
+  const handleReport = async () => {
+    const r = await window.api.diagnostics.recent()
+    if (r.ok) await navigator.clipboard.writeText(r.text)
+    if (shouldOpenForm(SUPPORT_FORM_URL)) window.open(SUPPORT_FORM_URL)
+    else showToast('Logs copied — paste them to your team lead.')
+  }
+
+  // Step 1: user clicks Re-sync on a system row.
+  const handleResyncClick = async (sys: SystemConfig) => {
+    if (!sys.folderPath) return
+    const r = await window.api.git.hasUnpublishedWork(sys.folderPath)
+    if (r.ok && r.hasWork) { setResyncFor(sys); return }  // ask what to do first
+    void confirmAndResync(sys)                             // clean: straight to strong-warning confirm
+  }
+
+  // Steps 3–4: strong-warning confirm, then hard reset.
+  const confirmAndResync = async (sys: SystemConfig) => {
+    if (!sys.folderPath) return
+    const ok = window.confirm(
+      `This replaces everything in "${sys.name}" with the Live Version from GitHub.\n\n` +
+      `Any unpublished changes will be gone. This can't be undone.`,
+    )
+    if (!ok) return
+    const r = await window.api.git.resyncFromLive(sys.folderPath)
+    if (r.ok) showToast(`${sys.name} is back in sync with the Live Version.`)
+    else showToast("Couldn't re-sync.", { label: 'Retry', onClick: () => { void confirmAndResync(sys) } })
+  }
 
   const handleChangeColor = (systemId: string, gradient: string) => {
     const updated = updateSystem(systemId, { gradient })
@@ -187,6 +226,11 @@ export default function Settings() {
                   >
                     Remove
                   </button>
+                  {sys.folderPath && (
+                    <button className="settings-btn subtle" onClick={() => handleResyncClick(sys)}>
+                      Re-sync
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -221,7 +265,28 @@ export default function Settings() {
             <div className="settings-info-value">AI Momentum Protocols v0.1.0</div>
           </div>
         </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title" style={{ marginBottom: '14px' }}>Diagnostics</div>
+          <div className="settings-info-card">
+            <div className="settings-info-label">Something not working?</div>
+            <div className="settings-info-value">Copy your logs or send a report so we can help.</div>
+            <div className="settings-diagnostics-actions">
+              <button className="settings-btn" onClick={handleCopyLogs}>Copy logs</button>
+              <button className="settings-btn" onClick={handleRevealLogs}>Reveal log file</button>
+              <button className="settings-btn primary" onClick={handleReport}>Report a problem</button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <ResyncModal
+        isOpen={resyncFor !== null}
+        systemName={resyncFor?.name ?? ''}
+        onPublishFirst={() => { const s = resyncFor; setResyncFor(null); if (s) showToast(`Open ${s.name} and publish your draft first.`) }}
+        onDiscard={() => { const s = resyncFor; setResyncFor(null); if (s) void confirmAndResync(s) }}
+        onClose={() => setResyncFor(null)}
+      />
     </div>
   )
 }

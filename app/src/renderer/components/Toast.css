@@ -13,3 +13,14 @@
   max-width: 480px;
   text-align: center;
 }
+
+.amp-toast-actions { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; }
+.amp-toast-btn {
+  background: #8B2BFF; color: #fff; border: none; border-radius: 6px;
+  padding: 5px 12px; font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.amp-toast-btn:hover { background: #7A1FE8; }
+.amp-toast-dismiss {
+  background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 13px;
+}
+.amp-toast-dismiss:hover { opacity: 1; }

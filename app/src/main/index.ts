@@ -7,7 +7,7 @@ import { startDeviceFlow, pollForToken, getIdentity } from './githubAuth'
 import { tokenStore } from './tokenStore'
 import { buildAuthHeader } from './authHeader'
 import * as github from './github'
-import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches } from './draftOps'
+import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 import { setupAutoUpdate } from './updater'
@@ -281,6 +281,15 @@ ipcMain.handle('git:createDraftFromChanges', async (_event, repoPath: string, dr
     return { ok: true, branch }
   } catch (error) {
     return { ok: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('git:updateFromLive', async (_event, repoPath: string) => {
+  try {
+    return await updateFromLive(repoPath)
+  } catch {
+    // An unexpected failure must not block publishing — treat as "nothing to update".
+    return { ok: true, updated: false }
   }
 })
 

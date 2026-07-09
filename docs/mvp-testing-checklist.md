@@ -1,12 +1,59 @@
 # MVP Manual Testing Checklist
 
-Run this end-to-end pass once all MVP workstreams are built, before cutting the first real signed release. Automated tests (`npm test`) already cover unit logic — this list is the human/UI/integration behavior that only a real run in `npm run dev` (and eventually the packaged `.dmg`) can confirm.
+Run this end-to-end pass once all MVP workstreams are built, before cutting the first real signed release. Automated tests (`npm test`) already cover the pure/unit logic — this list is the human/UI/integration behavior that only a real run in `npm run dev` (and, for the last section, the packaged `.dmg`) can confirm.
 
-Check items off as they pass. Note the date/build tested.
+Check items off as they pass. Note the date/build tested: ____________
+
+Sections are in build order. Each maps to a merged PR + its spec in `docs/superpowers/specs/`.
 
 ---
 
-## Collision prevention
+## 1. Content integrity & degraded mode (PR #1)
+
+- [ ] **Frontmatter survives editing** — Open a file with frontmatter (incl. keys *not* shown in the Properties panel), edit the body, save → all frontmatter is intact on disk, including the hidden keys.
+- [ ] **Properties panel writes correct YAML** — Edit a playbook's Status/Owner/etc. in the Properties panel → correct YAML is written back to disk.
+- [ ] **Minimal git diff** — A normal body edit produces a small, sensible git diff (no wholesale reformatting / no reordering of unrelated lines).
+- [ ] **Markdown round-trips** — Edit a file containing tables, task lists, and code blocks; save and reopen → nothing is corrupted or dropped.
+- [ ] **Local-only mode (no git)** — Connect a non-git folder → app enters Local-only mode with a clear notice; browsing/editing works; GitHub controls are greyed and explain themselves; nothing crashes.
+- [ ] **No `gh`/degraded mode** — With GitHub unavailable, the app still opens, browses, and edits; GitHub-dependent controls are disabled with a legible reason.
+
+## 2. Draft lifecycle & work-loss safety (PR #3)
+
+- [ ] **Switch-with-unsaved always prompts** — With unsaved edits in a draft, switching drafts always shows Save-or-Discard — **never** silently stashes.
+- [ ] **Navigating systems is safe** — Moving between systems never prompts and never loses on-disk edits.
+- [ ] **New Draft starts fresh** — New Draft always starts from a freshly-pulled Live Version (or local main + a note when offline), never from another draft.
+- [ ] **Archive is recoverable** — Archiving a draft keeps it recoverable; Unarchive restores it. Only a *merged* draft is ever deleted.
+- [ ] **Only your drafts show** — The draft list shows only drafts you created, opened, or adopted — never the repo's full branch list.
+- [ ] **Add existing work** — A branch created outside the app (local, or on GitHub) can be adopted and worked in as a Draft.
+- [ ] **Move changes into a draft** — With uncommitted edits on the Live Version, "move changes into a draft" carries the work into a new Draft and leaves the Live Version clean (no lost work).
+- [ ] **Plain-language status** — The status line reads in plain language and never shows the word "branch."
+
+## 3. External-edit sync — live view (PR #4)
+
+- [ ] **External edit reflects automatically** — Edit a file **outside the app** (Claude/Obsidian/manual) → the open file, the file tree, and git status all update with no user action.
+- [ ] **Tree refresh is non-destructive** — The tree updates without collapsing expanded folders or losing the current selection.
+- [ ] **Self-writes are silent** — The app's own autosave never triggers a reload or a nudge.
+- [ ] **In-app edit + on-disk change** — Editing in-app while the same file changes on disk shows one neutral "updated" nudge; **Keep editing** never loses what you typed; **Reload** pulls in the disk version.
+- [ ] **Deleted open file** — Deleting the currently open file is handled gracefully (tab closes, clear message) — no crash.
+
+## 4. Content creation — files, folders, scaffolds (PR #5)
+
+- [ ] **Scaffold new system types** — On a Draft, "+ New" → New Playbook / Project / Sub-system each open a name modal with a live slug preview and scaffold the correct files from the templates.
+- [ ] **Plain file/folder CRUD** — Create a plain file/folder, rename, move (both drag-and-drop **and** "Move to…"), and delete (with confirm) — all inside the allowed (non-top-level) locations.
+- [ ] **Copy path** — "Copy path" puts the system-relative path on the clipboard.
+- [ ] **Canonical sections + materialize** — The four canonical sections always appear (even in a repo missing them); creating into a missing folder materializes it on disk; no `.gitkeep` files are left behind.
+- [ ] **Live Version gating** — On the Live Version, create/move/rename/delete are disabled with a "create a draft" nudge.
+- [ ] **Templates are editable** — Editing files in `app/templates/` changes what scaffolds produce. *(Also see the separate reminder to swap in real templates.)*
+
+## 5. GitHub OAuth onboarding + REST (PR #6)
+
+- [ ] **First-run device flow** — First run with no token shows the Connect screen; clicking through the device flow (code → approve in browser) signs in and shows "Connected as @you".
+- [ ] **Publish without gh** — With no `gh` installed anywhere, publishing works (push + PR).
+- [ ] **Inbox + review without gh** — The Inbox lists PRs and a full review round-trip works (diff + approve / request-changes) via the token/REST.
+- [ ] **Reviewer picker is real** — The reviewer picker in the publish modal lists real repo collaborators (no hardcoded names).
+- [ ] **Sign out / revoked token** — Signing out (or a revoked token) drops to the soft reconnect state; local editing still works; reconnecting restores GitHub actions.
+
+## 6. Collision prevention (PR #8)
 
 - [ ] **Awareness banner appears** — Create two drafts that edit the **same** file. Publish one as a PR. Open that file in the *other* draft → a soft amber banner names the PR's author ("… also has edits to this file in review").
 - [ ] **Banner refreshes on window focus** — With the file open, switch away from the app and back → the banner re-fetches (appears/updates without reopening the file).
@@ -19,4 +66,14 @@ Check items off as they pass. Note the date/build tested.
 
 ---
 
-<!-- Add sections here as each remaining MVP workstream lands (safety/support surface, offline capability state, templates, etc.) -->
+## 7. Packaging, signing & auto-update (PR #7) — release-time
+
+These need a real signed build + distribution, so they run at release time on Kristi's Mac, not in `npm run dev`. Some were already validated during the packaging workstream (sign → notarize → publish succeeded); re-confirm end-to-end before shipping.
+
+- [ ] **Signed, notarized release builds** — `npm run release` produces a signed + notarized `.dmg` (+ `.zip` + `latest-mac.yml`) and publishes a GitHub Release to `ParrotLab/amp-atlas-releases`.
+- [ ] **Clean install** — Installing the `.dmg` gives a double-click app with **no Gatekeeper warning** and the correct AMP Atlas icon.
+- [ ] **Auto-update** — Cutting a higher version and releasing again causes the installed app to auto-update (prompt to restart), with **no repo access needed by the user**.
+
+---
+
+<!-- Add sections here as each remaining MVP workstream lands (safety/support surface, offline capability state, real templates, etc.) -->

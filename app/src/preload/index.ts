@@ -41,6 +41,7 @@ const api = {
     checkMerged: (repoPath: string) => ipcRenderer.invoke('git:checkMerged', repoPath),
     listPRs: (repoPath: string) => ipcRenderer.invoke('git:listPRs', repoPath),
     prDiff: (repoPath: string, prNumber: number) => ipcRenderer.invoke('git:prDiff', repoPath, prNumber),
+    fileWatchers: (repoPath: string, relPath: string) => ipcRenderer.invoke('git:fileWatchers', repoPath, relPath),
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => ipcRenderer.invoke('git:prFileDiff', repoPath, prNumber, filePath),
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => ipcRenderer.invoke('git:prFileContent', repoPath, prNumber, filePath),
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => ipcRenderer.invoke('git:reviewPR', repoPath, prNumber, action, body),

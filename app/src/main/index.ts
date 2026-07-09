@@ -11,6 +11,9 @@ import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptable
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 import { setupAutoUpdate } from './updater'
+import { logError } from './logger'
+
+process.on('uncaughtException', (err) => logError('uncaught', err))
 
 let mainWindow: BrowserWindow | null = null
 
@@ -243,6 +246,7 @@ ipcMain.handle('git:publish', async (_event, repoPath: string) => {
     await git.raw(['-c', `http.https://github.com/.extraheader=${buildAuthHeader(token)}`, 'push', 'origin', branch, '--set-upstream'])
     return { ok: true }
   } catch (error) {
+    logError('publish', error)
     return { ok: false, error: String(error) }
   }
 })
@@ -251,6 +255,7 @@ ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, b
   try {
     return { ok: true, ...(await github.createPR(repoPath, title, body, reviewers)) }
   } catch (error) {
+    logError('createPR', error)
     return { ok: false, error: String(error) }
   }
 })
@@ -287,8 +292,9 @@ ipcMain.handle('git:createDraftFromChanges', async (_event, repoPath: string, dr
 ipcMain.handle('git:updateFromLive', async (_event, repoPath: string) => {
   try {
     return await updateFromLive(repoPath)
-  } catch {
+  } catch (error) {
     // An unexpected failure must not block publishing — treat as "nothing to update".
+    logError('updateFromLive', error)
     return { ok: true, updated: false }
   }
 })
@@ -366,16 +372,16 @@ ipcMain.handle('git:prFileContent', async (_event, repoPath: string, prNumber: n
 })
 
 ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
-  try { await github.reviewPR(repoPath, prNumber, action, body); return { ok: true } } catch (error) { return { ok: false, error: String(error) } }
+  try { await github.reviewPR(repoPath, prNumber, action, body); return { ok: true } } catch (error) { logError('review', error); return { ok: false, error: String(error) } }
 })
 
 // --- GitHub OAuth device flow ---
 
 ipcMain.handle('auth:startDeviceFlow', async () => {
-  try { return { ok: true, ...(await startDeviceFlow()) } } catch (e) { return { ok: false, error: String(e) } }
+  try { return { ok: true, ...(await startDeviceFlow()) } } catch (e) { logError('auth', e); return { ok: false, error: String(e) } }
 })
 ipcMain.handle('auth:pollToken', async (_e, deviceCode: string, interval: number) => {
-  try { const r = await pollForToken(deviceCode, interval); return { ...r, connected: r.ok } } catch (e) { return { ok: false, error: String(e) } }
+  try { const r = await pollForToken(deviceCode, interval); return { ...r, connected: r.ok } } catch (e) { logError('auth', e); return { ok: false, error: String(e) } }
 })
 ipcMain.handle('auth:identity', async () => {
   try { return { ok: true, identity: await getIdentity() } } catch { return { ok: true, identity: null } }

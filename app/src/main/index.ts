@@ -11,7 +11,7 @@ import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptable
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 import { setupAutoUpdate } from './updater'
-import { logError } from './logger'
+import { logError, logFilePath } from './logger'
 
 process.on('uncaughtException', (err) => logError('uncaught', err))
 
@@ -373,6 +373,20 @@ ipcMain.handle('git:prFileContent', async (_event, repoPath: string, prNumber: n
 
 ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
   try { await github.reviewPR(repoPath, prNumber, action, body); return { ok: true } } catch (error) { logError('review', error); return { ok: false, error: String(error) } }
+})
+
+// --- Diagnostics (local logs, for support/screenshare debugging) ---
+
+ipcMain.handle('diagnostics:recent', async () => {
+  try {
+    const text = await readFile(logFilePath(), 'utf-8')
+    return { ok: true, text: text.split('\n').slice(-200).join('\n') }
+  } catch (error) { return { ok: false, error: String(error), text: '' } }
+})
+
+ipcMain.handle('diagnostics:reveal', async () => {
+  try { shell.showItemInFolder(logFilePath()); return { ok: true } }
+  catch (error) { return { ok: false, error: String(error) } }
 })
 
 // --- GitHub OAuth device flow ---

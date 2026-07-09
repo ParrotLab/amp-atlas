@@ -49,6 +49,10 @@ const api = {
   system: {
     capabilities: (repoPath: string) => ipcRenderer.invoke('system:capabilities', repoPath),
   },
+  diagnostics: {
+    recent: () => ipcRenderer.invoke('diagnostics:recent'),
+    reveal: () => ipcRenderer.invoke('diagnostics:reveal'),
+  },
   auth: {
     startDeviceFlow: () => ipcRenderer.invoke('auth:startDeviceFlow'),
     pollToken: (deviceCode: string, interval: number) => ipcRenderer.invoke('auth:pollToken', deviceCode, interval),

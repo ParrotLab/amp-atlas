@@ -111,11 +111,17 @@ interface ElectronAPI {
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; lines: Array<{ type: string; content: string }>; error?: string }>
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>
+    hasUnpublishedWork: (repoPath: string) => Promise<{ ok: boolean; hasWork: boolean; error?: string }>
+    resyncFromLive: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
   }
   system: {
     capabilities: (repoPath: string) => Promise<{
       ok: boolean; isGitRepo: boolean; connected: boolean
     }>
+  }
+  diagnostics: {
+    recent: () => Promise<{ ok: boolean; text: string; error?: string }>
+    reveal: () => Promise<{ ok: boolean; error?: string }>
   }
   auth: {
     startDeviceFlow: () => Promise<{ ok: boolean; error?: string; deviceCode?: string; userCode?: string; verificationUri?: string; interval?: number; expiresIn?: number }>

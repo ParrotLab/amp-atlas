@@ -66,7 +66,18 @@ Sections are in build order. Each maps to a merged PR + its spec in `docs/superp
 
 ---
 
-## 7. Packaging, signing & auto-update (PR #7) — release-time
+## 7. Safety / support surface
+
+- [ ] **Retry on failed publish** — Disconnect the network and publish a draft → a toast offers **Retry** and does not auto-vanish. Reconnect, click Retry → it publishes. The failure is recorded in the log.
+- [ ] **Copy logs** — Settings → Diagnostics → **Copy logs** → paste elsewhere to confirm recent log text landed on the clipboard.
+- [ ] **Reveal log file** — Settings → Diagnostics → **Reveal log file** → Finder opens the folder containing the log.
+- [ ] **Report a problem** — Settings → Diagnostics → **Report a problem** → logs are copied and (until the Airtable URL is set) a toast says "Logs copied — paste them to your team lead." Once the URL is configured, it opens the form.
+- [ ] **Re-sync a clean system** — Settings → **Re-sync** on a system with no unpublished work → strong-warning confirm → after confirming, the system matches the Live Version.
+- [ ] **Re-sync with unpublished work** — Make an unpublished edit in a system, then **Re-sync** → the three-way modal appears. **Keep editing** and **Publish first** both leave the work intact; **Discard & re-sync** (after the strong-warning confirm) resets the system to the Live Version.
+
+---
+
+## 8. Packaging, signing & auto-update (PR #7) — release-time
 
 These need a real signed build + distribution, so they run at release time on Kristi's Mac, not in `npm run dev`. Some were already validated during the packaging workstream (sign → notarize → publish succeeded); re-confirm end-to-end before shipping.
 

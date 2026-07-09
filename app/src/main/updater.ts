@@ -1,6 +1,7 @@
 import { app, dialog, BrowserWindow } from 'electron'
 // electron-updater is CommonJS (no default export) — use a named import.
 import { autoUpdater } from 'electron-updater'
+import { logError } from './logger'
 
 /** Wire auto-updates. Only meaningful in a packaged build. */
 export function setupAutoUpdate(win: BrowserWindow | null): void {
@@ -27,8 +28,8 @@ export function setupAutoUpdate(win: BrowserWindow | null): void {
 
   autoUpdater.on('error', (err) => {
     // Non-fatal: log and retry next launch; never interrupt the user.
-    console.error('[updater]', err)
+    logError('updater', err)
   })
 
-  autoUpdater.checkForUpdates().catch(err => console.error('[updater] check failed', err))
+  autoUpdater.checkForUpdates().catch(err => logError('updater', err))
 }

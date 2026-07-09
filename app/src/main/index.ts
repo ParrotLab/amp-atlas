@@ -352,6 +352,11 @@ ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) 
   try { return { ok: true, files: await github.prFiles(repoPath, prNumber) } } catch (error) { return { ok: false, error: String(error), files: [] } }
 })
 
+ipcMain.handle('git:fileWatchers', async (_event, repoPath: string, relPath: string) => {
+  try { return { ok: true, watchers: await github.fileWatchers(repoPath, relPath) } }
+  catch { return { ok: true, watchers: [] } }
+})
+
 ipcMain.handle('git:prFileDiff', async (_event, repoPath: string, prNumber: number, filePath: string) => {
   try { return { ok: true, ...(await github.prFileDiff(repoPath, prNumber, filePath)) } } catch (error) { return { ok: false, error: String(error), lines: [] } }
 })

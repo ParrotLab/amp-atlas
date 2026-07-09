@@ -15,6 +15,8 @@ import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
 import NewItemModal from '../components/NewItemModal'
 import MoveToModal from '../components/MoveToModal'
 import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
+import { useOnline } from '../hooks/useOnline'
+import { githubActionsAvailable } from '../utils/capabilities'
 import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
@@ -88,6 +90,7 @@ export default function SystemOverview() {
   const { data, body, status: writeStatus, updateBody, updateData, externalPrompt, resolveExternal, reconcile } = useFileDocument(selectedFile, isMainBranch)
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, connected: true })
+  const online = useOnline()
   const [treeRefresh, setTreeRefresh] = useState(0)
   type Pending =
     | { kind: 'scaffold'; type: ScaffoldType }
@@ -570,9 +573,17 @@ export default function SystemOverview() {
           repoPath={rootPath}
           prStatus={prStatus}
           canUseGit={caps.isGitRepo}
-          canUseGitHub={caps.isGitRepo && caps.connected}
+          canUseGitHub={githubActionsAvailable(caps, online)}
           onNeedGit={() => showToast("This folder isn't connected to version control.")}
-          onNeedGitHub={() => showToast(caps.connected ? 'Connect a GitHub-backed system to publish and review.' : 'Reconnect to GitHub in Settings to publish and review.')}
+          onNeedGitHub={() =>
+            showToast(
+              !online
+                ? "You're offline — keep editing; publishing and review need a connection."
+                : caps.connected
+                  ? 'Connect a GitHub-backed system to publish and review.'
+                  : 'Reconnect to GitHub in Settings to publish and review.',
+            )
+          }
         />
       </div>
       {modalConfig && (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getSystems } from '../utils/systemStore'
 import { iconMap } from '../components/SystemIcons'
+import { useOnline } from '../hooks/useOnline'
 import './Inbox.css'
 
 interface PRItem {
@@ -44,8 +45,10 @@ export default function Inbox() {
   const [prs, setPrs] = useState<PRItem[]>([])
   const [filter, setFilter] = useState<'all' | 'review' | 'mine'>('all')
   const [loading, setLoading] = useState(true)
+  const online = useOnline()
 
   useEffect(() => {
+    if (!online) { setLoading(false); return }   // don't fetch offline; re-runs when back online
     const loadPRs = async () => {
       setLoading(true)
       const systems = getSystems()
@@ -70,7 +73,7 @@ export default function Inbox() {
     }
 
     loadPRs()
-  }, [])
+  }, [online])
 
   const filteredPRs = prs.filter(pr => {
     if (filter === 'mine') return pr.author.login === 'kristinannedowns'
@@ -93,9 +96,10 @@ export default function Inbox() {
         <div className="inbox-count">{filteredPRs.length} open</div>
 
         <div className="inbox-list">
-          {loading && <div className="inbox-empty">Loading...</div>}
-          {!loading && filteredPRs.length === 0 && <div className="inbox-empty">No open reviews right now.</div>}
-          {!loading && filteredPRs.map(pr => (
+          {!online && <div className="inbox-empty">You're offline — your inbox will refresh when you reconnect.</div>}
+          {online && loading && <div className="inbox-empty">Loading...</div>}
+          {online && !loading && filteredPRs.length === 0 && <div className="inbox-empty">No open reviews right now.</div>}
+          {online && !loading && filteredPRs.map(pr => (
             <Link
               key={`${pr.systemId}-${pr.number}`}
               to={`/review/${pr.systemId}/${pr.number}`}

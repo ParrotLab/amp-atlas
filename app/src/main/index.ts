@@ -12,6 +12,7 @@ import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 import { setupAutoUpdate } from './updater'
 import { logError, logFilePath } from './logger'
+import { hasUnpublishedWork, resyncFromLive } from './resync'
 
 process.on('uncaughtException', (err) => logError('uncaught', err))
 
@@ -387,6 +388,18 @@ ipcMain.handle('diagnostics:recent', async () => {
 ipcMain.handle('diagnostics:reveal', async () => {
   try { shell.showItemInFolder(logFilePath()); return { ok: true } }
   catch (error) { return { ok: false, error: String(error) } }
+})
+
+// --- Re-sync from GitHub (Settings-only escape hatch) ---
+
+ipcMain.handle('git:hasUnpublishedWork', async (_event, repoPath: string) => {
+  try { return { ok: true, hasWork: await hasUnpublishedWork(repoPath) } }
+  catch (error) { logError('resync', error); return { ok: false, hasWork: false, error: String(error) } }
+})
+
+ipcMain.handle('git:resyncFromLive', async (_event, repoPath: string) => {
+  try { await resyncFromLive(repoPath); return { ok: true } }
+  catch (error) { logError('resync', error); return { ok: false, error: String(error) } }
 })
 
 // --- GitHub OAuth device flow ---

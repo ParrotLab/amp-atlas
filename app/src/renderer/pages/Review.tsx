@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import { getSystem } from '../utils/systemStore'
 import { editorExtensions } from '../utils/markdownSerializer'
 import { parseDocument } from '../utils/fileDocument'
+import { useOnline } from '../hooks/useOnline'
 import './Review.css'
 
 interface DiffLine {
@@ -58,6 +59,7 @@ export default function Review() {
   const [comment, setComment] = useState('')
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
   const [action, setAction] = useState<'approve' | 'request-changes' | null>(null)
+  const online = useOnline()
 
   const system = systemId ? getSystem(systemId) : undefined
   const repoPath = system?.folderPath || ''
@@ -156,6 +158,7 @@ export default function Review() {
 
   const handleSubmitReview = async (reviewAction: 'approve' | 'request-changes') => {
     if (!repoPath) return
+    if (!online) { alert("You're offline — keep editing; publishing and review need a connection."); return }
     setAction(reviewAction)
     setStatus('submitting')
     const result = await window.api.git.reviewPR(repoPath, prNum, reviewAction, comment)
@@ -271,16 +274,16 @@ export default function Review() {
                   <button
                     className={`review-action-btn request-changes ${intent === 'request-changes' ? 'primary' : ''}`}
                     onClick={() => handleSubmitReview('request-changes')}
-                    disabled={!hasComment || status === 'submitting'}
-                    title={!hasComment ? 'Add a note above describing what should change' : ''}
+                    disabled={!hasComment || status === 'submitting' || !online}
+                    title={!online ? "You're offline — reconnect to submit" : !hasComment ? 'Add a note above describing what should change' : ''}
                   >
                     {status === 'submitting' && action === 'request-changes' ? 'Submitting...' : 'Request Changes'}
                   </button>
                   <button
                     className={`review-action-btn approve ${intent !== 'approve' ? 'ghost' : ''}`}
                     onClick={() => handleSubmitReview('approve')}
-                    disabled={!allReviewed || status === 'submitting' || hasComment}
-                    title={!allReviewed ? 'Mark all files as reviewed first' : hasComment ? 'Clear the comment to approve, or click Request Changes' : ''}
+                    disabled={!allReviewed || status === 'submitting' || hasComment || !online}
+                    title={!online ? "You're offline — reconnect to submit" : !allReviewed ? 'Mark all files as reviewed first' : hasComment ? 'Clear the comment to approve, or click Request Changes' : ''}
                   >
                     {status === 'submitting' && action === 'approve'
                       ? 'Approving...'

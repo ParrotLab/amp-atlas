@@ -18,3 +18,14 @@
   flex: 1;
   min-height: 0;
 }
+
+.offline-pill {
+  position: fixed; top: 12px; right: 16px; z-index: 900;
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #fdf3e0; border: 1px solid #f2d9a8; color: #7a5a1e;
+  border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 500;
+  box-shadow: 0 2px 8px rgba(40, 20, 50, 0.08);
+}
+.offline-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #d9822b; display: inline-block;
+}

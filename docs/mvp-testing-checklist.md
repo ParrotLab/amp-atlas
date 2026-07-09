@@ -77,7 +77,21 @@ Sections are in build order. Each maps to a merged PR + its spec in `docs/superp
 
 ---
 
-## 8. Packaging, signing & auto-update (PR #7) — release-time
+## 8. Offline capability state
+
+Toggle connectivity with DevTools → Network → Offline, or turn wifi off.
+
+- [ ] **Offline pill appears** — Go offline → a subtle "You're offline" pill shows in the app shell (persists while offline).
+- [ ] **Local work keeps working** — While offline: open files, edit, **Save**, create a file/folder, and create/switch a **draft** all work normally.
+- [ ] **GitHub actions grey out** — While offline: **Publish** and **Submit for review** are disabled; clicking shows *"You're offline — keep editing; publishing and review need a connection."*
+- [ ] **Review submit blocked** — On a Review page while offline, Approve / Request Changes are disabled with the offline hint.
+- [ ] **Inbox offline line** — The Inbox shows *"You're offline — your inbox will refresh when you reconnect."* instead of a spinner.
+- [ ] **Reconnect restores everything** — Go back online → the pill vanishes, GitHub actions re-enable, and the Inbox repopulates, all with **no restart**.
+- [ ] **Distinct from signed-out** — The offline message ("keep editing…") is different from the signed-out message ("reconnect in Settings").
+
+---
+
+## 9. Packaging, signing & auto-update (PR #7) — release-time
 
 These need a real signed build + distribution, so they run at release time on Kristi's Mac, not in `npm run dev`. Some were already validated during the packaging workstream (sign → notarize → publish succeeded); re-confirm end-to-end before shipping.
 

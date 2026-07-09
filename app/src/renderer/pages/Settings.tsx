@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getSystems, updateSystemFolder, addSystem, removeSystem, updateSystem, SystemConfig } from '../utils/systemStore'
 import { iconMap, iconList } from '../components/SystemIcons'
 import { useToast } from '../components/Toast'
+import { SUPPORT_FORM_URL, shouldOpenForm } from '../utils/support'
 import './Settings.css'
 
 const gradientOptions = [
@@ -60,6 +61,21 @@ export default function Settings() {
   }
 
   const handleSignOut = async () => { await window.api.auth.signOut(); setIdentity(null); showToast('Signed out of GitHub.') }
+
+  const handleCopyLogs = async () => {
+    const r = await window.api.diagnostics.recent()
+    if (r.ok) { await navigator.clipboard.writeText(r.text); showToast('Logs copied to clipboard.') }
+    else showToast("Couldn't read logs.")
+  }
+
+  const handleRevealLogs = () => { window.api.diagnostics.reveal() }
+
+  const handleReport = async () => {
+    const r = await window.api.diagnostics.recent()
+    if (r.ok) await navigator.clipboard.writeText(r.text)
+    if (shouldOpenForm(SUPPORT_FORM_URL)) window.open(SUPPORT_FORM_URL)
+    else showToast('Logs copied — paste them to your team lead.')
+  }
 
   const handleChangeColor = (systemId: string, gradient: string) => {
     const updated = updateSystem(systemId, { gradient })
@@ -219,6 +235,19 @@ export default function Settings() {
           <div className="settings-info-card">
             <div className="settings-info-label">Version</div>
             <div className="settings-info-value">AI Momentum Protocols v0.1.0</div>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title" style={{ marginBottom: '14px' }}>Diagnostics</div>
+          <div className="settings-info-card">
+            <div className="settings-info-label">Something not working?</div>
+            <div className="settings-info-value">Copy your logs or send a report so we can help.</div>
+            <div className="settings-diagnostics-actions">
+              <button className="settings-btn" onClick={handleCopyLogs}>Copy logs</button>
+              <button className="settings-btn" onClick={handleRevealLogs}>Reveal log file</button>
+              <button className="settings-btn primary" onClick={handleReport}>Report a problem</button>
+            </div>
           </div>
         </div>
       </div>

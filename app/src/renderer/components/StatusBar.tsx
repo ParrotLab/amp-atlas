@@ -16,15 +16,16 @@ interface StatusBarProps {
   activeDrafts: DraftItem[]
   archivedDrafts: DraftItem[]
   lastSaved?: string
+  lastRefreshedLabel?: string
   onSave: () => void
   onDiscard: () => void
   onPublish: () => void
+  onRefresh?: () => void
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
   onUnarchive?: (branch: string) => void
   onAddExistingWork?: (branch: string) => void
-  onMoveChangesToDraft?: (name: string) => void
   repoPath?: string
   prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
   canUseGit?: boolean
@@ -43,16 +44,19 @@ function humanize(branch: string): string {
 export default function StatusBar({
   editedCount, newCount, isDirty,
   branchName, isMain,
-  activeDrafts, archivedDrafts, lastSaved,
-  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch, onUnarchive,
-  onAddExistingWork, onMoveChangesToDraft, repoPath, prStatus,
+  activeDrafts, archivedDrafts, lastSaved, lastRefreshedLabel,
+  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch, onUnarchive,
+  onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAdopt, setShowAdopt] = useState(false)
+  const [showActions, setShowActions] = useState(false)
   const [adoptable, setAdoptable] = useState<{ name: string; isRemoteOnly: boolean }[]>([])
   const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
   const unsaved = editedCount + newCount
+  const prOpen = prStatus?.hasPR && prStatus.state === 'OPEN'
+  const publishLabel = prOpen ? 'Update Review' : 'Publish'
 
   useEffect(() => {
     if (!showAdopt || !repoPath) return
@@ -64,11 +68,18 @@ export default function StatusBar({
     })
   }, [showAdopt, repoPath, activeDrafts, archivedDrafts])
 
-  const prBadge = prStatus?.hasPR && prStatus.state === 'OPEN' && (
-    <span className={`status-pr-badge-inline ${prStatus.reviewDecision === 'APPROVED' ? 'approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
-      {prStatus.reviewDecision === 'APPROVED' ? 'Approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
+  const prBadge = prOpen && (
+    <span className={`status-pr-badge-inline ${prStatus?.reviewDecision === 'APPROVED' ? 'approved' : prStatus?.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
+      {prStatus?.reviewDecision === 'APPROVED' ? 'Approved' : prStatus?.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
     </span>
   )
+
+  const doPublish = () => { setShowActions(false); canUseGitHub ? onPublish() : onNeedGitHub?.() }
+  const doDiscard = () => {
+    setShowActions(false)
+    if (!canUseGit) { onNeedGit?.(); return }
+    if (window.confirm('Discard all unsaved changes? This can’t be undone.')) onDiscard()
+  }
 
   return (
     <div className="status-bar">
@@ -153,15 +164,7 @@ export default function StatusBar({
             {lastSaved && ` · saved ${lastSaved}`}
           </span>
         )}
-        {isMain && isDirty && (
-          <button
-            className="status-btn outline"
-            onClick={() => { const n = window.prompt('Name this draft:'); if (n && n.trim()) onMoveChangesToDraft?.(n.trim()) }}
-          >
-            Move changes into a draft
-          </button>
-        )}
-        {isMain && !isDirty && <span className="status-item" style={{ color: '#16A34A' }}>read only</span>}
+        {isMain && <span className="status-readonly-tag">Read only</span>}
       </div>
 
       {showAdopt && (
@@ -180,35 +183,41 @@ export default function StatusBar({
       )}
 
       <div className="status-right">
-        <button
-          className={`status-btn secondary ${!canUseGit ? 'disabled' : ''}`}
-          disabled={canUseGit && !isDirty}
-          onClick={() => canUseGit ? onDiscard() : onNeedGit?.()}
-        >
-          Discard
-        </button>
-        <button
-          className={`status-btn primary ${!canUseGit ? 'disabled' : ''}`}
-          disabled={canUseGit && !isDirty}
-          onClick={() => canUseGit ? onSave() : onNeedGit?.()}
-        >
-          Save
-        </button>
-        {prStatus?.hasPR && prStatus.state === 'OPEN' ? (
-          <button
-            className={`status-btn outline ${!canUseGitHub ? 'disabled' : ''}`}
-            disabled={canUseGitHub && !isDirty}
-            onClick={() => canUseGitHub ? onPublish() : onNeedGitHub?.()}
-          >
-            Update Review
-          </button>
+        {isMain ? (
+          <div className="status-freshness">
+            {lastRefreshedLabel && <span className="status-updated">{lastRefreshedLabel}</span>}
+            <button className="status-refresh-btn" onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
+              ⟳ Refresh
+            </button>
+          </div>
         ) : (
-          <button
-            className={`status-btn outline ${!canUseGitHub ? 'disabled' : ''}`}
-            onClick={() => canUseGitHub ? onPublish() : onNeedGitHub?.()}
-          >
-            Publish
-          </button>
+          <div className="status-split-wrapper">
+            <div className="status-split">
+              <button
+                className={`status-split-primary ${!canUseGit ? 'disabled' : ''}`}
+                disabled={canUseGit && !isDirty}
+                onClick={() => canUseGit ? onSave() : onNeedGit?.()}
+                title="Save (⌘S)"
+              >
+                Save
+              </button>
+              <button className="status-split-caret" onClick={() => setShowActions(v => !v)} aria-label="More actions">▾</button>
+            </div>
+            {showActions && (
+              <>
+                <div className="status-dropdown-overlay" onClick={() => setShowActions(false)} />
+                <div className="status-actions-menu">
+                  <button className="status-actions-item" onClick={doPublish}>
+                    <span>{publishLabel}</span>
+                    <span className="status-kbd">⌘↵</span>
+                  </button>
+                  <button className="status-actions-item danger" onClick={doDiscard}>
+                    <span>Discard changes</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

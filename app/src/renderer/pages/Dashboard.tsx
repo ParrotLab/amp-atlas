@@ -60,12 +60,13 @@ export default function Dashboard() {
     setSystems(getSystems())
   }, [])
 
-  // Refresh the Live Version for connected systems. `force` ignores the freshness throttle.
-  const refreshSystems = async (force: boolean) => {
+  // Refresh the Live Version for connected systems.
+  // `force` ignores the freshness throttle; `silent` skips the visible "Refreshing…" state (used on load).
+  const refreshSystems = async (force: boolean, silent = false) => {
     const connected = getSystems().filter(s => s.folderPath)
     // seed display with any stored timestamps immediately
     setPullTimes(Object.fromEntries(connected.map(s => [s.folderPath!, getLastPull(s.folderPath!)])))
-    setRefreshing(true)
+    if (!silent) setRefreshing(true)
     for (const sys of connected) {
       const folder = sys.folderPath!
       const last = getLastPull(folder)
@@ -73,11 +74,11 @@ export default function Dashboard() {
       const r = await window.api.git.refreshMain(folder)
       if (r.ok) { const now = Date.now(); setLastPull(folder, now); setPullTimes(p => ({ ...p, [folder]: now })) }
     }
-    setRefreshing(false)
+    if (!silent) setRefreshing(false)
   }
 
-  // On open (launch / navigating home), refresh connected systems (throttled).
-  useEffect(() => { void refreshSystems(false) }, [])
+  // On open (launch / navigating home), silently refresh connected systems (throttled).
+  useEffect(() => { void refreshSystems(false, true) }, [])
 
   useEffect(() => {
     const loadDrafts = async () => {

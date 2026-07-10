@@ -79,13 +79,14 @@ knowing on day one:
 | Word | What it means |
 |------|----------------|
 | **System** | A home for one part of your team's knowledge (like a Learning System or Delivery System). |
+| **Sub-system** | A smaller area inside a System — a way to divide a big System into its parts. |
 | **Live Version** | The official, published version of a System that everyone shares. |
 | **Draft** | Your private working copy where you make changes safely. |
 | **Publish** | Sending an approved Draft to become the new Live Version. |
 | **Review** | A teammate checking your Draft before it's published. |
 
 There's a fuller [glossary](../02-core-concepts/glossary.md) when you want it — but these
-five will carry you a long way.
+will carry you a long way.
 
 ---
 

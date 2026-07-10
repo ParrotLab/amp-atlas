@@ -4,6 +4,7 @@ import { iconMap, iconList } from '../components/SystemIcons'
 import { useToast } from '../components/Toast'
 import { SUPPORT_FORM_URL, shouldOpenForm } from '../utils/support'
 import ResyncModal from '../components/ResyncModal'
+import { useProfile } from '../hooks/useProfile'
 import './Settings.css'
 
 const gradientOptions = [
@@ -29,6 +30,7 @@ export default function Settings() {
   const [editingName, setEditingName] = useState<string | null>(null)
   const [identity, setIdentity] = useState<{ login: string } | null>(null)
   const [resyncFor, setResyncFor] = useState<SystemConfig | null>(null)
+  const profile = useProfile()
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -254,7 +256,7 @@ export default function Settings() {
           <div className="settings-section-title" style={{ marginBottom: '14px' }}>Account</div>
           <div className="settings-info-card">
             <div className="settings-info-label">Signed in as</div>
-            <div className="settings-info-value">Rose &middot; Parrot Labs</div>
+            <div className="settings-info-value">{profile.name || '—'}{profile.login ? ` · @${profile.login}` : ''}</div>
           </div>
         </div>
 

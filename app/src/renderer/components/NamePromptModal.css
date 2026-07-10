@@ -1,0 +1,23 @@
+.nameprompt-overlay {
+  position: fixed; inset: 0; background: rgba(40, 20, 50, 0.35);
+  display: flex; align-items: center; justify-content: center; z-index: 1100;
+}
+.nameprompt-modal {
+  background: #fffdf9; border-radius: 14px; padding: 28px 30px; max-width: 420px; width: 90%;
+  box-shadow: 0 12px 40px rgba(40, 20, 50, 0.25); font-family: inherit;
+}
+.nameprompt-title { margin: 0 0 10px; font-size: 19px; color: #3b2a44; }
+.nameprompt-body { margin: 0 0 16px; font-size: 14px; line-height: 1.5; color: #4a3d52; }
+.nameprompt-input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 14px; font-family: inherit;
+  border: 1px solid #e3dcd2; border-radius: 8px; background: #fff; color: #3b2a44;
+}
+.nameprompt-input:focus { outline: none; border-color: #8B2BFF; }
+.nameprompt-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 20px; }
+.nameprompt-skip { background: none; border: none; color: #6b6966; font-size: 14px; cursor: pointer; }
+.nameprompt-skip:hover { color: #3b2a44; }
+.nameprompt-primary {
+  background: #6b2fb3; color: #fff; border: none; border-radius: 8px; padding: 9px 20px; font-size: 14px; cursor: pointer;
+}
+.nameprompt-primary:disabled { opacity: 0.5; cursor: default; }
+.nameprompt-primary:hover:not(:disabled) { background: #5a259c; }

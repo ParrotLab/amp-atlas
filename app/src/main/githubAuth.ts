@@ -42,11 +42,12 @@ export async function pollForToken(deviceCode: string, interval: number): Promis
   }
 }
 
-export async function getIdentity(): Promise<{ login: string; name: string; avatarUrl: string } | null> {
+export async function getIdentity(): Promise<{ login: string; name: string | null; avatarUrl: string } | null> {
   const token = tokenStore().getToken()
   if (!token) return null
   const res = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } })
   if (!res.ok) return null
   const j = await res.json()
-  return { login: j.login, name: j.name || j.login, avatarUrl: j.avatar_url }
+  // name is null when the user hasn't set a display name on GitHub — surface that so the app can ask.
+  return { login: j.login, name: j.name || null, avatarUrl: j.avatar_url }
 }

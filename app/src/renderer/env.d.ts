@@ -126,7 +126,7 @@ interface ElectronAPI {
   auth: {
     startDeviceFlow: () => Promise<{ ok: boolean; error?: string; deviceCode?: string; userCode?: string; verificationUri?: string; interval?: number; expiresIn?: number }>
     pollToken: (deviceCode: string, interval: number) => Promise<{ ok: boolean; connected?: boolean; error?: string }>
-    identity: () => Promise<{ ok: boolean; identity: { login: string; name: string; avatarUrl: string } | null }>
+    identity: () => Promise<{ ok: boolean; identity: { login: string; name: string | null; avatarUrl: string } | null }>
     status: () => Promise<{ connected: boolean; everConnected: boolean }>
     signOut: () => Promise<{ ok: boolean }>
   }

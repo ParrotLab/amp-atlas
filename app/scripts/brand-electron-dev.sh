@@ -32,6 +32,9 @@ if [ -f "$ICON_SRC" ]; then
   iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/electron.icns"
 fi
 
-# Nudge the bundle mtime so the Dock/Finder re-read it.
+# Nudge the bundle mtime and force LaunchServices to re-read it, so the Dock tooltip
+# (not just the icon) picks up the new name instead of serving a cached "Electron".
 touch "$APP"
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+[ -x "$LSREGISTER" ] && "$LSREGISTER" -f "$APP" >/dev/null 2>&1 || true
 echo "[brand] dev Electron.app branded as \"$NAME\""

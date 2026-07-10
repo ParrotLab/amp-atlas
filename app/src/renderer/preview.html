@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AMP Design System Preview</title>
-  <!-- Single source of truth: the app's styles. Edit those; this preview always matches the app. -->
-  <!-- fonts.css = the preview's own @font-face (design-system/fonts, co-located). The app has its
-       own fonts.css pointing at its bundled fonts. typography.css no longer declares @font-face. -->
-  <link rel="stylesheet" href="fonts.css">
-  <link rel="stylesheet" href="../app/src/renderer/styles/tokens.css">
-  <link rel="stylesheet" href="../app/src/renderer/styles/typography.css">
-  <link rel="stylesheet" href="../app/src/renderer/styles/components.css">
+  <!-- This preview lives inside the app and loads the exact same styles + fonts as the app.
+       One source for everything: app/src/renderer/. View it via the dev server
+       (http://localhost:5173/preview.html) or by opening this file directly. -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/fonts.css">
+  <link rel="stylesheet" href="styles/typography.css">
+  <link rel="stylesheet" href="styles/components.css">
   <style>
     /* ── Preview Page Layout ─────────────────────────────────────── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -545,7 +545,7 @@
   <!-- ═══════════════════════════════════════════════════════════════════ -->
   <header class="preview-header">
     <div style="margin-bottom: var(--space-4);">
-      <img src="assets/logo-wordmark-light.svg" alt="AI Momentum Protocols" style="height: 60px;">
+      <img src="assets/logos/logo-wordmark-light.svg" alt="AI Momentum Protocols" style="height: 60px;">
     </div>
     <h1><span class="sparkle">&#10022;</span> AMP Design System</h1>
     <p>Design tokens, typography, and components for AMP UP</p>
@@ -580,21 +580,21 @@
     <div class="subsection">
       <h3 class="subsection-title">Wordmark &mdash; Dark (for light backgrounds)</h3>
       <div class="component-box" style="text-align: center; padding: var(--space-10);">
-        <img src="assets/logo-wordmark-dark.svg" alt="AMP Logo Dark" style="height: 80px;">
+        <img src="assets/logos/logo-wordmark-dark.svg" alt="AMP Logo Dark" style="height: 80px;">
       </div>
     </div>
 
     <div class="subsection">
       <h3 class="subsection-title">Wordmark &mdash; Light (for dark backgrounds)</h3>
       <div class="component-box dark" style="text-align: center; padding: var(--space-10);">
-        <img src="assets/logo-wordmark-light.svg" alt="AMP Logo Light" style="height: 80px;">
+        <img src="assets/logos/logo-wordmark-light.svg" alt="AMP Logo Light" style="height: 80px;">
       </div>
     </div>
 
     <div class="subsection">
       <h3 class="subsection-title">Full Name &mdash; Horizontal (for dark backgrounds)</h3>
       <div class="component-box dark" style="text-align: center; padding: var(--space-10);">
-        <img src="assets/logo-light-full-name.svg" alt="AMP Full Name" style="height: 40px;">
+        <img src="assets/logos/logo-light-full-name.svg" alt="AMP Full Name" style="height: 40px;">
       </div>
     </div>
 
@@ -602,13 +602,13 @@
       <h3 class="subsection-title">On Brand Colors</h3>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3);">
         <div style="background: var(--amp-plum-900); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center;">
-          <img src="assets/logo-wordmark-light.svg" alt="AMP on Plum" style="height: 50px;">
+          <img src="assets/logos/logo-wordmark-light.svg" alt="AMP on Plum" style="height: 50px;">
         </div>
         <div style="background: var(--amp-violet-700); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center;">
-          <img src="assets/logo-wordmark-light.svg" alt="AMP on Violet" style="height: 50px;">
+          <img src="assets/logos/logo-wordmark-light.svg" alt="AMP on Violet" style="height: 50px;">
         </div>
         <div style="background: var(--amp-cream-500); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center;">
-          <img src="assets/logo-wordmark-dark.svg" alt="AMP on Cream" style="height: 50px;">
+          <img src="assets/logos/logo-wordmark-dark.svg" alt="AMP on Cream" style="height: 50px;">
         </div>
       </div>
     </div>
@@ -1140,7 +1140,7 @@
       <!-- Sidebar -->
       <div class="mockup-sidebar">
         <div class="mockup-sidebar-header">
-          <img src="assets/logo-wordmark-light.svg" alt="AMP" style="height: 28px;">
+          <img src="assets/logos/logo-wordmark-light.svg" alt="AMP" style="height: 28px;">
         </div>
         <div class="mockup-sidebar-search">
           <input class="mockup-search-input" placeholder="Search... (Cmd+K)" readonly>

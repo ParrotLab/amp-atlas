@@ -6,6 +6,14 @@
   flex-shrink: 0;
   border-right: 1px solid #EDE8E2;
   padding-top: 38px;
+  /* The nav rail is the window's drag handle (traffic lights live up here) */
+  -webkit-app-region: drag;
+}
+
+/* Interactive regions opt out of dragging so clicks register */
+.sidebar-nav,
+.sidebar-bottom {
+  -webkit-app-region: no-drag;
 }
 
 .sidebar-logo {

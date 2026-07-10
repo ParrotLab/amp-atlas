@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import TreeContextMenu, { ContextTarget } from './TreeContextMenu'
+import { SearchIcon, FilePlusIcon, FolderPlusIcon, PlusIcon, BookIcon, DocIcon } from './SystemIcons'
 import './FileTree.css'
 
 interface TreeNode {
@@ -21,6 +22,7 @@ interface FileTreeProps {
   gitDeleted?: Set<string>
   refreshToken?: number
   canEdit?: boolean
+  onSearch?: () => void
   onNeedDraft?: () => void
   onNewScaffold?: (type: 'playbook' | 'project' | 'sub-system') => void
   onNewFile?: (parentAbs: string) => void
@@ -32,13 +34,11 @@ interface FileTreeProps {
 
 export default function FileTree({
   rootPath, onFileSelect, selectedFile, gitModified, gitNew, gitDeleted, refreshToken,
-  canEdit, onNeedDraft, onNewScaffold, onNewFile, onNewFolder, onRename, onMove, onDelete,
+  canEdit, onSearch, onNeedDraft, onNewScaffold, onNewFile, onNewFolder, onRename, onMove, onDelete,
 }: FileTreeProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [expandedNodes, setExpandedNodes] = useState<Map<string, TreeNode[]>>(new Map())
-  const [search, setSearch] = useState('')
   const [menu, setMenu] = useState<{ x: number; y: number; target: ContextTarget } | null>(null)
-  const [showNew, setShowNew] = useState(false)
 
   const loadDirectory = useCallback(async (dirPath: string): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
@@ -147,9 +147,6 @@ export default function FileTree({
       isGitDeleted ? 'git-deleted' : ''
     ].filter(Boolean).join(' ')
 
-    const matchesSearch = !search || node.name.toLowerCase().includes(search.toLowerCase())
-    if (!matchesSearch && !node.isDirectory) return null
-
     return (
       <div key={node.path}>
         <div
@@ -174,9 +171,9 @@ export default function FileTree({
               </svg>
             </span>
           ) : isPlaybook ? (
-            <span className="tree-item-icon" style={{ color: '#8E8B87', fontSize: '14px' }}>&#x1F4D6;</span>
+            <span className="tree-item-icon" style={{ color: '#8E8B87' }}><BookIcon size={15} /></span>
           ) : (
-            <span className="tree-item-icon" style={{ color: '#B5B1AC', fontSize: '14px' }}>&#x1F4C4;</span>
+            <span className="tree-item-icon" style={{ color: '#B5B1AC' }}><DocIcon size={15} /></span>
           )}
           <span className="tree-item-name">{node.name}</span>
           {changeCount > 0 && <span className="tree-item-change-count">{changeCount}</span>}
@@ -194,40 +191,72 @@ export default function FileTree({
 
   const parentOf = (t: ContextTarget) => (t.isDirectory ? t.path : t.path.replace(/\/[^/]+$/, ''))
 
+  // New file/folder land next to the open file (or at the system root if nothing is open).
+  const contextFolder = selectedFile ? selectedFile.replace(/\/[^/]+$/, '') : rootPath
+  const guardedCreate = (run: () => void) => { if (canEdit) run(); else onNeedDraft?.() }
+
+  // Each section's "+" creates the type that belongs in that section.
+  const sectionAdd = (key: string): { title: string; run: () => void } | null => {
+    switch (key) {
+      case 'playbooks': return { title: 'New playbook', run: () => onNewScaffold?.('playbook') }
+      case 'work': return { title: 'New project', run: () => onNewScaffold?.('project') }
+      case 'reference': return { title: 'New sub-system', run: () => onNewScaffold?.('sub-system') }
+      case 'readmes': return { title: 'New readme', run: () => onNewFile?.(`${rootPath}/readmes`) }
+      default: return null
+    }
+  }
+
   return (
     <>
-      <div className="file-tree-header">
-        <div className="file-tree-newwrap">
-          <button className="file-tree-new" onClick={() => canEdit ? setShowNew(v => !v) : onNeedDraft?.()}>+ New</button>
-          {showNew && (
-            <>
-              <div className="tcm-overlay" onClick={() => setShowNew(false)} />
-              <div className="tcm" style={{ left: 12, top: 40 }}>
-                <button className="tcm-item" onClick={() => { setShowNew(false); onNewScaffold?.('playbook') }}>New Playbook</button>
-                <button className="tcm-item" onClick={() => { setShowNew(false); onNewScaffold?.('project') }}>New Project</button>
-                <button className="tcm-item" onClick={() => { setShowNew(false); onNewScaffold?.('sub-system') }}>New Sub-system</button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="file-tree-search">
-        <input
-          type="text"
-          placeholder="Search files... (Cmd+K)"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      <div className="file-tree-toolbar">
+        <button className="tree-tool-btn" title="Search files  ⌘K" aria-label="Search files" onClick={() => onSearch?.()}>
+          <SearchIcon size={17} />
+        </button>
+        <span className="tree-tool-spacer" />
+        <button
+          className={`tree-tool-btn ${!canEdit ? 'disabled' : ''}`}
+          title={canEdit ? 'New file' : 'Switch to a draft to add files'}
+          aria-label="New file"
+          aria-disabled={!canEdit}
+          onClick={() => guardedCreate(() => onNewFile?.(contextFolder))}
+        >
+          <FilePlusIcon size={17} />
+        </button>
+        <button
+          className={`tree-tool-btn ${!canEdit ? 'disabled' : ''}`}
+          title={canEdit ? 'New folder' : 'Switch to a draft to add folders'}
+          aria-label="New folder"
+          aria-disabled={!canEdit}
+          onClick={() => guardedCreate(() => onNewFolder?.(contextFolder))}
+        >
+          <FolderPlusIcon size={17} />
+        </button>
       </div>
       <div className="file-tree">
-        {sections.map(sec => (
-          <div key={sec.key}>
-            <div className="tree-section-label">{sec.label}</div>
-            {sec.nodes.length > 0
-              ? sec.nodes.map(node => renderItem(node, 0, sec.isPlaybook))
-              : <div className="tree-empty">Nothing here yet</div>}
-          </div>
-        ))}
+        {sections.map(sec => {
+          const add = sectionAdd(sec.key)
+          return (
+            <div key={sec.key} className="tree-section">
+              <div className="tree-section-header">
+                <span className="tree-section-label">{sec.label}</span>
+                {add && (
+                  <button
+                    className={`tree-section-add ${!canEdit ? 'disabled' : ''}`}
+                    title={canEdit ? add.title : 'Switch to a draft first'}
+                    aria-label={add.title}
+                    aria-disabled={!canEdit}
+                    onClick={() => guardedCreate(add.run)}
+                  >
+                    <PlusIcon size={14} />
+                  </button>
+                )}
+              </div>
+              {sec.nodes.length > 0
+                ? sec.nodes.map(node => renderItem(node, 0, sec.isPlaybook))
+                : <div className="tree-empty">Nothing here yet</div>}
+            </div>
+          )
+        })}
       </div>
       {menu && (
         <TreeContextMenu

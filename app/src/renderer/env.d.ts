@@ -78,6 +78,7 @@ interface ElectronAPI {
     move: (from: string, to: string) => Promise<{ ok: boolean; error?: string }>
     delete: (path: string) => Promise<{ ok: boolean; error?: string }>
     listFolders: (root: string) => Promise<{ ok: boolean; error?: string; folders: string[] }>
+    listFiles: (root: string) => Promise<{ ok: boolean; error?: string; files: string[] }>
   }
   dialog: {
     selectFolder: () => Promise<{ ok: boolean; canceled?: boolean; path?: string }>

@@ -44,3 +44,23 @@ export async function listFolders(root: string): Promise<string[]> {
   await walk(root, '')
   return out
 }
+
+/** All files under root (system-relative), excluding hidden dirs and node_modules. Powers file search. */
+export async function listFiles(root: string): Promise<string[]> {
+  const out: string[] = []
+  async function walk(absDir: string, relDir: string): Promise<void> {
+    let entries
+    try { entries = await readdir(absDir, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      const rel = relDir ? `${relDir}/${e.name}` : e.name
+      if (e.isDirectory()) {
+        if (e.name.startsWith('.') || e.name === 'node_modules') continue
+        await walk(`${absDir}/${e.name}`, rel)
+      } else if (e.isFile() && !e.name.startsWith('.')) {
+        out.push(rel)
+      }
+    }
+  }
+  await walk(root, '')
+  return out
+}

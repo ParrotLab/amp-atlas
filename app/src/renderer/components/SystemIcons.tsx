@@ -49,6 +49,18 @@ export const MailIcon = ({ size = 18 }: { size?: number }) => <I size={size}><pa
 
 export const RefreshIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3.5 10a6.5 6.5 0 0111-4.7l1.6 1.5"/><path d="M16.5 3.5v3.5H13"/><path d="M16.5 10a6.5 6.5 0 01-11 4.7L4 13.2"/><path d="M3.5 16.5V13H7"/></I>
 
+// UI / chrome icons (toolbar, selectors, focus mode)
+export const SearchIcon = ({ size = 18 }: { size?: number }) => <I size={size}><circle cx="9" cy="9" r="6"/><path d="M17 17l-3.5-3.5"/></I>
+export const FilePlusIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M11 2H5a1.5 1.5 0 00-1.5 1.5v13A1.5 1.5 0 005 18h10a1.5 1.5 0 001.5-1.5V7.5L11 2z"/><path d="M11 2v5.5h5.5"/><path d="M10 11v4M8 13h4"/></I>
+export const FolderPlusIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M2 5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"/><path d="M10 9v4M8 11h4"/></I>
+export const ChevronDownIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M5.5 8l4.5 4.5L14.5 8"/></I>
+export const ExpandIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5"/></I>
+export const CompressIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 8h5V3M17 8h-5V3M3 12h5v5M17 12h-5v5"/></I>
+export const PanelIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M12 4v12"/></I>
+export const EyeIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10z"/><circle cx="10" cy="10" r="2.5"/></I>
+export const PlusIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M10 4v12M4 10h12"/></I>
+export const CloseIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M5 5l10 10M15 5L5 15"/></I>
+
 export const iconMap: Record<string, React.FC<{ size?: number }>> = {
   book: BookIcon,
   monitor: MonitorIcon,

@@ -7,13 +7,15 @@ export interface FieldSchema {
   options?: string[]
 }
 
-export const STATUS_OPTIONS = ['Draft', 'Active', 'Archived']
+// Playbook grades — how a live playbook's quality is rated (or its build state).
+export const STATUS_OPTIONS = ['Not Yet Graded', 'A (Great)', 'B (Useful)', 'C (Not Useful)', 'F (Not Usable)', 'Future']
 
 const SCHEMAS: Record<string, FieldSchema[]> = {
   playbook: [
     { key: 'name', label: 'Name', widget: 'text' },
     { key: 'description', label: 'Description', widget: 'text' },
-    { key: 'process', label: 'Process', widget: 'text' },
+    { key: 'system', label: 'System', widget: 'text' },
+    { key: 'sub-pillar', label: 'Sub-pillar', widget: 'text' },
     { key: 'status', label: 'Status', widget: 'select', options: STATUS_OPTIONS },
   ],
 }

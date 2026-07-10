@@ -188,7 +188,7 @@ export default function StatusBar({
         {isMain ? (
           <div className="status-freshness">
             {lastRefreshedLabel && <span className="status-updated">{lastRefreshedLabel}</span>}
-            <Button variant="secondary" size="sm" icon={<RefreshIcon />} onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
+            <Button variant="outline" size="sm" icon={<RefreshIcon />} onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
               Refresh
             </Button>
           </div>

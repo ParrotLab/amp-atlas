@@ -34,6 +34,10 @@
 .btn-secondary:hover:not(:disabled) { background: #E7E0D7; }
 .btn-secondary:disabled { background: #F4F1EC; color: #B5B1AC; }
 
+.btn-outline { background: #fff; color: #8B2BFF; border-color: #D2C2F2; }
+.btn-outline:hover:not(:disabled) { background: rgba(139, 43, 255, 0.06); border-color: #8B2BFF; }
+.btn-outline:disabled { color: #C3B7DE; border-color: #E7DEF7; }
+
 .btn-ghost { background: transparent; color: #6B6966; }
 .btn-ghost:hover:not(:disabled) { background: rgba(0,0,0,0.05); color: #3D3832; }
 .btn-ghost:disabled { color: #B5B1AC; }

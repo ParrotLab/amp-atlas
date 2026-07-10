@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import './Button.css'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 interface ButtonProps {

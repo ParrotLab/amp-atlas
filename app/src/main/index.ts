@@ -14,6 +14,9 @@ import { setupAutoUpdate } from './updater'
 import { logError, logFilePath } from './logger'
 import { hasUnpublishedWork, resyncFromLive } from './resync'
 
+// Dock/menu name in dev (packaged builds get this from productName). Must run before app is ready.
+app.setName('AMP Atlas')
+
 process.on('uncaughtException', (err) => logError('uncaught', err))
 
 let mainWindow: BrowserWindow | null = null

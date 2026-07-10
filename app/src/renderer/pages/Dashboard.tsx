@@ -130,27 +130,37 @@ export default function Dashboard() {
 
       <div className="dashboard-section-head">
         <div className="section-label">Your Systems</div>
-        <button className="dashboard-refresh" onClick={() => refreshSystems(true)} disabled={refreshing}>
-          {refreshing ? 'Refreshing…' : '⟳ Refresh'}
-        </button>
+        {systems.length > 0 && (
+          <button className="dashboard-refresh" onClick={() => refreshSystems(true)} disabled={refreshing}>
+            {refreshing ? 'Refreshing…' : '⟳ Refresh'}
+          </button>
+        )}
       </div>
-      <div className="systems-grid">
-        {systems.map(sys => {
-          const Icon = iconMap[sys.icon] || BookIcon
-          const rel = sys.folderPath ? relativeTime(pullTimes[sys.folderPath] ?? getLastPull(sys.folderPath), nowMs) : ''
-          return (
-            <SystemCard
-              key={sys.id}
-              name={sys.name}
-              path={`/system/${sys.id}`}
-              gradient={sys.gradient}
-              meta={sys.folderPath ? (rel ? `Updated ${rel}` : 'Connected') : 'Not connected'}
-              connected={!!sys.folderPath}
-              icon={<Icon />}
-            />
-          )
-        })}
-      </div>
+      {systems.length === 0 ? (
+        <div className="systems-empty">
+          <div className="systems-empty-title">No systems yet</div>
+          <div className="systems-empty-sub">Add a system and connect it to your GitHub-backed folder to get started.</div>
+          <Link to="/settings" className="systems-empty-btn">+ Add a system</Link>
+        </div>
+      ) : (
+        <div className="systems-grid">
+          {systems.map(sys => {
+            const Icon = iconMap[sys.icon] || BookIcon
+            const rel = sys.folderPath ? relativeTime(pullTimes[sys.folderPath] ?? getLastPull(sys.folderPath), nowMs) : ''
+            return (
+              <SystemCard
+                key={sys.id}
+                name={sys.name}
+                path={`/system/${sys.id}`}
+                gradient={sys.gradient}
+                meta={sys.folderPath ? (rel ? `Updated ${rel}` : 'Connected') : 'Not connected'}
+                connected={!!sys.folderPath}
+                icon={<Icon />}
+              />
+            )
+          })}
+        </div>
+      )}
 
       {drafts.length > 0 && (
         <>

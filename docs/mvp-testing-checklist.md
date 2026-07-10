@@ -43,7 +43,9 @@ Sections are in build order. Each maps to a merged PR + its spec in `docs/superp
 - [ ] **Copy path** — "Copy path" puts the system-relative path on the clipboard.
 - [ ] **Canonical sections + materialize** — The four canonical sections always appear (even in a repo missing them); creating into a missing folder materializes it on disk; no `.gitkeep` files are left behind.
 - [ ] **Live Version gating** — On the Live Version, create/move/rename/delete are disabled with a "create a draft" nudge.
-- [ ] **Templates are editable** — Editing files in `app/templates/` changes what scaffolds produce. *(Also see the separate reminder to swap in real templates.)*
+- [ ] **Templates are editable** — Editing files in `app/templates/` changes what scaffolds produce.
+- [ ] **Real templates scaffold correctly** — Creating a new Playbook / Project / Sub-system produces the real templates (playbook SKILL.md with Purpose/Trigger/Inputs/Workflow/Outputs/Behavior Notes; project pitch.md + braindump.md; sub-system README.md with Mission/Where We Fit/What We Own/Roles/Core Processes). Guidance blockquotes render in the editor and survive a save.
+- [ ] **Playbook Properties fields** — Opening a scaffolded playbook's Properties panel shows **name, description, system, sub-system, status**, and Status is a dropdown of the grades (Not Yet Graded / A / B / C / F / Future).
 
 ## 5. GitHub OAuth onboarding + REST (PR #6)
 

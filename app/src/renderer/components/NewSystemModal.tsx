@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { addSystem, updateSystemFolder } from '../utils/systemStore'
 import { GRADIENTS } from '../utils/appearance'
 import { iconMap, iconList } from './SystemIcons'
+import Modal from './Modal'
+import Button from './Button'
 import './NewSystemModal.css'
 
 interface NewSystemModalProps {
@@ -21,15 +23,6 @@ export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystem
     if (isOpen) { setName(''); setIcon('book'); setGradient(GRADIENTS[0].value); setFolder('') }
   }, [isOpen])
 
-  useEffect(() => {
-    if (!isOpen) return
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
-
   const chooseFolder = async () => {
     const r = await window.api.dialog.selectFolder()
     if (r.ok && r.path) setFolder(r.path)
@@ -47,13 +40,19 @@ export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystem
   const PreviewIcon = iconMap[icon] || iconMap['book']
 
   return (
-    <div className="newsystem-overlay" onClick={onClose}>
-      <div className="newsystem-modal" onClick={e => e.stopPropagation()}>
-        <h2 className="newsystem-title">Add a system</h2>
-        <p className="newsystem-note">
-          A system is like a vault in Obsidian — pick the folder on your computer where its files live, and give it a name and look.
-        </p>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={480}
+      title="Add a system"
+      subtitle="A system is like a vault in Obsidian — pick the folder on your computer where its files live, and give it a name and look."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" disabled={!name.trim()} onClick={create}>Create system</Button>
+        </>
+      }
+    >
         {/* Live preview + name */}
         <div className="newsystem-head">
           <div className="newsystem-preview" style={{ background: gradient }}>
@@ -106,12 +105,6 @@ export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystem
           </button>
           <span className="newsystem-folder-path">{folder || 'No folder selected yet'}</span>
         </div>
-
-        <div className="newsystem-actions">
-          <button className="newsystem-cancel" onClick={onClose}>Cancel</button>
-          <button className="newsystem-create" disabled={!name.trim()} onClick={create}>Create system</button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

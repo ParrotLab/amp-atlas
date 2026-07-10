@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import SystemCard from '../components/SystemCard'
 import { getSystems, SystemConfig } from '../utils/systemStore'
+import { listActive } from '../utils/draftStore'
 import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
 import { useProfile } from '../hooks/useProfile'
 import NewSystemModal from '../components/NewSystemModal'
@@ -60,6 +61,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     setSystems(getSystems())
+    // Re-read systems when the window regains focus (catches adds/removes made elsewhere).
+    const onFocus = () => setSystems(getSystems())
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   // Refresh the Live Version for connected systems.
@@ -88,35 +93,44 @@ export default function Dashboard() {
 
       for (const sys of systems) {
         if (!sys.folderPath) continue
+        // Only drafts the user created/adopted in the app (the registry) — never the repo's own branches.
+        const registered = listActive(sys.id)
+        if (registered.length === 0) continue
+
+        // Enrich the draft the repo is currently on with live status/PR; others show without live counts.
+        let current: string | null = null
+        let modifiedCount = 0
         try {
           const statusResult = await window.api.git.status(sys.folderPath)
-          if (!statusResult.ok || !statusResult.status) continue
+          if (statusResult.ok && statusResult.status) {
+            current = statusResult.status.current
+            modifiedCount = statusResult.status.modified.length + statusResult.status.not_added.length
+          }
+        } catch { /* ignore */ }
 
-          const branch = statusResult.status.current
-          if (!branch || branch === 'main' || branch === 'master') continue
-
-          // Check PR status
+        for (const d of registered) {
           let prState: string | null = null
           let reviewDecision: string | null = null
-          try {
-            const prResult = await window.api.git.prStatus(sys.folderPath)
-            if (prResult.ok && prResult.hasPR) {
-              prState = prResult.pr?.state || null
-              reviewDecision = prResult.pr?.reviewDecision || null
-            }
-          } catch { /* ignore */ }
-
+          if (d.branch === current) {
+            try {
+              const prResult = await window.api.git.prStatus(sys.folderPath)
+              if (prResult.ok && prResult.hasPR) {
+                prState = prResult.pr?.state || null
+                reviewDecision = prResult.pr?.reviewDecision || null
+              }
+            } catch { /* ignore */ }
+          }
           allDrafts.push({
             systemId: sys.id,
             systemName: sys.name,
-            branchName: branch,
-            displayName: humanize(branch),
-            modifiedCount: statusResult.status.modified.length + statusResult.status.not_added.length,
-            isClean: statusResult.status.isClean,
+            branchName: d.branch,
+            displayName: d.title || humanize(d.branch),
+            modifiedCount: d.branch === current ? modifiedCount : 0,
+            isClean: true,
             prStatus: prState,
-            reviewDecision
+            reviewDecision,
           })
-        } catch { /* ignore */ }
+        }
       }
 
       setDrafts(allDrafts)

@@ -108,6 +108,7 @@ interface ElectronAPI {
       ok: boolean
       watchers: Array<{ number: number; author: string; title: string; branch: string }>
     }>
+    reviewRequestCount: (repoPath: string, login: string) => Promise<{ ok: boolean; count: number }>
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; lines: Array<{ type: string; content: string }>; error?: string }>
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>

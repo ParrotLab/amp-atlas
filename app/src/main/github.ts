@@ -113,6 +113,13 @@ export async function collaborators(repoPath: string) {
 
 export function isTokenError(e: unknown): boolean { return e instanceof TokenError }
 
+/** Count of open PRs in this repo where `login` is a requested reviewer (i.e. awaiting their review). One API call. */
+export async function reviewRequestCount(repoPath: string, login: string): Promise<number> {
+  const { owner, repo } = await ownerRepo(repoPath)
+  const prs = await gh(`/repos/${owner}/${repo}/pulls?state=open&per_page=50`) as Array<{ requested_reviewers?: { login: string }[] }>
+  return prs.filter(p => (p.requested_reviewers ?? []).some(u => u.login === login)).length
+}
+
 export type FileWatcher = { number: number; author: string; title: string; branch: string }
 
 type WatcherPR = { number: number; title: string; headRefName: string; author: { login: string } }

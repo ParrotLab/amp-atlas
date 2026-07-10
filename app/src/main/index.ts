@@ -462,6 +462,10 @@ ipcMain.handle('fs:listFolders', async (_event, root: string) => {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')
+  // Packaged builds get the icon from electron-builder; in dev, brand the dock icon too.
+  if (is.dev && process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(join(__dirname, '../../build/icon.png'))
+  }
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })

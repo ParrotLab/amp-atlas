@@ -1007,19 +1007,20 @@
     </div>
 
     <div class="component-box" style="margin-top: var(--space-4);">
-      <h3 class="subsection-title">Branch Selector</h3>
-      <div class="row">
-        <div class="branch-selector">
-          <span style="font-size: 14px;">&#9741;</span>
-          <span>main</span>
-          <span style="font-size: 10px; color: var(--color-text-tertiary);">&#9660;</span>
-        </div>
-        <div class="branch-selector">
-          <span style="font-size: 14px;">&#9741;</span>
-          <span>draft/q2-updates</span>
-          <span class="badge badge-brand" style="font-size: 10px; padding: 2px 6px;">Draft</span>
-          <span style="font-size: 10px; color: var(--color-text-tertiary);">&#9660;</span>
-        </div>
+      <h3 class="subsection-title">Version Switcher</h3>
+      <p class="section-subtitle" style="margin-top: 0;">Plain-language versions &mdash; no branch names or git icons. Green = Live, violet = a draft.</p>
+      <div class="row" style="margin-top: var(--space-3);">
+        <button class="status-branch-btn">
+          <span class="status-dot green"></span>
+          <span class="branch-label">Live Version</span>
+          <span class="status-branch-chevron">&#9662;</span>
+        </button>
+        <button class="status-branch-btn">
+          <span class="status-dot violet"></span>
+          <span class="branch-label">Draft: Q2 Updates</span>
+          <span class="badge badge-brand" style="font-size: 10px; padding: 2px 6px;">In Review</span>
+          <span class="status-branch-chevron">&#9662;</span>
+        </button>
       </div>
     </div>
   </section>

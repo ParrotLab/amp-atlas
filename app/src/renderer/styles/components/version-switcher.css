@@ -1,0 +1,40 @@
+/* -----------------------------------------------------------------------
+   GIT STATUS INDICATORS
+   ----------------------------------------------------------------------- */
+
+.git-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.git-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.git-status-synced .git-status-dot { background: var(--color-status-success); }
+.git-status-ahead .git-status-dot { background: var(--color-status-info); }
+.git-status-behind .git-status-dot { background: var(--color-status-warning); }
+.git-status-conflict .git-status-dot { background: var(--color-status-error); }
+
+/* Branch selector */
+.branch-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.branch-selector:hover {
+  border-color: var(--color-border-strong);
+}

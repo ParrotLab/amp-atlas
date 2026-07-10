@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import Badge from './Badge'
 import './NewDraftModal.css'
 
 interface NewDraftModalProps {
@@ -94,7 +95,7 @@ export default function NewDraftModal({ isOpen, onClose, onCreate }: NewDraftMod
               <div>
                 <div className="new-draft-option-title">
                   Current draft
-                  <span className="new-draft-option-badge">Advanced</span>
+                  <Badge variant="neutral">Advanced</Badge>
                 </div>
                 <div className="new-draft-option-desc">Branch off your current work-in-progress</div>
               </div>

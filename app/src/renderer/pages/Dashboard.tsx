@@ -6,6 +6,7 @@ import { listActive } from '../utils/draftStore'
 import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
 import { useProfile } from '../hooks/useProfile'
 import NewSystemModal from '../components/NewSystemModal'
+import Badge, { reviewVariant, reviewLabel } from '../components/Badge'
 import './Dashboard.css'
 
 const BookIcon = () => (
@@ -198,11 +199,9 @@ export default function Dashboard() {
                 </div>
                 <div className="draft-card-right">
                   {draft.prStatus === 'OPEN' ? (
-                    <span className={`draft-card-badge ${draft.reviewDecision === 'APPROVED' ? 'approved' : draft.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
-                      {draft.reviewDecision === 'APPROVED' ? 'Approved' : draft.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
-                    </span>
+                    <Badge variant={reviewVariant(draft.reviewDecision)}>{reviewLabel(draft.reviewDecision)}</Badge>
                   ) : (
-                    <span className="draft-card-badge editing">Editing</span>
+                    <Badge variant="neutral">Editing</Badge>
                   )}
                 </div>
               </Link>

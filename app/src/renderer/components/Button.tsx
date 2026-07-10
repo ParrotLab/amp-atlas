@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
-import './Button.css'
 
-type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+// Variants + sizes come from the AMP design system (styles/components.css .btn-*).
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'accent' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 interface ButtonProps {
@@ -16,20 +16,21 @@ interface ButtonProps {
   className?: string
 }
 
-/** The one button component. Variants + sizes keep sizing/modes consistent everywhere. */
+/** The one button component, backed by the design-system .btn classes. */
 export default function Button({
   children, variant = 'secondary', size = 'md', icon, disabled, onClick, type = 'button', title, className = '',
 }: ButtonProps) {
+  const sizeClass = size === 'md' ? '' : `btn-${size}`
   return (
     <button
       type={type}
       title={title}
       disabled={disabled}
       onClick={onClick}
-      className={`btn btn-${variant} btn-${size} ${icon ? 'btn-has-icon' : ''} ${className}`}
+      className={`btn btn-${variant} ${sizeClass} ${className}`.trim()}
     >
-      {icon && <span className="btn-icon">{icon}</span>}
-      {children && <span className="btn-label">{children}</span>}
+      {icon && <span className="btn-lead">{icon}</span>}
+      {children && <span>{children}</span>}
     </button>
   )
 }

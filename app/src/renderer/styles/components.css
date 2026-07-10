@@ -93,6 +93,29 @@
   background: var(--color-interactive-secondary-hover);
 }
 
+/* Outline — violet (brand) */
+.btn-outline {
+  background: var(--color-bg-primary);
+  color: var(--color-text-brand);
+  border-color: var(--amp-violet-300);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-bg-brand-subtle);
+  border-color: var(--color-interactive-primary);
+}
+
+/* Danger — destructive */
+.btn-danger {
+  background: var(--color-bg-primary);
+  color: var(--color-status-error);
+  border-color: #EAB8B8;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-status-error-bg);
+}
+
 /* Sizes */
 .btn-sm {
   font-size: var(--text-xs);
@@ -103,6 +126,12 @@
   font-size: var(--text-base);
   padding: var(--space-3) var(--space-6);
 }
+
+/* Leading icon inside a text button — scales with the button size. */
+.btn-lead { display: inline-flex; align-items: center; justify-content: center; }
+.btn-lead svg { width: 16px; height: 16px; display: block; }
+.btn-sm .btn-lead svg { width: 14px; height: 14px; }
+.btn-lg .btn-lead svg { width: 18px; height: 18px; }
 
 /* Icon button (square) */
 .btn-icon {

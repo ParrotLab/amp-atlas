@@ -13,6 +13,7 @@ const api = {
     move: (from: string, to: string) => ipcRenderer.invoke('fs:move', from, to),
     delete: (path: string) => ipcRenderer.invoke('fs:delete', path),
     listFolders: (root: string) => ipcRenderer.invoke('fs:listFolders', root),
+    listFiles: (root: string) => ipcRenderer.invoke('fs:listFiles', root),
     onChanged: (cb: (paths: string[]) => void) => {
       const handler = (_e: unknown, paths: string[]) => cb(paths)
       ipcRenderer.on('fs:changed', handler)

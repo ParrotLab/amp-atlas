@@ -12,7 +12,6 @@ export default function AppLayout() {
   const [nameDismissed, setNameDismissed] = useState(false)
   return (
     <div className="app-layout">
-      <div className="titlebar-drag-region" />
       <Sidebar />
       <main className="app-main">
         {!online && (

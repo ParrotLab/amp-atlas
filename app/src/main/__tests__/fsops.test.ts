@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mkdtempSync, existsSync, writeFileSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { ensureDir, createFile, move, del, listFolders } from '../fsops'
+import { ensureDir, createFile, move, del, listFolders, listFiles } from '../fsops'
 
 function tmp(): string { return mkdtempSync(join(tmpdir(), 'amp-fs-')) }
 
@@ -48,5 +48,20 @@ describe('fsops', () => {
     expect(folders).toContain('work/x')
     expect(folders).toContain('reference')
     expect(folders.some(f => f.startsWith('.git'))).toBe(false)
+  })
+
+  it('listFiles returns nested files (relative), excluding hidden dirs + node_modules', async () => {
+    const d = tmp()
+    await createFile(join(d, 'README.md'), '1')
+    await createFile(join(d, 'reference/foo.md'), '2')
+    await createFile(join(d, 'work/x/pitch.md'), '3')
+    await createFile(join(d, '.git/config'), 'x')
+    await createFile(join(d, 'node_modules/pkg/index.js'), 'x')
+    const files = await listFiles(d)
+    expect(files).toContain('README.md')
+    expect(files).toContain('reference/foo.md')
+    expect(files).toContain('work/x/pitch.md')
+    expect(files.some(f => f.startsWith('.git'))).toBe(false)
+    expect(files.some(f => f.startsWith('node_modules'))).toBe(false)
   })
 })

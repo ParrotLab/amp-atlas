@@ -9,7 +9,7 @@ import { buildAuthHeader } from './authHeader'
 import * as github from './github'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive, refreshMain } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
-import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
+import { ensureDir, createFile, move as movePath, del as delPath, listFolders, listFiles } from './fsops'
 import { setupAutoUpdate } from './updater'
 import { logError, logFilePath } from './logger'
 import { hasUnpublishedWork, resyncFromLive } from './resync'
@@ -471,6 +471,9 @@ ipcMain.handle('fs:delete', async (_event, path: string) => {
 })
 ipcMain.handle('fs:listFolders', async (_event, root: string) => {
   try { return { ok: true, folders: await listFolders(root) } } catch (error) { return { ok: false, error: String(error), folders: [] } }
+})
+ipcMain.handle('fs:listFiles', async (_event, root: string) => {
+  try { return { ok: true, files: await listFiles(root) } } catch (error) { return { ok: false, error: String(error), files: [] } }
 })
 
 app.whenReady().then(() => {

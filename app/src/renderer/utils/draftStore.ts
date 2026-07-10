@@ -40,14 +40,16 @@ export function listArchived(systemId: string): DraftEntry[] {
   return getDrafts(systemId).filter(d => d.state === 'archived')
 }
 
-/** Upsert a draft as active; refresh title + timestamps. */
+/** Upsert a draft as active; refresh timestamps. Keeps the original title once set
+ *  (the git-status poller re-registers with a humanized branch name — don't clobber
+ *  the user's original capitalization). */
 export function registerDraft(systemId: string, branch: string, title: string): DraftEntry {
   const store = read()
   const now = new Date().toISOString()
   const existing = store[systemId]?.[branch]
   const entry: DraftEntry = {
     branch,
-    title,
+    title: existing?.title || title,
     state: 'active',
     createdAt: existing?.createdAt || now,
     lastOpenedAt: now,

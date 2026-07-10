@@ -15,6 +15,10 @@ import { useToast } from '../components/Toast'
 import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
 import NewItemModal from '../components/NewItemModal'
 import MoveToModal from '../components/MoveToModal'
+import CommandPalette from '../components/CommandPalette'
+import ConfirmModal from '../components/ConfirmModal'
+import { FolderIcon, CloseIcon } from '../components/SystemIcons'
+import { detectFileType, getSchema } from '../utils/frontmatterSchemas'
 import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
 import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
@@ -80,11 +84,16 @@ export default function SystemOverview() {
   const [branch, setBranch] = useState<string>('')
   const [isMainBranch, setIsMainBranch] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
-  const [ahead, setAhead] = useState(0)
+  const [hasUnpublished, setHasUnpublished] = useState(false)
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
+  const [showPalette, setShowPalette] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [confirm, setConfirm] = useState<null | {
+    title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void | Promise<void>
+  }>(null)
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
@@ -93,6 +102,8 @@ export default function SystemOverview() {
   const rootPath = system?.folderPath || ''
 
   const { data, body, status: writeStatus, updateBody, updateData, externalPrompt, resolveExternal, reconcile } = useFileDocument(selectedFile, isMainBranch)
+  // Only files with a known schema (e.g. playbooks) have editable properties.
+  const hasProperties = !!getSchema(selectedFile ? detectFileType(selectedFile, data) : null)
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, connected: true })
   const online = useOnline()
@@ -194,15 +205,23 @@ export default function SystemOverview() {
       setBranch(result.status.current || 'main')
       setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
       setIsDirty(!result.status.isClean)
-      setAhead(result.status.ahead)
 
       // Register the current draft so it appears in the app's draft list.
       const cur = result.status.current
-      if (systemId && cur && cur !== 'main' && cur !== 'master') {
+      const onMain = cur === 'main' || cur === 'master'
+      if (systemId && cur && !onMain) {
         registerDraft(systemId, cur, humanize(cur))
         touchDraft(systemId, cur)
         setActiveDrafts(listActive(systemId))
         setArchivedDrafts(listArchived(systemId))
+      }
+
+      // Is there anything to publish? (uncommitted edits OR committed-but-unpublished work)
+      if (onMain) {
+        setHasUnpublished(false)
+      } else {
+        const w = await window.api.git.hasUnpublishedWork(rootPath)
+        setHasUnpublished(w.ok ? w.hasWork : true)
       }
     }
 
@@ -272,11 +291,8 @@ export default function SystemOverview() {
   }
 
   // "Discard" = revert all uncommitted changes on disk
-  const handleDiscard = async () => {
+  const doDiscard = async () => {
     if (!rootPath) return
-    const confirmed = window.confirm('Discard all edits since your last save? This cannot be undone.')
-    if (!confirmed) return
-
     const result = await window.api.git.discard(rootPath)
     if (result.ok) {
       // Reload current file to show reverted content
@@ -290,10 +306,46 @@ export default function SystemOverview() {
     }
   }
 
+  const handleDiscard = () => {
+    if (!rootPath) return
+    setConfirm({
+      title: 'Discard all changes?',
+      message: 'This reverts every edit since your last save. This can’t be undone.',
+      confirmLabel: 'Discard changes',
+      danger: true,
+      onConfirm: doDiscard,
+    })
+  }
+
   // "Publish" = open modal to commit + push to GitHub + create PR
   const handlePublish = () => {
     setShowPublish(true)
   }
+
+  // Focus mode: dim the app chrome (nav rail) via a body class; Esc leaves.
+  useEffect(() => {
+    document.body.classList.toggle('focus-mode', focusMode)
+    return () => document.body.classList.remove('focus-mode')
+  }, [focusMode])
+
+  useEffect(() => {
+    if (!focusMode) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFocusMode(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [focusMode])
+
+  // ⌘K / ⌘P toggles the file search palette (works on Live Version and drafts).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && ['k', 'p'].includes(e.key.toLowerCase())) {
+        e.preventDefault()
+        if (rootPath) setShowPalette(v => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [rootPath])
 
   // Keyboard shortcuts on a draft: ⌘S save, ⌘↵ publish.
   useEffect(() => {
@@ -412,8 +464,10 @@ export default function SystemOverview() {
     if (!rootPath) return
     const result = await window.api.git.createDraft(rootPath, name)
     if (result.ok && result.branch) {
-      if (systemId) registerDraft(systemId, result.branch, humanize(result.branch))
-      setTabs([]); setSelectedFile(undefined); setIsDirty(false); setTreeKey(k => k + 1)
+      // Store the user's original name (keeps capitalization); keep tabs open so they
+      // can continue right where they were on the Live Version.
+      if (systemId) registerDraft(systemId, result.branch, name.trim())
+      setIsDirty(false); setTreeKey(k => k + 1)
       await fetchGitStatus(); refreshDrafts()
       if (result.pulled === false) showToast("Draft created from your local Live Version (offline — couldn't pull latest).")
     } else {
@@ -500,13 +554,22 @@ export default function SystemOverview() {
     await refreshAfterFs()
   }
 
-  const handleDelete = async (absPath: string) => {
-    const name = absPath.split('/').pop()
-    if (!window.confirm(`Delete "${name}"? This can't be undone (until you Discard the draft).`)) return
+  const doDelete = async (absPath: string) => {
     const res = await window.api.fs.delete(absPath)
     if (!res.ok) { showToast(res.error || "Couldn't delete"); return }
     if (selectedFile === absPath) { setSelectedFile(undefined); setTabs(prev => prev.filter(t => t.path !== absPath)) }
     await refreshAfterFs()
+  }
+
+  const handleDelete = (absPath: string) => {
+    const name = absPath.split('/').pop()
+    setConfirm({
+      title: 'Delete this item?',
+      message: `“${name}” will be removed. You can still get it back by discarding the draft.`,
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: () => doDelete(absPath),
+    })
   }
 
   const modalConfig = (() => {
@@ -545,7 +608,7 @@ export default function SystemOverview() {
         minWidth: '250px',
         background: '#FEFCF9',
         borderRight: '1px solid #EDE8E2',
-        display: 'flex',
+        display: focusMode ? 'none' : 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
@@ -560,6 +623,7 @@ export default function SystemOverview() {
             gitDeleted={gitDeleted}
             refreshToken={treeRefresh}
             canEdit={canEdit}
+            onSearch={() => setShowPalette(true)}
             onNeedDraft={() => showToast('Create a draft to make changes.')}
             onNewScaffold={(type) => setPendingCreate({ kind: 'scaffold', type })}
             onNewFile={(parentAbs) => setPendingCreate({ kind: 'file', parentAbs })}
@@ -570,7 +634,7 @@ export default function SystemOverview() {
           />
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>
+            <div style={{ marginBottom: '16px', color: '#C4BFB9' }}><FolderIcon size={40} /></div>
             <div style={{ fontSize: '14px', fontWeight: 500, color: '#1a1a2e', marginBottom: '6px' }}>No folder connected</div>
             <div style={{ fontSize: '12px', color: '#B5B1AC', marginBottom: '20px', lineHeight: 1.5 }}>Select a folder on your computer to connect this system.</div>
             <button
@@ -595,7 +659,16 @@ export default function SystemOverview() {
 
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
-        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
+        <TabBar
+          tabs={tabs.map(t => {
+            const rel = t.path.replace(rootPath + '/', '')
+            const status = gitModified.has(rel) ? 'modified' as const : gitNew.has(rel) ? 'new' as const : undefined
+            return { ...t, status }
+          })}
+          activeTab={selectedFile}
+          onTabClick={handleTabClick}
+          onTabClose={handleTabClose}
+        />
         {isMainBranch && isDirty && !moveBannerDismissed && (
           <div style={{ position: 'relative', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 40px 10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5 }}>
             You've edited the Live Version directly —{' '}
@@ -609,9 +682,9 @@ export default function SystemOverview() {
             <button
               onClick={() => setMoveBannerDismissed(true)}
               aria-label="Dismiss"
-              style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', color: '#b99b5f', cursor: 'pointer', fontSize: '14px', lineHeight: 1, fontFamily: 'inherit' }}
+              style={{ position: 'absolute', top: '50%', right: 8, transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, background: 'none', border: 'none', color: '#b99b5f', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              ✕
+              <CloseIcon size={14} />
             </button>
           </div>
         )}
@@ -625,12 +698,15 @@ export default function SystemOverview() {
             writeStatus={writeStatus}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}
+            hasProperties={hasProperties}
+            focusMode={focusMode}
+            onToggleFocus={() => setFocusMode(v => !v)}
             externalPrompt={externalPrompt}
             onReloadExternal={() => resolveExternal('reload')}
             onKeepExternal={() => resolveExternal('keep')}
           />
           <PropertiesPanel
-            isOpen={propsOpen}
+            isOpen={propsOpen && !focusMode && hasProperties}
             onClose={() => setPropsOpen(false)}
             filePath={selectedFile}
             data={data}
@@ -643,6 +719,7 @@ export default function SystemOverview() {
           savedCount={0}
           newCount={gitNew.size}
           isDirty={isDirty}
+          hasUnpublishedWork={hasUnpublished}
           branchName={branch}
           isMain={isMainBranch}
           activeDrafts={activeDrafts}
@@ -720,6 +797,21 @@ export default function SystemOverview() {
         isOpen={showMoveChanges}
         onClose={() => setShowMoveChanges(false)}
         onMove={handleMoveChangesToDraft}
+      />
+      <CommandPalette
+        isOpen={showPalette}
+        rootPath={rootPath}
+        onClose={() => setShowPalette(false)}
+        onSelect={handleFileSelect}
+      />
+      <ConfirmModal
+        isOpen={!!confirm}
+        title={confirm?.title ?? ''}
+        message={confirm?.message ?? ''}
+        confirmLabel={confirm?.confirmLabel}
+        danger={confirm?.danger}
+        onConfirm={() => { const c = confirm; setConfirm(null); void c?.onConfirm() }}
+        onCancel={() => setConfirm(null)}
       />
     </div>
   )

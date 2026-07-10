@@ -93,6 +93,7 @@ interface ElectronAPI {
       | { ok: true; updated: boolean }
       | { ok: false; conflicted: true; files: string[] }
     >
+    refreshMain: (repoPath: string) => Promise<{ ok: boolean; updated: boolean }>
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string; url?: string; alreadyExists?: boolean }>
     createDraft: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string; pulled?: boolean }>
     createDraftFromChanges: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string }>
@@ -108,6 +109,7 @@ interface ElectronAPI {
       ok: boolean
       watchers: Array<{ number: number; author: string; title: string; branch: string }>
     }>
+    reviewRequestCount: (repoPath: string, login: string) => Promise<{ ok: boolean; count: number }>
     prFileDiff: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; lines: Array<{ type: string; content: string }>; error?: string }>
     prFileContent: (repoPath: string, prNumber: number, filePath: string) => Promise<{ ok: boolean; content: string; error?: string }>
     reviewPR: (repoPath: string, prNumber: number, action: string, body: string) => Promise<{ ok: boolean; error?: string }>
@@ -126,7 +128,7 @@ interface ElectronAPI {
   auth: {
     startDeviceFlow: () => Promise<{ ok: boolean; error?: string; deviceCode?: string; userCode?: string; verificationUri?: string; interval?: number; expiresIn?: number }>
     pollToken: (deviceCode: string, interval: number) => Promise<{ ok: boolean; connected?: boolean; error?: string }>
-    identity: () => Promise<{ ok: boolean; identity: { login: string; name: string; avatarUrl: string } | null }>
+    identity: () => Promise<{ ok: boolean; identity: { login: string; name: string | null; avatarUrl: string } | null }>
     status: () => Promise<{ connected: boolean; everConnected: boolean }>
     signOut: () => Promise<{ ok: boolean }>
   }

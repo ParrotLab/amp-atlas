@@ -58,3 +58,12 @@
   color: #B0ADA8;
   margin-bottom: 14px;
 }
+
+/* Not-connected systems read as inactive: fade the card but keep its color. Still clickable to connect. */
+.system-card.disconnected {
+  opacity: 0.5;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.system-card.disconnected:hover {
+  opacity: 0.7;
+}

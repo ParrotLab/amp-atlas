@@ -101,3 +101,27 @@
   background: rgba(220, 38, 38, 0.1);
   color: #DC2626;
 }
+
+.dashboard-section-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+.dashboard-section-head .section-label { margin-bottom: 0; }
+.dashboard-refresh {
+  background: none; border: none; color: #8B2BFF; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px;
+}
+.dashboard-refresh:hover:not(:disabled) { background: rgba(139, 43, 255, 0.08); }
+.dashboard-refresh:disabled { color: #B0ADA8; cursor: default; }
+
+.systems-empty {
+  border: 1.5px dashed #D9D2C7; border-radius: 16px; padding: 40px 28px; text-align: center;
+  background: rgba(255,255,255,0.4); margin-bottom: 32px;
+}
+.systems-empty-title { font-size: 16px; font-weight: 700; color: #3D3832; margin-bottom: 6px; }
+.systems-empty-sub { font-size: 13.5px; color: #8A857E; margin-bottom: 18px; }
+.systems-empty-btn {
+  display: inline-block; background: #8B2BFF; color: #fff; text-decoration: none;
+  padding: 9px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  border: none; font-family: inherit; cursor: pointer;
+}
+.systems-empty-btn:hover { background: #7A1FE8; }

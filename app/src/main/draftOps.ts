@@ -64,6 +64,32 @@ export async function createDraftFromMain(repoPath: string, draftName: string): 
   return { branch, pulled }
 }
 
+/**
+ * Fetch origin's base branch and fast-forward the local Live Version when possible.
+ * Never disturbs the current branch or working tree; diverged/non-ff cases are left as-is.
+ * Returns whether the local base advanced.
+ */
+export async function refreshMain(repoPath: string): Promise<{ updated: boolean }> {
+  const git = simpleGit(repoPath)
+  const info = await git.branch()
+  const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
+  const before = await git.revparse([base]).catch(() => '')
+  try {
+    await git.fetch('origin', base)
+  } catch {
+    return { updated: false } // offline / no remote
+  }
+  const current = (await git.status()).current
+  if (current === base) {
+    try { await git.merge(['--ff-only', `origin/${base}`]) } catch { /* diverged — leave local as-is */ }
+  } else {
+    // Advance the local base ref to origin without checking it out (fast-forward only).
+    try { await git.raw(['fetch', 'origin', `${base}:${base}`]) } catch { /* non-ff — ignore */ }
+  }
+  const after = await git.revparse([base]).catch(() => '')
+  return { updated: before !== after }
+}
+
 export type UpdateFromLiveResult =
   | { ok: true; updated: boolean }
   | { ok: false; conflicted: true; files: string[] }

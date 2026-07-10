@@ -9,6 +9,7 @@ import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStor
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
 import ConflictModal from '../components/ConflictModal'
+import MoveChangesModal from '../components/MoveChangesModal'
 import { useFileDocument } from '../hooks/useFileDocument'
 import { useToast } from '../components/Toast'
 import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
@@ -17,6 +18,8 @@ import MoveToModal from '../components/MoveToModal'
 import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
 import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
+import { setLastPull, getLastPull, relativeTime } from '../utils/pullStatus'
+import { getStoredTabs, setStoredTabs } from '../utils/tabStore'
 import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
@@ -83,6 +86,8 @@ export default function SystemOverview() {
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
+  const [showMoveChanges, setShowMoveChanges] = useState(false)
+  const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
   const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
@@ -109,6 +114,53 @@ export default function SystemOverview() {
       if (r.ok) setCaps({ isGitRepo: r.isGitRepo, connected: r.connected })
     })
   }, [rootPath])
+
+  const [refreshTick, setRefreshTick] = useState(0)
+
+  // Opening a system refreshes its Live Version from GitHub and records the pull time.
+  useEffect(() => {
+    if (!rootPath) return
+    window.api.git.refreshMain(rootPath).then(r => { if (r.ok) { setLastPull(rootPath, Date.now()); setRefreshTick(t => t + 1) } })
+  }, [rootPath])
+
+  // Manual "Refresh" on the Live Version: pull latest main + record + refresh view.
+  const handleRefreshLive = async () => {
+    if (!rootPath) return
+    const r = await window.api.git.refreshMain(rootPath)
+    if (r.ok) { setLastPull(rootPath, Date.now()); setRefreshTick(t => t + 1); void fetchGitStatus() }
+  }
+
+  // Opening a system: restore its previously-open tabs; if none, auto-open README.md if present.
+  useEffect(() => {
+    if (!systemId || !rootPath) return
+    let cancelled = false
+    ;(async () => {
+      const saved = getStoredTabs(systemId)
+      const valid: { path: string; name: string }[] = []
+      for (const t of saved?.tabs ?? []) {
+        const s = await window.api.fs.stat(t.path)
+        if (s.ok) valid.push(t)
+      }
+      if (cancelled) return
+      if (valid.length > 0) {
+        setTabs(valid)
+        setSelectedFile(saved?.active && valid.some(t => t.path === saved.active) ? saved.active : valid[0].path)
+      } else {
+        const readme = `${rootPath}/README.md`
+        const s = await window.api.fs.stat(readme)
+        if (!cancelled && s.ok) { setTabs([{ path: readme, name: 'README.md' }]); setSelectedFile(readme) }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [systemId, rootPath])
+
+  // Persist open tabs per system (only when non-empty, so transient clears don't wipe saved state).
+  useEffect(() => {
+    if (systemId && tabs.length > 0) setStoredTabs(systemId, { tabs, active: selectedFile })
+  }, [systemId, tabs, selectedFile])
+
+  // Re-show the move-changes banner if the user edits Live again after dismissing.
+  useEffect(() => { if (!isDirty) setMoveBannerDismissed(false) }, [isDirty])
 
   // Watch the active system folder; reflect external edits live.
   useEffect(() => {
@@ -242,6 +294,22 @@ export default function SystemOverview() {
   const handlePublish = () => {
     setShowPublish(true)
   }
+
+  // Keyboard shortcuts on a draft: ⌘S save, ⌘↵ publish.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || isMainBranch) return
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault()
+        if (isDirty && caps.isGitRepo) void handleSave()
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        handlePublish()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isMainBranch, isDirty, caps.isGitRepo])
 
   const handleDoPublish = async (title: string, description: string, reviewers: string[]) => {
     if (!rootPath) return
@@ -528,6 +596,25 @@ export default function SystemOverview() {
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
         <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
+        {isMainBranch && isDirty && !moveBannerDismissed && (
+          <div style={{ position: 'relative', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 40px 10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5 }}>
+            You've edited the Live Version directly —{' '}
+            <button
+              onClick={() => setShowMoveChanges(true)}
+              style={{ background: 'none', border: 'none', padding: 0, color: '#8B2BFF', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', textDecoration: 'underline' }}
+            >
+              move these changes into a draft
+            </button>{' '}
+            to save and publish them safely.
+            <button
+              onClick={() => setMoveBannerDismissed(true)}
+              aria-label="Dismiss"
+              style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', color: '#b99b5f', cursor: 'pointer', fontSize: '14px', lineHeight: 1, fontFamily: 'inherit' }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
           <FileViewer
             filePath={selectedFile}
@@ -561,15 +648,16 @@ export default function SystemOverview() {
           activeDrafts={activeDrafts}
           archivedDrafts={archivedDrafts}
           lastSaved={lastSaved}
+          lastRefreshedLabel={(() => { void refreshTick; const rel = rootPath ? relativeTime(getLastPull(rootPath), Date.now()) : ''; return rel ? `Updated ${rel}` : '' })()}
           onSave={handleSave}
           onDiscard={handleDiscard}
           onPublish={handlePublish}
+          onRefresh={handleRefreshLive}
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
           onUnarchive={handleUnarchive}
           onAddExistingWork={handleAddExistingWork}
-          onMoveChangesToDraft={handleMoveChangesToDraft}
           repoPath={rootPath}
           prStatus={prStatus}
           canUseGit={caps.isGitRepo}
@@ -627,6 +715,11 @@ export default function SystemOverview() {
         isOpen={conflictFiles !== null}
         files={conflictFiles ?? []}
         onClose={() => setConflictFiles(null)}
+      />
+      <MoveChangesModal
+        isOpen={showMoveChanges}
+        onClose={() => setShowMoveChanges(false)}
+        onMove={handleMoveChangesToDraft}
       />
     </div>
   )

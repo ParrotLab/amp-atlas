@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import Modal from './Modal'
+import Button from './Button'
+import Input from './Input'
 import './PublishModal.css'
 
 interface PublishModalProps {
@@ -51,14 +54,6 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
     }
   }, [isOpen, draftName, repoPath])
 
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, onClose])
 
   const toggleReviewer = (name: string) => {
     setSelectedReviewers(prev =>
@@ -74,29 +69,37 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
     setTimeout(() => onClose(), 1500)
   }
 
-  if (!isOpen) return null
-
-  const totalChanges = modifiedCount + newCount
+  if (status === 'done') {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} maxWidth={520}>
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
+          <div className="publish-title">Published!</div>
+          <div className="publish-subtitle">
+            Your changes are now visible to the team.
+            {selectedReviewers.length > 0 && ` ${selectedReviewers.join(' and ')} will be notified.`}
+          </div>
+        </div>
+      </Modal>
+    )
+  }
 
   return (
-    <div className="publish-overlay" onClick={onClose}>
-      <div className="publish-modal" onClick={e => e.stopPropagation()}>
-        {status === 'done' ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
-            <div className="publish-title">Published!</div>
-            <div className="publish-subtitle">
-              Your changes are now visible to the team.
-              {selectedReviewers.length > 0 && ` ${selectedReviewers.join(' and ')} will be notified.`}
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="publish-title">Publish Your Changes</div>
-            <div className="publish-subtitle">
-              Share your work with the team and request a review.
-            </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={520}
+      title="Publish Your Changes"
+      subtitle="Share your work with the team and request a review."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" disabled={!title.trim() || status === 'publishing'} onClick={handlePublish}>
+            {status === 'publishing' ? 'Publishing…' : 'Publish & Request Review'}
+          </Button>
+        </>
+      }
+    >
             <div className="publish-summary">
               <div className="publish-summary-label">What you're publishing</div>
               {draftCommits.length > 0 || draftFiles.length > 0 || modifiedCount > 0 || newCount > 0 ? (
@@ -143,9 +146,8 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
             <div className="publish-field">
               <div className="publish-label">Title</div>
-              <input
+              <Input
                 ref={titleRef}
-                className="publish-input"
                 type="text"
                 placeholder="What did you work on?"
                 value={title}
@@ -182,21 +184,6 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
               </div>
             </div>
 
-            <div className="publish-footer">
-              <button className="publish-btn cancel" onClick={onClose}>
-                Cancel
-              </button>
-              <button
-                className={`publish-btn ${status === 'publishing' ? 'publishing' : 'submit'}`}
-                disabled={!title.trim() || status === 'publishing'}
-                onClick={handlePublish}
-              >
-                {status === 'publishing' ? 'Publishing...' : 'Publish & Request Review'}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+    </Modal>
   )
 }

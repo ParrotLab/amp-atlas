@@ -7,12 +7,15 @@ import { startDeviceFlow, pollForToken, getIdentity } from './githubAuth'
 import { tokenStore } from './tokenStore'
 import { buildAuthHeader } from './authHeader'
 import * as github from './github'
-import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive } from './draftOps'
+import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive, refreshMain } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 import { setupAutoUpdate } from './updater'
 import { logError, logFilePath } from './logger'
 import { hasUnpublishedWork, resyncFromLive } from './resync'
+
+// Dock/menu name in dev (packaged builds get this from productName). Must run before app is ready.
+app.setName('AMP Atlas')
 
 process.on('uncaughtException', (err) => logError('uncaught', err))
 
@@ -290,6 +293,11 @@ ipcMain.handle('git:createDraftFromChanges', async (_event, repoPath: string, dr
   }
 })
 
+ipcMain.handle('git:refreshMain', async (_event, repoPath: string) => {
+  try { return { ok: true, ...(await refreshMain(repoPath)) } }
+  catch (error) { logError('refreshMain', error); return { ok: false, updated: false } }
+})
+
 ipcMain.handle('git:updateFromLive', async (_event, repoPath: string) => {
   try {
     return await updateFromLive(repoPath)
@@ -362,6 +370,11 @@ ipcMain.handle('git:prDiff', async (_event, repoPath: string, prNumber: number) 
 ipcMain.handle('git:fileWatchers', async (_event, repoPath: string, relPath: string) => {
   try { return { ok: true, watchers: await github.fileWatchers(repoPath, relPath) } }
   catch { return { ok: true, watchers: [] } }
+})
+
+ipcMain.handle('git:reviewRequestCount', async (_event, repoPath: string, login: string) => {
+  try { return { ok: true, count: await github.reviewRequestCount(repoPath, login) } }
+  catch { return { ok: true, count: 0 } }
 })
 
 ipcMain.handle('git:prFileDiff', async (_event, repoPath: string, prNumber: number, filePath: string) => {
@@ -462,6 +475,10 @@ ipcMain.handle('fs:listFolders', async (_event, root: string) => {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')
+  // Packaged builds get the icon from electron-builder; in dev, brand the dock icon too.
+  if (is.dev && process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(join(__dirname, '../../build/icon.png'))
+  }
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })

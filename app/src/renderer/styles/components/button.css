@@ -1,0 +1,134 @@
+/* -----------------------------------------------------------------------
+   BUTTONS
+   ----------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  white-space: nowrap;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary — violet */
+.btn-primary {
+  background: var(--color-interactive-primary);
+  color: var(--color-text-on-brand);
+  border-color: var(--color-interactive-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-interactive-primary-hover);
+  border-color: var(--color-interactive-primary-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--color-interactive-primary-active);
+}
+
+/* Secondary — outlined */
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-default);
+}
+
+/* Ghost — no border */
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* Accent — orange */
+.btn-accent {
+  background: var(--color-interactive-secondary);
+  color: var(--amp-white);
+  border-color: var(--color-interactive-secondary);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: var(--color-interactive-secondary-hover);
+}
+
+/* Outline — violet (brand) */
+.btn-outline {
+  background: var(--color-bg-primary);
+  color: var(--color-text-brand);
+  border-color: var(--amp-violet-300);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-bg-brand-subtle);
+  border-color: var(--color-interactive-primary);
+}
+
+/* Danger — destructive */
+.btn-danger {
+  background: var(--color-bg-primary);
+  color: var(--color-status-error);
+  border-color: #EAB8B8;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-status-error-bg);
+}
+
+/* Sizes */
+.btn-sm {
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+}
+
+.btn-lg {
+  font-size: var(--text-base);
+  padding: var(--space-3) var(--space-6);
+}
+
+/* Leading icon inside a text button — scales with the button size. */
+.btn-lead { display: inline-flex; align-items: center; justify-content: center; }
+.btn-lead svg { width: 16px; height: 16px; display: block; }
+.btn-sm .btn-lead svg { width: 14px; height: 14px; }
+.btn-lg .btn-lead svg { width: 18px; height: 18px; }
+
+/* Icon button (square) */
+.btn-icon {
+  padding: var(--space-2);
+  width: 36px;
+  height: 36px;
+}
+
+.btn-icon.btn-sm {
+  width: 28px;
+  height: 28px;
+  padding: var(--space-1);
+}

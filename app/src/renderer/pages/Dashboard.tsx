@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import SystemCard from '../components/SystemCard'
-import { getSystems, SystemConfig } from '../utils/systemStore'
+import { getSystems, SystemConfig, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
+import { listActive } from '../utils/draftStore'
+import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
+import { useProfile } from '../hooks/useProfile'
+import NewSystemModal from '../components/NewSystemModal'
+import Badge, { reviewVariant, reviewLabel } from '../components/Badge'
 import './Dashboard.css'
 
 const BookIcon = () => (
@@ -46,13 +51,43 @@ interface DraftInfo {
 
 export default function Dashboard() {
   const now = new Date()
+  const nowMs = now.getTime()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening'
+  const profile = useProfile()
   const [systems, setSystems] = useState<SystemConfig[]>([])
   const [drafts, setDrafts] = useState<DraftInfo[]>([])
+  const [pullTimes, setPullTimes] = useState<Record<string, number | null>>({})
+  const [refreshing, setRefreshing] = useState(false)
+  const [showAddSystem, setShowAddSystem] = useState(false)
 
   useEffect(() => {
     setSystems(getSystems())
+    // Re-read systems on window focus and whenever a system is added/edited/removed.
+    const reread = () => setSystems(getSystems())
+    window.addEventListener('focus', reread)
+    window.addEventListener(SYSTEMS_CHANGED_EVENT, reread)
+    return () => { window.removeEventListener('focus', reread); window.removeEventListener(SYSTEMS_CHANGED_EVENT, reread) }
   }, [])
+
+  // Refresh the Live Version for connected systems.
+  // `force` ignores the freshness throttle; `silent` skips the visible "Refreshing…" state (used on load).
+  const refreshSystems = async (force: boolean, silent = false) => {
+    const connected = getSystems().filter(s => s.folderPath)
+    // seed display with any stored timestamps immediately
+    setPullTimes(Object.fromEntries(connected.map(s => [s.folderPath!, getLastPull(s.folderPath!)])))
+    if (!silent) setRefreshing(true)
+    for (const sys of connected) {
+      const folder = sys.folderPath!
+      const last = getLastPull(folder)
+      if (!force && last && Date.now() - last < 60_000) continue // fresh enough
+      const r = await window.api.git.refreshMain(folder)
+      if (r.ok) { const now = Date.now(); setLastPull(folder, now); setPullTimes(p => ({ ...p, [folder]: now })) }
+    }
+    if (!silent) setRefreshing(false)
+  }
+
+  // On open (launch / navigating home), silently refresh connected systems (throttled).
+  useEffect(() => { void refreshSystems(false, true) }, [])
 
   useEffect(() => {
     const loadDrafts = async () => {
@@ -60,35 +95,44 @@ export default function Dashboard() {
 
       for (const sys of systems) {
         if (!sys.folderPath) continue
+        // Only drafts the user created/adopted in the app (the registry) — never the repo's own branches.
+        const registered = listActive(sys.id)
+        if (registered.length === 0) continue
+
+        // Enrich the draft the repo is currently on with live status/PR; others show without live counts.
+        let current: string | null = null
+        let modifiedCount = 0
         try {
           const statusResult = await window.api.git.status(sys.folderPath)
-          if (!statusResult.ok || !statusResult.status) continue
+          if (statusResult.ok && statusResult.status) {
+            current = statusResult.status.current
+            modifiedCount = statusResult.status.modified.length + statusResult.status.not_added.length
+          }
+        } catch { /* ignore */ }
 
-          const branch = statusResult.status.current
-          if (!branch || branch === 'main' || branch === 'master') continue
-
-          // Check PR status
+        for (const d of registered) {
           let prState: string | null = null
           let reviewDecision: string | null = null
-          try {
-            const prResult = await window.api.git.prStatus(sys.folderPath)
-            if (prResult.ok && prResult.hasPR) {
-              prState = prResult.pr?.state || null
-              reviewDecision = prResult.pr?.reviewDecision || null
-            }
-          } catch { /* ignore */ }
-
+          if (d.branch === current) {
+            try {
+              const prResult = await window.api.git.prStatus(sys.folderPath)
+              if (prResult.ok && prResult.hasPR) {
+                prState = prResult.pr?.state || null
+                reviewDecision = prResult.pr?.reviewDecision || null
+              }
+            } catch { /* ignore */ }
+          }
           allDrafts.push({
             systemId: sys.id,
             systemName: sys.name,
-            branchName: branch,
-            displayName: humanize(branch),
-            modifiedCount: statusResult.status.modified.length + statusResult.status.not_added.length,
-            isClean: statusResult.status.isClean,
+            branchName: d.branch,
+            displayName: d.title || humanize(d.branch),
+            modifiedCount: d.branch === current ? modifiedCount : 0,
+            isClean: true,
             prStatus: prState,
-            reviewDecision
+            reviewDecision,
           })
-        } catch { /* ignore */ }
+        }
       }
 
       setDrafts(allDrafts)
@@ -99,25 +143,42 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      <h1 className="dashboard-greeting">{greeting}, Rose</h1>
+      <h1 className="dashboard-greeting">{greeting}{profile.name ? `, ${profile.name.split(' ')[0]}` : ''}</h1>
       <p className="dashboard-subtitle">Here's what's happening across your systems.</p>
 
-      <div className="section-label">Your Systems</div>
-      <div className="systems-grid">
-        {systems.map(sys => {
-          const Icon = iconMap[sys.icon] || BookIcon
-          return (
-            <SystemCard
-              key={sys.id}
-              name={sys.name}
-              path={`/system/${sys.id}`}
-              gradient={sys.gradient}
-              meta={sys.folderPath ? 'Connected' : 'Not connected'}
-              icon={<Icon />}
-            />
-          )
-        })}
+      <div className="dashboard-section-head">
+        <div className="section-label">Your Systems</div>
+        {systems.length > 0 && (
+          <button className="dashboard-refresh" onClick={() => refreshSystems(true)} disabled={refreshing}>
+            {refreshing ? 'Refreshing…' : '⟳ Refresh'}
+          </button>
+        )}
       </div>
+      {systems.length === 0 ? (
+        <div className="systems-empty">
+          <div className="systems-empty-title">No systems yet</div>
+          <div className="systems-empty-sub">Add a system and connect it to your GitHub-backed folder to get started.</div>
+          <button className="systems-empty-btn" onClick={() => setShowAddSystem(true)}>+ Add a system</button>
+        </div>
+      ) : (
+        <div className="systems-grid">
+          {systems.map(sys => {
+            const Icon = iconMap[sys.icon] || BookIcon
+            const rel = sys.folderPath ? relativeTime(pullTimes[sys.folderPath] ?? getLastPull(sys.folderPath), nowMs) : ''
+            return (
+              <SystemCard
+                key={sys.id}
+                name={sys.name}
+                path={`/system/${sys.id}`}
+                gradient={sys.gradient}
+                meta={sys.folderPath ? (rel ? `Updated ${rel}` : 'Connected') : 'Not connected'}
+                connected={!!sys.folderPath}
+                icon={<Icon />}
+              />
+            )
+          })}
+        </div>
+      )}
 
       {drafts.length > 0 && (
         <>
@@ -138,11 +199,9 @@ export default function Dashboard() {
                 </div>
                 <div className="draft-card-right">
                   {draft.prStatus === 'OPEN' ? (
-                    <span className={`draft-card-badge ${draft.reviewDecision === 'APPROVED' ? 'approved' : draft.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
-                      {draft.reviewDecision === 'APPROVED' ? 'Approved' : draft.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
-                    </span>
+                    <Badge variant={reviewVariant(draft.reviewDecision)}>{reviewLabel(draft.reviewDecision)}</Badge>
                   ) : (
-                    <span className="draft-card-badge editing">Editing</span>
+                    <Badge variant="neutral">Editing</Badge>
                   )}
                 </div>
               </Link>
@@ -150,6 +209,12 @@ export default function Dashboard() {
           </div>
         </>
       )}
+
+      <NewSystemModal
+        isOpen={showAddSystem}
+        onClose={() => setShowAddSystem(false)}
+        onCreated={() => { setSystems(getSystems()); void refreshSystems(true) }}
+      />
     </div>
   )
 }

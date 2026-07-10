@@ -1,0 +1,48 @@
+/* -----------------------------------------------------------------------
+   COMMAND PALETTE / SEARCH OVERLAY
+   ----------------------------------------------------------------------- */
+
+.command-palette {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  max-width: 90vw;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-modal);
+  overflow: hidden;
+}
+
+.command-palette-input {
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-lg);
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--color-text-primary);
+}
+
+.command-palette-results {
+  max-height: 320px;
+  overflow-y: auto;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.command-palette-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.command-palette-item:hover,
+.command-palette-item.selected {
+  background: var(--color-bg-brand-subtle);
+}

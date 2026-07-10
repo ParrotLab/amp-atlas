@@ -1,0 +1,43 @@
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid transparent; border-radius: 8px; cursor: pointer; font-family: inherit;
+  font-weight: 600; white-space: nowrap; transition: background 100ms ease, border-color 100ms ease, color 100ms ease;
+}
+.btn:disabled { cursor: default; }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; }
+.btn-icon svg { display: block; }
+
+/* Sizes — icon scales with the button so it never looks tiny next to the label. */
+.btn-sm { height: 28px; padding: 0 12px; font-size: 12px; border-radius: 7px; }
+.btn-sm .btn-icon { font-size: 14px; }
+.btn-sm .btn-icon svg { width: 14px; height: 14px; }
+
+.btn-md { height: 34px; padding: 0 16px; font-size: 13px; }
+.btn-md .btn-icon { font-size: 16px; }
+.btn-md .btn-icon svg { width: 16px; height: 16px; }
+
+.btn-lg { height: 42px; padding: 0 20px; font-size: 14px; border-radius: 10px; }
+.btn-lg .btn-icon { font-size: 18px; }
+.btn-lg .btn-icon svg { width: 18px; height: 18px; }
+
+/* Slightly tighter left padding when there's a leading icon. */
+.btn-has-icon.btn-sm { padding-left: 10px; }
+.btn-has-icon.btn-md { padding-left: 13px; }
+.btn-has-icon.btn-lg { padding-left: 16px; }
+
+/* Variants */
+.btn-primary { background: #8B2BFF; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #7A1FE6; }
+.btn-primary:disabled { background: #E7E2DB; color: #A9A49D; }
+
+.btn-secondary { background: #F0EBE5; color: #3D3832; }
+.btn-secondary:hover:not(:disabled) { background: #E7E0D7; }
+.btn-secondary:disabled { background: #F4F1EC; color: #B5B1AC; }
+
+.btn-ghost { background: transparent; color: #6B6966; }
+.btn-ghost:hover:not(:disabled) { background: rgba(0,0,0,0.05); color: #3D3832; }
+.btn-ghost:disabled { color: #B5B1AC; }
+
+.btn-danger { background: #fff; color: #C02626; border-color: #EAB8B8; }
+.btn-danger:hover:not(:disabled) { background: #FDF0F0; }
+.btn-danger:disabled { color: #D9A9A9; border-color: #F0DBDB; }

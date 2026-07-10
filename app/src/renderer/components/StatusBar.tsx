@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import Button from './Button'
+import { RefreshIcon } from './SystemIcons'
 import './StatusBar.css'
 
 interface DraftItem {
@@ -186,9 +188,9 @@ export default function StatusBar({
         {isMain ? (
           <div className="status-freshness">
             {lastRefreshedLabel && <span className="status-updated">{lastRefreshedLabel}</span>}
-            <button className="status-refresh-btn" onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
-              ⟳ Refresh
-            </button>
+            <Button variant="secondary" size="sm" icon={<RefreshIcon />} onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
+              Refresh
+            </Button>
           </div>
         ) : (
           <div className="status-split-wrapper">

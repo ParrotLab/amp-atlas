@@ -87,6 +87,7 @@ export default function SystemOverview() {
   const [showPublish, setShowPublish] = useState(false)
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
+  const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
   const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
@@ -157,6 +158,9 @@ export default function SystemOverview() {
   useEffect(() => {
     if (systemId && tabs.length > 0) setStoredTabs(systemId, { tabs, active: selectedFile })
   }, [systemId, tabs, selectedFile])
+
+  // Re-show the move-changes banner if the user edits Live again after dismissing.
+  useEffect(() => { if (!isDirty) setMoveBannerDismissed(false) }, [isDirty])
 
   // Watch the active system folder; reflect external edits live.
   useEffect(() => {
@@ -592,14 +596,22 @@ export default function SystemOverview() {
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
         <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
-        {isMainBranch && isDirty && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.45 }}>
-            <span>You've edited the Live Version directly — move these changes into a draft to save and publish them safely.</span>
+        {isMainBranch && isDirty && !moveBannerDismissed && (
+          <div style={{ position: 'relative', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 40px 10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5 }}>
+            You've edited the Live Version directly —{' '}
             <button
               onClick={() => setShowMoveChanges(true)}
-              style={{ background: '#8B2BFF', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}
+              style={{ background: 'none', border: 'none', padding: 0, color: '#8B2BFF', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', textDecoration: 'underline' }}
             >
-              Move into a draft
+              move these changes into a draft
+            </button>{' '}
+            to save and publish them safely.
+            <button
+              onClick={() => setMoveBannerDismissed(true)}
+              aria-label="Dismiss"
+              style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', color: '#b99b5f', cursor: 'pointer', fontSize: '14px', lineHeight: 1, fontFamily: 'inherit' }}
+            >
+              ✕
             </button>
           </div>
         )}

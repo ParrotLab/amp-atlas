@@ -52,7 +52,7 @@
 .newsystem-cancel { background: none; border: none; color: #6b6966; font-size: 14px; cursor: pointer; }
 .newsystem-cancel:hover { color: #3b2a44; }
 .newsystem-create {
-  background: #6b2fb3; color: #fff; border: none; border-radius: 8px; padding: 9px 20px; font-size: 14px; cursor: pointer;
+  background: #8B2BFF; color: #fff; border: none; border-radius: 8px; padding: 9px 20px; font-size: 14px; cursor: pointer;
 }
 .newsystem-create:disabled { opacity: 0.5; cursor: default; }
-.newsystem-create:hover:not(:disabled) { background: #5a259c; }
+.newsystem-create:hover:not(:disabled) { background: #7A1FE8; }

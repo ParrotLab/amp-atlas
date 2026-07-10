@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Input from './Input'
 import './NamePromptModal.css'
 
 interface NamePromptModalProps {
@@ -21,8 +22,7 @@ export default function NamePromptModal({ isOpen, onSave, onSkip }: NamePromptMo
         <p className="nameprompt-body">
           Your GitHub account doesn't have a display name set. We'll use this to label your drafts and reviews — you can change it anytime in Settings.
         </p>
-        <input
-          className="nameprompt-input"
+        <Input
           autoFocus
           value={value}
           placeholder="Your name"

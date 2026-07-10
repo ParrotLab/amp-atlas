@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import Input from './Input'
 import './NewDraftModal.css'
 
 interface MoveChangesModalProps {
@@ -44,9 +45,8 @@ export default function MoveChangesModal({ isOpen, onClose, onMove }: MoveChange
 
         <div className="new-draft-field">
           <div className="new-draft-label">Name your draft</div>
-          <input
+          <Input
             ref={inputRef}
-            className="new-draft-input"
             type="text"
             placeholder="e.g. Q2 content updates"
             value={name}

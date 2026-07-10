@@ -3,11 +3,13 @@ import { NavLink, useLocation } from 'react-router-dom'
 import logo from '../assets/logos/logo-wordmark-dark.svg'
 import { getSystems } from '../utils/systemStore'
 import { iconMap, DiamondIcon, MailIcon, GearIcon } from './SystemIcons'
+import { useProfile } from '../hooks/useProfile'
 import './Sidebar.css'
 
 export default function Sidebar() {
   const [systems, setSystems] = useState(getSystems())
   const location = useLocation()
+  const profile = useProfile()
 
   // Re-read systems from store whenever route changes (catches settings updates)
   useEffect(() => {
@@ -50,12 +52,12 @@ export default function Sidebar() {
 
       <div className="sidebar-bottom">
         <div className="sidebar-avatar">
-          R
+          {(profile.name || '?').charAt(0).toUpperCase()}
           <div className="online-dot" />
         </div>
         <div>
-          <div className="sidebar-user-name">Rose</div>
-          <div className="sidebar-user-org">Parrot Labs</div>
+          <div className="sidebar-user-name">{profile.name || '—'}</div>
+          {profile.login && <div className="sidebar-user-org">@{profile.login}</div>}
         </div>
       </div>
     </aside>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Button from './Button'
+import Badge, { reviewVariant, reviewLabel } from './Badge'
 import { RefreshIcon } from './SystemIcons'
 import './StatusBar.css'
 
@@ -71,9 +72,7 @@ export default function StatusBar({
   }, [showAdopt, repoPath, activeDrafts, archivedDrafts])
 
   const prBadge = prOpen && (
-    <span className={`status-pr-badge-inline ${prStatus?.reviewDecision === 'APPROVED' ? 'approved' : prStatus?.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
-      {prStatus?.reviewDecision === 'APPROVED' ? 'Approved' : prStatus?.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
-    </span>
+    <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
   )
 
   const doPublish = () => { setShowActions(false); canUseGitHub ? onPublish() : onNeedGitHub?.() }

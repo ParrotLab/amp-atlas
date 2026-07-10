@@ -113,6 +113,7 @@ export default function Dashboard() {
               path={`/system/${sys.id}`}
               gradient={sys.gradient}
               meta={sys.folderPath ? 'Connected' : 'Not connected'}
+              connected={!!sys.folderPath}
               icon={<Icon />}
             />
           )

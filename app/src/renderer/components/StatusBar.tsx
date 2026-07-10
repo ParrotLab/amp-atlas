@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Button from './Button'
 import Badge, { reviewVariant, reviewLabel } from './Badge'
+import SplitButton from './SplitButton'
 import { RefreshIcon } from './SystemIcons'
 import './StatusBar.css'
 
@@ -54,7 +55,6 @@ export default function StatusBar({
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAdopt, setShowAdopt] = useState(false)
-  const [showActions, setShowActions] = useState(false)
   const [adoptable, setAdoptable] = useState<{ name: string; isRemoteOnly: boolean }[]>([])
   const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
   const unsaved = editedCount + newCount
@@ -75,9 +75,8 @@ export default function StatusBar({
     <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
   )
 
-  const doPublish = () => { setShowActions(false); canUseGitHub ? onPublish() : onNeedGitHub?.() }
+  const doPublish = () => { canUseGitHub ? onPublish() : onNeedGitHub?.() }
   const doDiscard = () => {
-    setShowActions(false)
     if (!canUseGit) { onNeedGit?.(); return }
     if (window.confirm('Discard all unsaved changes? This can’t be undone.')) onDiscard()
   }
@@ -192,33 +191,16 @@ export default function StatusBar({
             </Button>
           </div>
         ) : (
-          <div className="status-split-wrapper">
-            <div className="status-split">
-              <button
-                className={`status-split-primary ${!canUseGit ? 'disabled' : ''}`}
-                disabled={canUseGit && !isDirty}
-                onClick={() => canUseGit ? onSave() : onNeedGit?.()}
-                title="Save (⌘S)"
-              >
-                Save
-              </button>
-              <button className="status-split-caret" onClick={() => setShowActions(v => !v)} aria-label="More actions">▾</button>
-            </div>
-            {showActions && (
-              <>
-                <div className="status-dropdown-overlay" onClick={() => setShowActions(false)} />
-                <div className="status-actions-menu">
-                  <button className="status-actions-item" onClick={doPublish}>
-                    <span>{publishLabel}</span>
-                    <span className="status-kbd">⌘↵</span>
-                  </button>
-                  <button className="status-actions-item danger" onClick={doDiscard}>
-                    <span>Discard changes</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <SplitButton
+            label="Save"
+            title="Save (⌘S)"
+            disabled={canUseGit && !isDirty}
+            onClick={() => canUseGit ? onSave() : onNeedGit?.()}
+            items={[
+              { label: publishLabel, kbd: '⌘↵', onClick: doPublish },
+              { label: 'Discard changes', danger: true, onClick: doDiscard },
+            ]}
+          />
         )}
       </div>
     </div>

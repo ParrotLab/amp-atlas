@@ -5,6 +5,7 @@
 
 @import './components/reset.css';
 @import './components/button.css';
+@import './components/split-button.css';
 @import './components/input.css';
 @import './components/sidebar.css';
 @import './components/tabs.css';

@@ -2,7 +2,7 @@
 name: {{name}}
 description:
 system:
-sub-pillar:
+sub-system:
 status: Not Yet Graded
 ---
 

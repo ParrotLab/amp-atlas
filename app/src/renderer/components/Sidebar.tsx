@@ -11,10 +11,28 @@ export default function Sidebar() {
   const location = useLocation()
   const profile = useProfile()
 
+  const [reviewCount, setReviewCount] = useState(0)
+
   // Re-read systems from store whenever route changes (catches settings updates)
   useEffect(() => {
     setSystems(getSystems())
   }, [location.pathname])
+
+  // Count PRs awaiting this user's review across all connected systems (one API call each).
+  useEffect(() => {
+    if (!profile.login) return
+    let cancelled = false
+    ;(async () => {
+      let total = 0
+      for (const sys of getSystems()) {
+        if (!sys.folderPath) continue
+        const r = await window.api.git.reviewRequestCount(sys.folderPath, profile.login)
+        if (r.ok) total += r.count
+      }
+      if (!cancelled) setReviewCount(total)
+    })()
+    return () => { cancelled = true }
+  }, [profile.login, location.pathname])
 
   return (
     <aside className="sidebar no-select">
@@ -28,7 +46,7 @@ export default function Sidebar() {
         </NavLink>
         <NavLink to="/inbox" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <MailIcon size={18} /> Inbox
-          <span className="nav-badge">3</span>
+          {reviewCount > 0 && <span className="nav-badge">{reviewCount}</span>}
         </NavLink>
 
         <div className="nav-divider" />

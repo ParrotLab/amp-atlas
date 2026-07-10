@@ -6,14 +6,10 @@ interface SystemConfig {
   gradient: string
 }
 
-const STORAGE_KEY = 'amp-up-systems-v2' // Bumped to pick up new Delivery System
+const STORAGE_KEY = 'amp-up-systems-v2'
 
-const defaultSystems: SystemConfig[] = [
-  { id: 'learning', name: 'Learning System', folderPath: '', icon: 'book', gradient: 'linear-gradient(135deg, #8B2BFF, #A855FF)' },
-  { id: 'marketing', name: 'Marketing System', folderPath: '', icon: 'monitor', gradient: 'linear-gradient(135deg, #FF7B00, #FFB875)' },
-  { id: 'ai-ops', name: 'AI Operations', folderPath: '', icon: 'layers', gradient: 'linear-gradient(135deg, #3D0052, #7A3D8F)' },
-  { id: 'delivery', name: 'Delivery System', folderPath: '', icon: 'book', gradient: 'linear-gradient(135deg, #16A34A, #22C55E)' },
-]
+// No seeded systems — every user (including dev) starts blank and adds their own.
+const defaultSystems: SystemConfig[] = []
 
 export function getSystems(): SystemConfig[] {
   try {

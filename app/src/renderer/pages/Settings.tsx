@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { getSystems, updateSystemFolder, addSystem, removeSystem, updateSystem, SystemConfig } from '../utils/systemStore'
+import { getSystems, updateSystemFolder, removeSystem, updateSystem, SystemConfig } from '../utils/systemStore'
 import { iconMap, iconList } from '../components/SystemIcons'
 import { useToast } from '../components/Toast'
 import { SUPPORT_FORM_URL, shouldOpenForm } from '../utils/support'
 import ResyncModal from '../components/ResyncModal'
+import NewSystemModal from '../components/NewSystemModal'
 import { useProfile } from '../hooks/useProfile'
 import './Settings.css'
 
@@ -30,6 +31,7 @@ export default function Settings() {
   const [editingName, setEditingName] = useState<string | null>(null)
   const [identity, setIdentity] = useState<{ login: string } | null>(null)
   const [resyncFor, setResyncFor] = useState<SystemConfig | null>(null)
+  const [showAddSystem, setShowAddSystem] = useState(false)
   const profile = useProfile()
   const { showToast } = useToast()
 
@@ -120,12 +122,7 @@ export default function Settings() {
     setEditingName(null)
   }
 
-  const handleAddSystem = () => {
-    const name = prompt('Name your new system:')
-    if (!name?.trim()) return
-    const updated = addSystem(name.trim(), 'book', gradientOptions[0].value)
-    setSystems(updated)
-  }
+  const handleAddSystem = () => setShowAddSystem(true)
 
   const handleRemoveSystem = (systemId: string, systemName: string) => {
     const confirmed = window.confirm(`Remove "${systemName}"?\n\nThis only removes it from AMP UP — your files won't be deleted.`)
@@ -288,6 +285,11 @@ export default function Settings() {
         onPublishFirst={() => { const s = resyncFor; setResyncFor(null); if (s) showToast(`Open ${s.name} and publish your draft first.`) }}
         onDiscard={() => { const s = resyncFor; setResyncFor(null); if (s) void confirmAndResync(s) }}
         onClose={() => setResyncFor(null)}
+      />
+      <NewSystemModal
+        isOpen={showAddSystem}
+        onClose={() => setShowAddSystem(false)}
+        onCreated={() => setSystems(getSystems())}
       />
     </div>
   )

@@ -122,5 +122,6 @@
 .systems-empty-btn {
   display: inline-block; background: #8B2BFF; color: #fff; text-decoration: none;
   padding: 9px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  border: none; font-family: inherit; cursor: pointer;
 }
 .systems-empty-btn:hover { background: #7A1FE8; }

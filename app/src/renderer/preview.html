@@ -931,6 +931,23 @@
         </div>
       </div>
     </div>
+
+    <div class="subsection">
+      <h3 class="subsection-title">Split / Multi-action Button</h3>
+      <p class="section-subtitle" style="margin-top: 0;">A primary action joined to a caret that reveals secondary actions (e.g. Save + Publish / Discard).</p>
+      <div class="component-box" style="margin-top: var(--space-3);">
+        <div class="row" style="align-items: flex-start; gap: var(--space-8);">
+          <div class="split-btn">
+            <button class="split-btn-primary">Save</button>
+            <button class="split-btn-caret">&#9662;</button>
+          </div>
+          <div class="split-btn-menu" style="position: static; min-width: 200px;">
+            <button class="split-btn-menu-item"><span>Publish</span><span class="split-btn-kbd">&#8984;&#8617;</span></button>
+            <button class="split-btn-menu-item danger"><span>Discard changes</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ═══════════════════════════════════════════════════════════════════ -->

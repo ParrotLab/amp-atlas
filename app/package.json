@@ -4,7 +4,10 @@
   "description": "AMP Atlas — a markdown editor over GitHub for the AMP team.",
   "main": "./out/main/index.js",
   "scripts": {
+    "brand:dev": "bash scripts/brand-electron-dev.sh",
+    "predev": "npm run brand:dev",
     "dev": "electron-vite dev",
+    "postinstall": "npm run brand:dev || true",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "test": "vitest run",

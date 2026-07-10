@@ -4,9 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AMP Design System Preview</title>
-  <link rel="stylesheet" href="tokens.css">
-  <link rel="stylesheet" href="typography.css">
-  <link rel="stylesheet" href="components.css">
+  <!-- This preview lives inside the app and loads the exact same styles + fonts as the app.
+       One source for everything: app/src/renderer/. View it via the dev server
+       (http://localhost:5173/preview.html) or by opening this file directly. -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/fonts.css">
+  <link rel="stylesheet" href="styles/typography.css">
+  <link rel="stylesheet" href="styles/components.css">
   <style>
     /* ── Preview Page Layout ─────────────────────────────────────── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -541,7 +545,7 @@
   <!-- ═══════════════════════════════════════════════════════════════════ -->
   <header class="preview-header">
     <div style="margin-bottom: var(--space-4);">
-      <img src="assets/logo-wordmark-light.svg" alt="AI Momentum Protocols" style="height: 60px;">
+      <img src="assets/logos/logo-wordmark-light.svg" alt="AI Momentum Protocols" style="height: 60px;">
     </div>
     <h1><span class="sparkle">&#10022;</span> AMP Design System</h1>
     <p>Design tokens, typography, and components for AMP UP</p>
@@ -576,21 +580,21 @@
     <div class="subsection">
       <h3 class="subsection-title">Wordmark &mdash; Dark (for light backgrounds)</h3>
       <div class="component-box" style="text-align: center; padding: var(--space-10);">
-        <img src="assets/logo-wordmark-dark.svg" alt="AMP Logo Dark" style="height: 80px;">
+        <img src="assets/logos/logo-wordmark-dark.svg" alt="AMP Logo Dark" style="height: 80px;">
       </div>
     </div>
 
     <div class="subsection">
       <h3 class="subsection-title">Wordmark &mdash; Light (for dark backgrounds)</h3>
       <div class="component-box dark" style="text-align: center; padding: var(--space-10);">
-        <img src="assets/logo-wordmark-light.svg" alt="AMP Logo Light" style="height: 80px;">
+        <img src="assets/logos/logo-wordmark-light.svg" alt="AMP Logo Light" style="height: 80px;">
       </div>
     </div>
 
     <div class="subsection">
       <h3 class="subsection-title">Full Name &mdash; Horizontal (for dark backgrounds)</h3>
       <div class="component-box dark" style="text-align: center; padding: var(--space-10);">
-        <img src="assets/logo-light-full-name.svg" alt="AMP Full Name" style="height: 40px;">
+        <img src="assets/logos/logo-light-full-name.svg" alt="AMP Full Name" style="height: 40px;">
       </div>
     </div>
 
@@ -598,13 +602,13 @@
       <h3 class="subsection-title">On Brand Colors</h3>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3);">
         <div style="background: var(--amp-plum-900); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center;">
-          <img src="assets/logo-wordmark-light.svg" alt="AMP on Plum" style="height: 50px;">
+          <img src="assets/logos/logo-wordmark-light.svg" alt="AMP on Plum" style="height: 50px;">
         </div>
         <div style="background: var(--amp-violet-700); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center;">
-          <img src="assets/logo-wordmark-light.svg" alt="AMP on Violet" style="height: 50px;">
+          <img src="assets/logos/logo-wordmark-light.svg" alt="AMP on Violet" style="height: 50px;">
         </div>
         <div style="background: var(--amp-cream-500); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center;">
-          <img src="assets/logo-wordmark-dark.svg" alt="AMP on Cream" style="height: 50px;">
+          <img src="assets/logos/logo-wordmark-dark.svg" alt="AMP on Cream" style="height: 50px;">
         </div>
       </div>
     </div>
@@ -884,8 +888,10 @@
         <div class="row">
           <button class="btn btn-primary">Primary</button>
           <button class="btn btn-secondary">Secondary</button>
+          <button class="btn btn-outline">Outline</button>
           <button class="btn btn-ghost">Ghost</button>
           <button class="btn btn-accent">Accent</button>
+          <button class="btn btn-danger">Danger</button>
           <button class="btn btn-primary" disabled>Disabled</button>
         </div>
       </div>
@@ -922,6 +928,23 @@
           <button class="btn btn-primary">Primary</button>
           <button class="btn btn-accent">Accent</button>
           <button class="btn" style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3);">Outline</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <h3 class="subsection-title">Split / Multi-action Button</h3>
+      <p class="section-subtitle" style="margin-top: 0;">A primary action joined to a caret that reveals secondary actions (e.g. Save + Publish / Discard).</p>
+      <div class="component-box" style="margin-top: var(--space-3);">
+        <div class="row" style="align-items: flex-start; gap: var(--space-8);">
+          <div class="split-btn">
+            <button class="split-btn-primary">Save</button>
+            <button class="split-btn-caret">&#9662;</button>
+          </div>
+          <div class="split-btn-menu" style="position: static; min-width: 200px;">
+            <button class="split-btn-menu-item"><span>Publish</span><span class="split-btn-kbd">&#8984;&#8617;</span></button>
+            <button class="split-btn-menu-item danger"><span>Discard changes</span></button>
+          </div>
         </div>
       </div>
     </div>
@@ -1004,19 +1027,20 @@
     </div>
 
     <div class="component-box" style="margin-top: var(--space-4);">
-      <h3 class="subsection-title">Branch Selector</h3>
-      <div class="row">
-        <div class="branch-selector">
-          <span style="font-size: 14px;">&#9741;</span>
-          <span>main</span>
-          <span style="font-size: 10px; color: var(--color-text-tertiary);">&#9660;</span>
-        </div>
-        <div class="branch-selector">
-          <span style="font-size: 14px;">&#9741;</span>
-          <span>draft/q2-updates</span>
-          <span class="badge badge-brand" style="font-size: 10px; padding: 2px 6px;">Draft</span>
-          <span style="font-size: 10px; color: var(--color-text-tertiary);">&#9660;</span>
-        </div>
+      <h3 class="subsection-title">Version Switcher</h3>
+      <p class="section-subtitle" style="margin-top: 0;">Plain-language versions &mdash; no branch names or git icons. Green = Live, violet = a draft.</p>
+      <div class="row" style="margin-top: var(--space-3);">
+        <button class="status-branch-btn">
+          <span class="status-dot green"></span>
+          <span class="branch-label">Live Version</span>
+          <span class="status-branch-chevron">&#9662;</span>
+        </button>
+        <button class="status-branch-btn">
+          <span class="status-dot violet"></span>
+          <span class="branch-label">Draft: Q2 Updates</span>
+          <span class="badge badge-brand" style="font-size: 10px; padding: 2px 6px;">In Review</span>
+          <span class="status-branch-chevron">&#9662;</span>
+        </button>
       </div>
     </div>
   </section>
@@ -1133,7 +1157,7 @@
       <!-- Sidebar -->
       <div class="mockup-sidebar">
         <div class="mockup-sidebar-header">
-          <img src="assets/logo-wordmark-light.svg" alt="AMP" style="height: 28px;">
+          <img src="assets/logos/logo-wordmark-light.svg" alt="AMP" style="height: 28px;">
         </div>
         <div class="mockup-sidebar-search">
           <input class="mockup-search-input" placeholder="Search... (Cmd+K)" readonly>

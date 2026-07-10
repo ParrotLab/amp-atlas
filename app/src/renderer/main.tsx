@@ -1,4 +1,5 @@
 import './styles/tokens.css'
+import './styles/fonts.css'
 import './styles/typography.css'
 import './styles/components.css'
 import './styles/global.css'

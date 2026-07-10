@@ -22,182 +22,6 @@
   gap: 5px;
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.status-dot.orange { background: #C47A0A; }
-.status-dot.violet { background: #8B2BFF; }
-.status-dot.green { background: #16A34A; }
-
-.status-sep {
-  color: #D4D0CC;
-}
-
-/* Branch selector button */
-.status-branch-wrapper {
-  position: relative;
-}
-
-.status-branch-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #1a1a2e;
-  background: white;
-  border: 1px solid #EDE8E2;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 80ms ease;
-  max-width: 280px;
-}
-
-.status-branch-btn:hover {
-  border-color: #D4D0CC;
-  background: #F5F0EB;
-}
-
-.status-branch-btn .branch-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-branch-chevron {
-  font-size: 10px;
-  color: #B5B1AC;
-  margin-left: 2px;
-}
-
-/* Dropdown overlay */
-.status-dropdown-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-}
-
-/* Dropdown menu */
-.status-dropdown {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 0;
-  background: white;
-  border: 1px solid #EDE8E2;
-  border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-  min-width: 320px;
-  max-height: 420px;
-  overflow-y: auto;
-  padding: 8px;
-  z-index: 1000;
-  animation: dropdownFadeIn 100ms ease;
-}
-
-.status-dropdown::-webkit-scrollbar { width: 4px; }
-.status-dropdown::-webkit-scrollbar-track { background: transparent; }
-.status-dropdown::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
-
-@keyframes dropdownFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.status-dropdown-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #B5B1AC;
-  padding: 8px 10px 4px;
-}
-
-.status-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #4A4743;
-  background: none;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-  transition: background 80ms ease;
-}
-
-.status-dropdown-item:hover {
-  background: #F0EBE5;
-}
-
-.status-dropdown-item.active {
-  color: #8B2BFF;
-}
-
-.status-dropdown-check {
-  margin-left: auto;
-  color: #8B2BFF;
-  font-size: 14px;
-}
-
-.status-dropdown-item-name {
-  flex: 1;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-archive-btn {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  border: none;
-  background: none;
-  color: #D4D0CC;
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0;
-  transition: all 80ms ease;
-  flex-shrink: 0;
-  font-family: inherit;
-}
-
-.status-dropdown-item:hover .status-archive-btn {
-  opacity: 1;
-}
-
-.status-archive-btn:hover {
-  background: #FEF2F2;
-  color: #DC2626;
-}
-
-.status-dropdown-divider {
-  height: 1px;
-  background: #EDE8E2;
-  margin: 4px 6px;
-}
-
-.status-dropdown-item.new-draft {
-  color: #8B2BFF;
-}
-
-.status-dropdown-item.new-draft:hover {
-  background: rgba(139, 43, 255, 0.06);
-}
 
 /* Buttons */
 .status-right {
@@ -213,7 +37,7 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  font-family: inherit;
+  font-family: var(--font-sans);
   transition: all 100ms ease;
 }
 
@@ -300,3 +124,17 @@
   background: rgba(220, 38, 38, 0.1);
   color: #DC2626;
 }
+
+/* --- Live Version: read-only tag + freshness cluster --- */
+.status-readonly-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: #A9A49D;
+}
+.status-freshness { display: flex; align-items: center; gap: 12px; }
+.status-updated { font-size: 12px; color: #8E8B87; }
+.status-refresh-btn {
+  padding: 6px 14px; font-size: 12px; font-weight: 600; font-family: var(--font-sans);
+  border: 1px solid #E3DCD2; border-radius: 8px; background: #fff; color: #6b2fb3; cursor: pointer;
+  transition: all 100ms ease;
+}
+.status-refresh-btn:hover { background: rgba(139, 43, 255, 0.06); border-color: #C9BEDB; color: #8B2BFF; }

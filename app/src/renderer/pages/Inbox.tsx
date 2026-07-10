@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getSystems } from '../utils/systemStore'
 import { iconMap } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
+import Badge, { reviewVariant } from '../components/Badge'
 import './Inbox.css'
 
 interface PRItem {
@@ -119,9 +120,9 @@ export default function Inbox() {
                 <span style={{ color: '#DC2626' }}>-{pr.deletions}</span>
                 <span>{pr.changedFiles} files</span>
               </div>
-              <span className={`inbox-item-badge ${pr.reviewDecision === 'APPROVED' ? 'approved' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'open'}`}>
+              <Badge variant={reviewVariant(pr.reviewDecision)}>
                 {pr.reviewDecision === 'APPROVED' ? 'Approved' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'Open'}
-              </span>
+              </Badge>
             </Link>
           ))}
         </div>

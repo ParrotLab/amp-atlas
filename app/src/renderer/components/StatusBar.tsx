@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react'
+import Button from './Button'
+import Badge, { reviewVariant, reviewLabel } from './Badge'
+import SplitButton from './SplitButton'
+import { RefreshIcon } from './SystemIcons'
 import './StatusBar.css'
 
 interface DraftItem {
@@ -16,15 +20,16 @@ interface StatusBarProps {
   activeDrafts: DraftItem[]
   archivedDrafts: DraftItem[]
   lastSaved?: string
+  lastRefreshedLabel?: string
   onSave: () => void
   onDiscard: () => void
   onPublish: () => void
+  onRefresh?: () => void
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
   onUnarchive?: (branch: string) => void
   onAddExistingWork?: (branch: string) => void
-  onMoveChangesToDraft?: (name: string) => void
   repoPath?: string
   prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
   canUseGit?: boolean
@@ -43,9 +48,9 @@ function humanize(branch: string): string {
 export default function StatusBar({
   editedCount, newCount, isDirty,
   branchName, isMain,
-  activeDrafts, archivedDrafts, lastSaved,
-  onSave, onDiscard, onPublish, onSwitchBranch, onNewDraft, onArchiveBranch, onUnarchive,
-  onAddExistingWork, onMoveChangesToDraft, repoPath, prStatus,
+  activeDrafts, archivedDrafts, lastSaved, lastRefreshedLabel,
+  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch, onUnarchive,
+  onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
@@ -53,6 +58,8 @@ export default function StatusBar({
   const [adoptable, setAdoptable] = useState<{ name: string; isRemoteOnly: boolean }[]>([])
   const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
   const unsaved = editedCount + newCount
+  const prOpen = prStatus?.hasPR && prStatus.state === 'OPEN'
+  const publishLabel = prOpen ? 'Update Review' : 'Publish'
 
   useEffect(() => {
     if (!showAdopt || !repoPath) return
@@ -64,11 +71,15 @@ export default function StatusBar({
     })
   }, [showAdopt, repoPath, activeDrafts, archivedDrafts])
 
-  const prBadge = prStatus?.hasPR && prStatus.state === 'OPEN' && (
-    <span className={`status-pr-badge-inline ${prStatus.reviewDecision === 'APPROVED' ? 'approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'changes' : 'review'}`}>
-      {prStatus.reviewDecision === 'APPROVED' ? 'Approved' : prStatus.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'In Review'}
-    </span>
+  const prBadge = prOpen && (
+    <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
   )
+
+  const doPublish = () => { canUseGitHub ? onPublish() : onNeedGitHub?.() }
+  const doDiscard = () => {
+    if (!canUseGit) { onNeedGit?.(); return }
+    if (window.confirm('Discard all unsaved changes? This can’t be undone.')) onDiscard()
+  }
 
   return (
     <div className="status-bar">
@@ -153,15 +164,7 @@ export default function StatusBar({
             {lastSaved && ` · saved ${lastSaved}`}
           </span>
         )}
-        {isMain && isDirty && (
-          <button
-            className="status-btn outline"
-            onClick={() => { const n = window.prompt('Name this draft:'); if (n && n.trim()) onMoveChangesToDraft?.(n.trim()) }}
-          >
-            Move changes into a draft
-          </button>
-        )}
-        {isMain && !isDirty && <span className="status-item" style={{ color: '#16A34A' }}>read only</span>}
+        {isMain && <span className="status-readonly-tag">Read only</span>}
       </div>
 
       {showAdopt && (
@@ -180,35 +183,24 @@ export default function StatusBar({
       )}
 
       <div className="status-right">
-        <button
-          className={`status-btn secondary ${!canUseGit ? 'disabled' : ''}`}
-          disabled={canUseGit && !isDirty}
-          onClick={() => canUseGit ? onDiscard() : onNeedGit?.()}
-        >
-          Discard
-        </button>
-        <button
-          className={`status-btn primary ${!canUseGit ? 'disabled' : ''}`}
-          disabled={canUseGit && !isDirty}
-          onClick={() => canUseGit ? onSave() : onNeedGit?.()}
-        >
-          Save
-        </button>
-        {prStatus?.hasPR && prStatus.state === 'OPEN' ? (
-          <button
-            className={`status-btn outline ${!canUseGitHub ? 'disabled' : ''}`}
-            disabled={canUseGitHub && !isDirty}
-            onClick={() => canUseGitHub ? onPublish() : onNeedGitHub?.()}
-          >
-            Update Review
-          </button>
+        {isMain ? (
+          <div className="status-freshness">
+            {lastRefreshedLabel && <span className="status-updated">{lastRefreshedLabel}</span>}
+            <Button variant="outline" size="sm" icon={<RefreshIcon />} onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
+              Refresh
+            </Button>
+          </div>
         ) : (
-          <button
-            className={`status-btn outline ${!canUseGitHub ? 'disabled' : ''}`}
-            onClick={() => canUseGitHub ? onPublish() : onNeedGitHub?.()}
-          >
-            Publish
-          </button>
+          <SplitButton
+            label="Save"
+            title="Save (⌘S)"
+            disabled={canUseGit && !isDirty}
+            onClick={() => canUseGit ? onSave() : onNeedGit?.()}
+            items={[
+              { label: publishLabel, kbd: '⌘↵', onClick: doPublish },
+              { label: 'Discard changes', danger: true, onClick: doDiscard },
+            ]}
+          />
         )}
       </div>
     </div>

@@ -1,11 +1,13 @@
 /* -----------------------------------------------------------------------
    MODAL / DIALOG
+   Warm, borderless dialog (matches the app). Use via the <Modal> component:
+   .modal-overlay > .modal (with .modal-title / .modal-subtitle / .modal-body / .modal-footer).
    ----------------------------------------------------------------------- */
 
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(40, 20, 50, 0.35);
   z-index: var(--z-overlay);
   display: flex;
   align-items: center;
@@ -13,32 +15,52 @@
 }
 
 .modal {
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
-  width: 480px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-  z-index: var(--z-modal);
+  background: #fffdf9;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(40, 20, 50, 0.25);
+  padding: 28px 30px;
+  width: 90%;
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+  font-family: var(--font-sans);
 }
 
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--color-border-subtle);
+.modal-title {
+  margin: 0 0 12px;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: #3b2a44;
+}
+
+.modal-subtitle {
+  margin: 0 0 16px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: #8A857E;
 }
 
 .modal-body {
-  padding: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: #4a3d52;
 }
+.modal-body p { margin: 0 0 12px; }
+.modal-body strong { color: var(--color-text-brand); }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--color-border-subtle);
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* Label above a field inside a modal body. */
+.modal-field-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: #4a3d52;
+  margin-bottom: var(--space-2);
 }

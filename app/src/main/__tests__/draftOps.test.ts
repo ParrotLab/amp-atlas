@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, existsSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { simpleGit } from 'simple-git'
-import { slugifyDraft, listAdoptableBranches, createDraftFromChanges, switchDraft, createDraftFromMain, updateFromLive } from '../draftOps'
+import { slugifyDraft, listAdoptableBranches, createDraftFromChanges, switchDraft, createDraftFromMain, updateFromLive, refreshMain } from '../draftOps'
 
 async function tempRepo(): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), 'amp-'))
@@ -129,5 +129,33 @@ describe('updateFromLive', () => {
     // draft is byte-identical to before, and the tree is clean (merge aborted)
     expect(readFileSync(join(dir, 'readme.md'), 'utf8')).toBe(draftContent)
     expect((await simpleGit(dir).status()).isClean()).toBe(true)
+  })
+})
+
+describe('refreshMain', () => {
+  it('fast-forwards local main from origin while on a draft branch', async () => {
+    const dir = await tempRepo()
+    const { originWork } = await withOrigin(dir)
+    // on a draft branch
+    await simpleGit(dir).checkoutLocalBranch('draft/x')
+    // origin advances main
+    writeFileSync(join(originWork, 'live.md'), 'live\n')
+    await simpleGit(originWork).add('-A'); await simpleGit(originWork).commit('live edit')
+    await simpleGit(originWork).push('origin', 'main')
+
+    const res = await refreshMain(dir)
+    expect(res).toEqual({ updated: true })
+    const localMain = (await simpleGit(dir).revparse(['main'])).trim()
+    const originMain = (await simpleGit(dir).revparse(['origin/main'])).trim()
+    expect(localMain).toBe(originMain)
+    // still on the draft branch, untouched
+    expect((await simpleGit(dir).status()).current).toBe('draft/x')
+  })
+
+  it('reports updated:false when already current', async () => {
+    const dir = await tempRepo()
+    await withOrigin(dir)
+    const res = await refreshMain(dir)
+    expect(res).toEqual({ updated: false })
   })
 })

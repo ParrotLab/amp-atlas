@@ -4,6 +4,7 @@ import SystemCard from '../components/SystemCard'
 import { getSystems, SystemConfig } from '../utils/systemStore'
 import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
 import { useProfile } from '../hooks/useProfile'
+import NewSystemModal from '../components/NewSystemModal'
 import './Dashboard.css'
 
 const BookIcon = () => (
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const [drafts, setDrafts] = useState<DraftInfo[]>([])
   const [pullTimes, setPullTimes] = useState<Record<string, number | null>>({})
   const [refreshing, setRefreshing] = useState(false)
+  const [showAddSystem, setShowAddSystem] = useState(false)
 
   useEffect(() => {
     setSystems(getSystems())
@@ -140,7 +142,7 @@ export default function Dashboard() {
         <div className="systems-empty">
           <div className="systems-empty-title">No systems yet</div>
           <div className="systems-empty-sub">Add a system and connect it to your GitHub-backed folder to get started.</div>
-          <Link to="/settings" className="systems-empty-btn">+ Add a system</Link>
+          <button className="systems-empty-btn" onClick={() => setShowAddSystem(true)}>+ Add a system</button>
         </div>
       ) : (
         <div className="systems-grid">
@@ -193,6 +195,12 @@ export default function Dashboard() {
           </div>
         </>
       )}
+
+      <NewSystemModal
+        isOpen={showAddSystem}
+        onClose={() => setShowAddSystem(false)}
+        onCreated={() => { setSystems(getSystems()); void refreshSystems(true) }}
+      />
     </div>
   )
 }

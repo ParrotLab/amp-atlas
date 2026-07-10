@@ -93,6 +93,7 @@ interface ElectronAPI {
       | { ok: true; updated: boolean }
       | { ok: false; conflicted: true; files: string[] }
     >
+    refreshMain: (repoPath: string) => Promise<{ ok: boolean; updated: boolean }>
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string; url?: string; alreadyExists?: boolean }>
     createDraft: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string; pulled?: boolean }>
     createDraftFromChanges: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string }>

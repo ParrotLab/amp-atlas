@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import SystemCard from '../components/SystemCard'
 import { getSystems, SystemConfig } from '../utils/systemStore'
+import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
+import { useProfile } from '../hooks/useProfile'
 import './Dashboard.css'
 
 const BookIcon = () => (
@@ -46,13 +48,36 @@ interface DraftInfo {
 
 export default function Dashboard() {
   const now = new Date()
+  const nowMs = now.getTime()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening'
+  const profile = useProfile()
   const [systems, setSystems] = useState<SystemConfig[]>([])
   const [drafts, setDrafts] = useState<DraftInfo[]>([])
+  const [pullTimes, setPullTimes] = useState<Record<string, number | null>>({})
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     setSystems(getSystems())
   }, [])
+
+  // Refresh the Live Version for connected systems. `force` ignores the freshness throttle.
+  const refreshSystems = async (force: boolean) => {
+    const connected = getSystems().filter(s => s.folderPath)
+    // seed display with any stored timestamps immediately
+    setPullTimes(Object.fromEntries(connected.map(s => [s.folderPath!, getLastPull(s.folderPath!)])))
+    setRefreshing(true)
+    for (const sys of connected) {
+      const folder = sys.folderPath!
+      const last = getLastPull(folder)
+      if (!force && last && Date.now() - last < 60_000) continue // fresh enough
+      const r = await window.api.git.refreshMain(folder)
+      if (r.ok) { const now = Date.now(); setLastPull(folder, now); setPullTimes(p => ({ ...p, [folder]: now })) }
+    }
+    setRefreshing(false)
+  }
+
+  // On open (launch / navigating home), refresh connected systems (throttled).
+  useEffect(() => { void refreshSystems(false) }, [])
 
   useEffect(() => {
     const loadDrafts = async () => {
@@ -99,20 +124,26 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      <h1 className="dashboard-greeting">{greeting}, Rose</h1>
+      <h1 className="dashboard-greeting">{greeting}{profile.name ? `, ${profile.name.split(' ')[0]}` : ''}</h1>
       <p className="dashboard-subtitle">Here's what's happening across your systems.</p>
 
-      <div className="section-label">Your Systems</div>
+      <div className="dashboard-section-head">
+        <div className="section-label">Your Systems</div>
+        <button className="dashboard-refresh" onClick={() => refreshSystems(true)} disabled={refreshing}>
+          {refreshing ? 'Refreshing…' : '⟳ Refresh'}
+        </button>
+      </div>
       <div className="systems-grid">
         {systems.map(sys => {
           const Icon = iconMap[sys.icon] || BookIcon
+          const rel = sys.folderPath ? relativeTime(pullTimes[sys.folderPath] ?? getLastPull(sys.folderPath), nowMs) : ''
           return (
             <SystemCard
               key={sys.id}
               name={sys.name}
               path={`/system/${sys.id}`}
               gradient={sys.gradient}
-              meta={sys.folderPath ? 'Connected' : 'Not connected'}
+              meta={sys.folderPath ? (rel ? `Updated ${rel}` : 'Connected') : 'Not connected'}
               connected={!!sys.folderPath}
               icon={<Icon />}
             />

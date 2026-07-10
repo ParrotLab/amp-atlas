@@ -17,6 +17,7 @@ import MoveToModal from '../components/MoveToModal'
 import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
 import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
+import { setLastPull } from '../utils/pullStatus'
 import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
@@ -108,6 +109,12 @@ export default function SystemOverview() {
     window.api.system.capabilities(rootPath).then(r => {
       if (r.ok) setCaps({ isGitRepo: r.isGitRepo, connected: r.connected })
     })
+  }, [rootPath])
+
+  // Opening a system refreshes its Live Version from GitHub and records the pull time.
+  useEffect(() => {
+    if (!rootPath) return
+    window.api.git.refreshMain(rootPath).then(r => { if (r.ok) setLastPull(rootPath, Date.now()) })
   }, [rootPath])
 
   // Watch the active system folder; reflect external edits live.

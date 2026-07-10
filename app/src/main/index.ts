@@ -7,7 +7,7 @@ import { startDeviceFlow, pollForToken, getIdentity } from './githubAuth'
 import { tokenStore } from './tokenStore'
 import { buildAuthHeader } from './authHeader'
 import * as github from './github'
-import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive } from './draftOps'
+import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive, refreshMain } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders } from './fsops'
 import { setupAutoUpdate } from './updater'
@@ -288,6 +288,11 @@ ipcMain.handle('git:createDraftFromChanges', async (_event, repoPath: string, dr
   } catch (error) {
     return { ok: false, error: String(error) }
   }
+})
+
+ipcMain.handle('git:refreshMain', async (_event, repoPath: string) => {
+  try { return { ok: true, ...(await refreshMain(repoPath)) } }
+  catch (error) { logError('refreshMain', error); return { ok: false, updated: false } }
 })
 
 ipcMain.handle('git:updateFromLive', async (_event, repoPath: string) => {

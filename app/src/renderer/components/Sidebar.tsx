@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import logo from '../assets/logos/logo-wordmark-dark.svg'
 import { getSystems } from '../utils/systemStore'
-import { iconMap } from './SystemIcons'
+import { iconMap, DiamondIcon, MailIcon, GearIcon } from './SystemIcons'
 import './Sidebar.css'
 
 export default function Sidebar() {
@@ -22,10 +22,10 @@ export default function Sidebar() {
 
       <nav className="sidebar-nav">
         <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-          <span style={{ fontSize: '16px' }}>◇</span> Dashboard
+          <DiamondIcon size={18} /> Dashboard
         </NavLink>
         <NavLink to="/inbox" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <span style={{ fontSize: '14px' }}>✉</span> Inbox
+          <MailIcon size={18} /> Inbox
           <span className="nav-badge">3</span>
         </NavLink>
 
@@ -44,7 +44,7 @@ export default function Sidebar() {
         <div className="nav-divider" />
 
         <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <span style={{ fontSize: '16px' }}>⚙</span> Settings
+          <GearIcon size={18} /> Settings
         </NavLink>
       </nav>
 

@@ -45,6 +45,8 @@ export const HomeIcon = ({ size = 18 }: { size?: number }) => <I size={size}><pa
 export const AnchorIcon = ({ size = 18 }: { size?: number }) => <I size={size}><circle cx="10" cy="5" r="3"/><path d="M10 8v10"/><path d="M3 13a7 7 0 0014 0"/><path d="M7 12h6"/></I>
 export const CrownIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 16h14l-2-10-3.5 4L10 4 8.5 10 5 6 3 16z"/><path d="M3 16a1 1 0 001 1h12a1 1 0 001-1"/></I>
 
+export const MailIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M2 5a1 1 0 011-1h14a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V5z"/><path d="M2.5 5.5l7.5 6 7.5-6"/></I>
+
 export const iconMap: Record<string, React.FC<{ size?: number }>> = {
   book: BookIcon,
   monitor: MonitorIcon,

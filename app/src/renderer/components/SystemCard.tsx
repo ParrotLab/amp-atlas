@@ -7,11 +7,12 @@ interface SystemCardProps {
   gradient: string
   meta: string
   icon: React.ReactNode
+  connected?: boolean
 }
 
-export default function SystemCard({ name, path, gradient, meta, icon }: SystemCardProps) {
+export default function SystemCard({ name, path, gradient, meta, icon, connected = true }: SystemCardProps) {
   return (
-    <Link to={path} className="system-card" style={{ background: gradient }}>
+    <Link to={path} className={`system-card ${connected ? '' : 'disconnected'}`} style={{ background: gradient }}>
       <div className="system-card-icon">{icon}</div>
       <div className="system-card-name">{name}</div>
       <div className="system-card-meta">{meta}</div>

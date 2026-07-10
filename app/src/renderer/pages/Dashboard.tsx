@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import SystemCard from '../components/SystemCard'
-import { getSystems, SystemConfig } from '../utils/systemStore'
+import { getSystems, SystemConfig, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
 import { listActive } from '../utils/draftStore'
 import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
 import { useProfile } from '../hooks/useProfile'
@@ -61,10 +61,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     setSystems(getSystems())
-    // Re-read systems when the window regains focus (catches adds/removes made elsewhere).
-    const onFocus = () => setSystems(getSystems())
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    // Re-read systems on window focus and whenever a system is added/edited/removed.
+    const reread = () => setSystems(getSystems())
+    window.addEventListener('focus', reread)
+    window.addEventListener(SYSTEMS_CHANGED_EVENT, reread)
+    return () => { window.removeEventListener('focus', reread); window.removeEventListener(SYSTEMS_CHANGED_EVENT, reread) }
   }, [])
 
   // Refresh the Live Version for connected systems.

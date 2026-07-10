@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AMP Design System Preview</title>
   <!-- Single source of truth: the app's styles. Edit those; this preview always matches the app. -->
+  <!-- fonts.css = the preview's own @font-face (design-system/fonts, co-located). The app has its
+       own fonts.css pointing at its bundled fonts. typography.css no longer declares @font-face. -->
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="../app/src/renderer/styles/tokens.css">
   <link rel="stylesheet" href="../app/src/renderer/styles/typography.css">
   <link rel="stylesheet" href="../app/src/renderer/styles/components.css">
-  <!-- Loaded LAST so its co-located @font-face (design-system/fonts) overrides the app's
-       ../assets/fonts path, which doesn't resolve when opening this file over file://. -->
-  <link rel="stylesheet" href="fonts.css">
   <style>
     /* ── Preview Page Layout ─────────────────────────────────────── */
     * { box-sizing: border-box; margin: 0; padding: 0; }

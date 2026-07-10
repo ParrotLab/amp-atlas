@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import logo from '../assets/logos/logo-wordmark-dark.svg'
-import { getSystems } from '../utils/systemStore'
+import { getSystems, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
 import { iconMap, DiamondIcon, MailIcon, GearIcon } from './SystemIcons'
 import { useProfile } from '../hooks/useProfile'
 import './Sidebar.css'
@@ -13,10 +13,16 @@ export default function Sidebar() {
 
   const [reviewCount, setReviewCount] = useState(0)
 
-  // Re-read systems from store whenever route changes (catches settings updates)
+  // Re-read systems on route change and whenever a system is added/edited/removed anywhere.
   useEffect(() => {
     setSystems(getSystems())
   }, [location.pathname])
+
+  useEffect(() => {
+    const h = () => setSystems(getSystems())
+    window.addEventListener(SYSTEMS_CHANGED_EVENT, h)
+    return () => window.removeEventListener(SYSTEMS_CHANGED_EVENT, h)
+  }, [])
 
   // Count PRs awaiting this user's review across all connected systems (one API call each).
   useEffect(() => {

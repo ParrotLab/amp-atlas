@@ -21,8 +21,12 @@ export function getSystems(): SystemConfig[] {
   return defaultSystems
 }
 
+export const SYSTEMS_CHANGED_EVENT = 'amp:systems-changed'
+
 export function saveSystems(systems: SystemConfig[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(systems))
+  // Notify every mounted view (sidebar, dashboard) to re-read without a route change.
+  window.dispatchEvent(new Event(SYSTEMS_CHANGED_EVENT))
 }
 
 export function updateSystemFolder(systemId: string, folderPath: string): SystemConfig[] {

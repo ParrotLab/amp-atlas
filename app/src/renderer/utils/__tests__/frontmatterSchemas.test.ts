@@ -22,7 +22,7 @@ describe('detectFileType', () => {
 describe('getSchema', () => {
   it('returns ordered fields for playbook', () => {
     const fields = getSchema('playbook')!.map(f => f.key)
-    expect(fields).toEqual(['name', 'description', 'system', 'sub-pillar', 'status'])
+    expect(fields).toEqual(['name', 'description', 'system', 'sub-system', 'status'])
   })
 
   it('returns null for unknown type', () => {

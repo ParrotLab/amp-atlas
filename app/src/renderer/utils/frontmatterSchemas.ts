@@ -15,7 +15,7 @@ const SCHEMAS: Record<string, FieldSchema[]> = {
     { key: 'name', label: 'Name', widget: 'text' },
     { key: 'description', label: 'Description', widget: 'text' },
     { key: 'system', label: 'System', widget: 'text' },
-    { key: 'sub-pillar', label: 'Sub-pillar', widget: 'text' },
+    { key: 'sub-system', label: 'Sub-system', widget: 'text' },
     { key: 'status', label: 'Status', widget: 'select', options: STATUS_OPTIONS },
   ],
 }

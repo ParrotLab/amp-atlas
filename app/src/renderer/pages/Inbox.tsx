@@ -79,7 +79,7 @@ export default function Inbox() {
             })
           }
         }
-      } catch { /* ignore */ }
+      } catch { /* a single system's PR fetch failing shouldn't drop the rest */ }
     }
     all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     setItems(all)

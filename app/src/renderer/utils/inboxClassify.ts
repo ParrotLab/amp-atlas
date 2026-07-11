@@ -22,6 +22,6 @@ export function classifyInboxPR(pr: ClassifiablePR, login: string): InboxClassif
     if (pr.reviewDecision === 'CHANGES_REQUESTED') return { tab: 'drafts', action: 'make-edits', badge: 'changes' }
     return { tab: 'drafts', action: 'view', badge: 'inreview' }
   }
-  if (pr.requestedReviewers.includes(login)) return { tab: 'review', action: 'review', badge: null }
+  if ((pr.requestedReviewers ?? []).includes(login)) return { tab: 'review', action: 'review', badge: null }
   return { tab: null, action: 'view', badge: null }
 }

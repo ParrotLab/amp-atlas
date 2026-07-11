@@ -19,6 +19,7 @@ import CommandPalette from '../components/CommandPalette'
 import ConfirmModal from '../components/ConfirmModal'
 import { FolderIcon, CloseIcon } from '../components/SystemIcons'
 import { detectFileType, getSchema } from '../utils/frontmatterSchemas'
+import { displayName } from '../utils/naming'
 import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
 import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
@@ -110,10 +111,11 @@ export default function SystemOverview() {
   const [treeRefresh, setTreeRefresh] = useState(0)
   type Pending =
     | { kind: 'scaffold'; type: ScaffoldType }
-    | { kind: 'file'; parentAbs: string }
-    | { kind: 'folder'; parentAbs: string }
+    | { kind: 'file'; parentAbs?: string }      // parentAbs omitted (toolbar) => user must pick a location
+    | { kind: 'folder'; parentAbs?: string }
     | { kind: 'rename'; absPath: string; isDir: boolean }
   const [pendingCreate, setPendingCreate] = useState<Pending | null>(null)
+  const [createFolders, setCreateFolders] = useState<string[]>([])
   const [moveSource, setMoveSource] = useState<string | null>(null)
   const [moveFolders, setMoveFolders] = useState<string[]>([])
   const canEdit = !isMainBranch && caps.isGitRepo
@@ -492,11 +494,31 @@ export default function SystemOverview() {
 
   const refreshAfterFs = async () => { setTreeRefresh(t => t + 1); await fetchGitStatus() }
 
-  const doCreateConfirm = async (name: string) => {
+  // Keep open tabs (and the active file) pointed at a renamed/moved path — incl. descendants
+  // of a moved/renamed folder — so tabs update in place instead of going stale or duplicating.
+  const repointTabs = (from: string, to: string) => {
+    const remap = (path: string): string | null =>
+      path === from ? to : path.startsWith(from + '/') ? to + path.slice(from.length) : null
+    setTabs(prev => prev.map(t => {
+      const np = remap(t.path)
+      return np ? { ...t, path: np, name: np.split('/').pop() || t.name } : t
+    }))
+    setSelectedFile(cur => (cur ? remap(cur) ?? cur : cur))
+  }
+
+  // Load the destination-folder list whenever a file/folder create modal opens.
+  useEffect(() => {
+    if (!rootPath || (pendingCreate?.kind !== 'file' && pendingCreate?.kind !== 'folder')) return
+    window.api.fs.listFolders(rootPath).then(r => setCreateFolders(r.ok ? r.folders : []))
+  }, [pendingCreate, rootPath])
+
+  const doCreateConfirm = async (name: string, folderRel: string) => {
     const p = pendingCreate
     setPendingCreate(null)
     if (!p) return
     const date = new Date().toISOString().slice(0, 10)
+    // Destination folder chosen in the modal (empty => system root).
+    const destAbs = folderRel ? `${rootPath}/${folderRel}` : rootPath
     if (p.kind === 'scaffold') {
       const { files } = scaffoldFor(p.type, name, date)
       let firstAbs = ''
@@ -509,20 +531,25 @@ export default function SystemOverview() {
       await refreshAfterFs()
       if (firstAbs) handleFileSelect(firstAbs)
     } else if (p.kind === 'file') {
-      const trimmed = name.trim()
-      const abs = `${p.parentAbs}/${trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`}`
+      // Exact name (spaces + capitalization preserved); .md is added on disk, hidden from the user.
+      const base = name.trim().replace(/\.md$/i, '')
+      const abs = `${destAbs}/${base}.md`
       const res = await window.api.fs.createFile(abs, '')
       if (!res.ok) { showToast(res.error || "Couldn't create"); return }
       await refreshAfterFs(); handleFileSelect(abs)
     } else if (p.kind === 'folder') {
-      const res = await window.api.fs.mkdir(`${p.parentAbs}/${name.trim()}`)
+      const res = await window.api.fs.mkdir(`${destAbs}/${name.trim()}`)
       if (!res.ok) { showToast(res.error || "Couldn't create"); return }
       await refreshAfterFs()
     } else { // rename
       const parent = p.absPath.replace(/\/[^/]+$/, '')
-      const res = await window.api.fs.move(p.absPath, `${parent}/${name.trim()}`)
+      const clean = name.trim()
+      const newBase = p.isDir ? clean : `${clean.replace(/\.md$/i, '')}.md`
+      const oldAbs = p.absPath
+      const newAbs = `${parent}/${newBase}`
+      const res = await window.api.fs.move(oldAbs, newAbs)
       if (!res.ok) { showToast(res.error || "Couldn't rename"); return }
-      if (selectedFile === p.absPath) setSelectedFile(undefined)
+      repointTabs(oldAbs, newAbs)
       await refreshAfterFs()
     }
   }
@@ -537,9 +564,10 @@ export default function SystemOverview() {
       return
     }
     const name = fromAbs.split('/').pop()
-    const res = await window.api.fs.move(fromAbs, `${toFolderAbs}/${name}`)
+    const to = `${toFolderAbs}/${name}`
+    const res = await window.api.fs.move(fromAbs, to)
     if (!res.ok) { showToast(res.error || "Couldn't move"); return }
-    if (selectedFile === fromAbs) setSelectedFile(undefined)
+    repointTabs(fromAbs, to)
     await refreshAfterFs()
   }
 
@@ -548,9 +576,11 @@ export default function SystemOverview() {
     setMoveSource(null)
     if (!from) return
     const name = from.split('/').pop()
-    const res = await window.api.fs.move(from, `${rootPath}/${folderRel}/${name}`)
+    const destDir = folderRel ? `${rootPath}/${folderRel}` : rootPath
+    const to = `${destDir}/${name}`
+    const res = await window.api.fs.move(from, to)
     if (!res.ok) { showToast(res.error || "Couldn't move"); return }
-    if (selectedFile === from) setSelectedFile(undefined)
+    repointTabs(from, to)
     await refreshAfterFs()
   }
 
@@ -561,8 +591,22 @@ export default function SystemOverview() {
     await refreshAfterFs()
   }
 
+  // Inline title rename (the editable title in the viewer) → rename the open file on disk.
+  const handleRenameTitle = async (newName: string) => {
+    if (!selectedFile) return
+    const clean = newName.trim().replace(/\.md$/i, '')
+    if (!clean) return
+    const parent = selectedFile.replace(/\/[^/]+$/, '')
+    const newAbs = `${parent}/${clean}.md`
+    if (newAbs === selectedFile) return
+    const res = await window.api.fs.move(selectedFile, newAbs)
+    if (!res.ok) { showToast(res.error || "Couldn't rename"); return }
+    repointTabs(selectedFile, newAbs)
+    await refreshAfterFs()
+  }
+
   const handleDelete = (absPath: string) => {
-    const name = absPath.split('/').pop()
+    const name = displayName(absPath.split('/').pop() || '')
     setConfirm({
       title: 'Delete this item?',
       message: `“${name}” will be removed. You can still get it back by discarding the draft.`,
@@ -572,16 +616,41 @@ export default function SystemOverview() {
     })
   }
 
-  const modalConfig = (() => {
+  const modalConfig: null | {
+    title: string
+    previewFor: (name: string, folder: string) => string
+    initialName: string
+    confirmLabel?: string
+    location?: { folders: string[]; initial?: string }
+  } = (() => {
     const p = pendingCreate
     if (!p) return null
+    // Absolute parent → system-relative folder ('' = root). undefined => no default (force a pick).
+    const relOf = (abs?: string) => abs === undefined ? undefined : abs === rootPath ? '' : abs.replace(rootPath + '/', '')
     if (p.kind === 'scaffold') {
       const labels = { playbook: 'New Playbook', project: 'New Project', 'sub-system': 'New Sub-system' }
-      return { title: labels[p.type], previewFor: (slug: string) => `will create ${scaffoldFor(p.type, slug, '').folder}/`, initialName: '' }
+      return { title: labels[p.type], previewFor: (name: string) => `will create ${scaffoldFor(p.type, name, '').folder}/`, initialName: '' }
     }
-    if (p.kind === 'file') return { title: 'New File', previewFor: (slug: string) => `${p.parentAbs.replace(rootPath + '/', '')}/${slug}.md`, initialName: '' }
-    if (p.kind === 'folder') return { title: 'New Folder', previewFor: (slug: string) => `${p.parentAbs.replace(rootPath + '/', '')}/${slug}`, initialName: '' }
-    return { title: 'Rename', previewFor: (slug: string) => slug, initialName: p.absPath.split('/').pop() || '' }
+    if (p.kind === 'file') return {
+      title: 'New File',
+      previewFor: (name: string, folder: string) => `${folder ? folder + ' / ' : ''}${name}`,
+      initialName: '',
+      location: { folders: createFolders, initial: relOf(p.parentAbs) },
+    }
+    if (p.kind === 'folder') return {
+      title: 'New Folder',
+      previewFor: (name: string, folder: string) => `${folder ? folder + ' / ' : ''}${name}`,
+      initialName: '',
+      location: { folders: createFolders, initial: relOf(p.parentAbs) },
+    }
+    // Rename — show/edit the name without the .md extension (files); folders keep their exact name.
+    const base = p.absPath.split('/').pop() || ''
+    return {
+      title: 'Rename',
+      previewFor: (name: string) => name,
+      initialName: p.isDir ? base : displayName(base),
+      confirmLabel: 'Rename',
+    }
   })()
 
   // React to external file changes: refresh status + tree, reconcile the open file.
@@ -701,6 +770,7 @@ export default function SystemOverview() {
             hasProperties={hasProperties}
             focusMode={focusMode}
             onToggleFocus={() => setFocusMode(v => !v)}
+            onRenameTitle={handleRenameTitle}
             externalPrompt={externalPrompt}
             onReloadExternal={() => resolveExternal('reload')}
             onKeepExternal={() => resolveExternal('keep')}
@@ -757,14 +827,21 @@ export default function SystemOverview() {
           title={modalConfig.title}
           previewFor={modalConfig.previewFor}
           initialName={modalConfig.initialName}
+          confirmLabel={modalConfig.confirmLabel}
+          location={modalConfig.location}
           onConfirm={doCreateConfirm}
           onCancel={() => setPendingCreate(null)}
         />
       )}
       <MoveToModal
         isOpen={!!moveSource}
-        itemName={moveSource ? (moveSource.split('/').pop() || '') : ''}
+        itemName={moveSource ? displayName(moveSource.split('/').pop() || '') : ''}
         folders={moveFolders}
+        currentFolder={(() => {
+          if (!moveSource) return ''
+          const parent = moveSource.replace(/\/[^/]+$/, '')
+          return parent === rootPath ? '' : parent.replace(rootPath + '/', '')
+        })()}
         onPick={handlePickMoveDest}
         onCancel={() => setMoveSource(null)}
       />

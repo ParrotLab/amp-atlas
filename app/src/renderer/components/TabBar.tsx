@@ -1,3 +1,4 @@
+import { displayName } from '../utils/naming'
 import './TabBar.css'
 
 export interface Tab {
@@ -25,7 +26,7 @@ export default function TabBar({ tabs, activeTab, onTabClick, onTabClose }: TabB
             onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onTabClose(tab.path) } }}
           >
             {tab.status && <span className={`tab-dirty ${tab.status}`} aria-label="Uncommitted changes" />}
-            <span className="tab-name">{tab.name}</span>
+            <span className="tab-name">{displayName(tab.name)}</span>
             <button
               className="tab-close"
               aria-label={`Close ${tab.name}`}

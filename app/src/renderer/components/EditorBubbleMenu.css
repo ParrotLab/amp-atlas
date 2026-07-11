@@ -1,0 +1,62 @@
+/* Selection bubble menu — a translucent floating material (apple-design) */
+.bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 11px;
+  box-shadow: 0 10px 28px rgba(26, 26, 46, 0.18), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.bm-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  color: #3D3832;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 80ms ease, color 80ms ease, transform 80ms ease;
+}
+.bm-btn:hover { background: #F0EBE5; }
+.bm-btn:active { transform: scale(0.92); }
+.bm-btn.active { background: rgba(139, 43, 255, 0.1); color: #8B2BFF; }
+
+.bm-btn b, .bm-btn i, .bm-btn s { font-size: 14px; }
+.bm-h { font-size: 12px; font-weight: 600; letter-spacing: 0.01em; }
+
+.bm-sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.bm-link { display: flex; align-items: center; gap: 2px; padding: 0 2px; }
+.bm-link-input {
+  width: 220px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  color: #1a1a2e;
+}
+.bm-link-input::placeholder { color: #B5B1AC; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .bubble-menu { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}

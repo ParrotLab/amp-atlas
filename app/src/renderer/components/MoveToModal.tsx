@@ -1,33 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from './Modal'
 import Button from './Button'
-import Input from './Input'
+import FolderPicker from './FolderPicker'
 
 interface MoveToModalProps {
   isOpen: boolean
   itemName: string
-  folders: string[]              // system-relative destination folders
+  folders: string[]              // system-relative destination folders (source + descendants excluded)
+  currentFolder: string          // where the item lives now ('' = top level) — the browser opens here
   onPick: (folderRel: string) => void
   onCancel: () => void
 }
 
-export default function MoveToModal({ isOpen, itemName, folders, onPick, onCancel }: MoveToModalProps) {
-  const [filter, setFilter] = useState('')
-  useEffect(() => { if (isOpen) setFilter('') }, [isOpen])
-  const shown = folders.filter(f => f.toLowerCase().includes(filter.toLowerCase()))
+export default function MoveToModal({ isOpen, itemName, folders, currentFolder, onPick, onCancel }: MoveToModalProps) {
+  const [dest, setDest] = useState<string | null>(null)
+
+  // Reset the selection on close, so reopening starts fresh at the item's current folder
+  // (initialBrowse) instead of wherever the last session navigated to.
+  useEffect(() => {
+    if (!isOpen) setDest(null)
+  }, [isOpen])
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onCancel}
       title={`Move “${itemName}” to…`}
-      footer={<Button variant="ghost" onClick={onCancel}>Cancel</Button>}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          <Button variant="primary" disabled={dest === null} onClick={() => dest !== null && onPick(dest)}>Move here</Button>
+        </>
+      }
     >
-      <Input placeholder="Filter folders" value={filter} onChange={e => setFilter(e.target.value)} />
-      <div style={{ maxHeight: 240, overflowY: 'auto', marginTop: 10 }}>
-        {shown.length === 0 && <div className="modal-hint">No folders</div>}
-        {shown.map(f => (
-          <button key={f} className="tcm-item" style={{ width: '100%', textAlign: 'left' }} onClick={() => onPick(f)}>{f}</button>
-        ))}
+      <FolderPicker folders={folders} value={dest} onSelect={setDest} initialBrowse={currentFolder} />
+      <div className="modal-hint">
+        {dest === null ? 'Choose a destination' : dest === '' ? 'Top level' : dest}
       </div>
     </Modal>
   )

@@ -3,3 +3,4 @@
 .tcm-item:hover { background: #F0EBE5; }
 .tcm-item.danger { color: #DC2626; }
 .tcm-item.danger:hover { background: #FEF2F2; }
+.tcm-sep { height: 1px; background: #EDE8E2; margin: 4px 6px; }

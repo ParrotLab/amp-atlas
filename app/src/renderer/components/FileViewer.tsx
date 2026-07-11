@@ -3,6 +3,9 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import { editorExtensions } from '../utils/markdownSerializer'
 import { useFileWatchers } from '../hooks/useFileWatchers'
 import { ExpandIcon, CompressIcon, PanelIcon, EyeIcon } from './SystemIcons'
+import { displayName } from '../utils/naming'
+import EditorBubbleMenu from './EditorBubbleMenu'
+import { SlashCommand } from './slashCommand'
 import './FileViewer.css'
 
 interface FileViewerProps {
@@ -17,6 +20,7 @@ interface FileViewerProps {
   hasProperties?: boolean
   focusMode?: boolean
   onToggleFocus?: () => void
+  onRenameTitle?: (newName: string) => void
   externalPrompt?: boolean
   onReloadExternal?: () => void
   onKeepExternal?: () => void
@@ -24,17 +28,22 @@ interface FileViewerProps {
 
 export default function FileViewer({
   filePath, rootPath, readOnly, body, onBodyChange, writeStatus, onToggleProperties, propsOpen,
-  hasProperties, focusMode, onToggleFocus,
+  hasProperties, focusMode, onToggleFocus, onRenameTitle,
   externalPrompt, onReloadExternal, onKeepExternal,
 }: FileViewerProps) {
   const [lastModified, setLastModified] = useState<string>('')
+  const [titleDraft, setTitleDraft] = useState('')
+  const [tableMenu, setTableMenu] = useState<{ x: number; y: number } | null>(null)
+
+  // Keep the editable title in sync with the open file.
+  useEffect(() => { setTitleDraft(displayName(filePath?.split('/').pop() || '')) }, [filePath])
 
   const watchers = useFileWatchers(filePath, rootPath ?? '')
   const [dismissedFile, setDismissedFile] = useState<string>('')
   const showWatchers = watchers.length > 0 && dismissedFile !== filePath
 
   const editor = useEditor({
-    extensions: editorExtensions(),
+    extensions: [...editorExtensions(), SlashCommand],
     editable: !readOnly,
     content: '',
     onUpdate: ({ editor: ed }) => {
@@ -90,9 +99,23 @@ export default function FileViewer({
     ? filePath.replace(rootPath + '/', '').split('/').join(' / ')
     : filePath.split('/').slice(-4).join(' / ')
 
+  // Right-click inside a table → open the table editing menu (targets the clicked cell).
+  const handleTableContextMenu = (e: React.MouseEvent) => {
+    if (!editor || readOnly) return
+    if (!(e.target as HTMLElement).closest('.tiptap')) return
+    const pos = editor.view.posAtCoords({ left: e.clientX, top: e.clientY })
+    if (!pos) return
+    editor.commands.setTextSelection(pos.pos)
+    if (editor.isActive('table')) {
+      e.preventDefault()
+      setTableMenu({ x: Math.min(e.clientX, window.innerWidth - 200), y: e.clientY })
+    }
+  }
+  const tableCmd = (run: () => void) => { run(); setTableMenu(null) }
+
   return (
     <div className={`file-viewer ${focusMode ? 'focus' : ''}`}>
-      <div className="file-viewer-content">
+      <div className="file-viewer-content" onContextMenu={handleTableContextMenu}>
         {externalPrompt && (
           <div className="file-updated-banner">
             <span>This file was just updated.</span>
@@ -150,14 +173,52 @@ export default function FileViewer({
             )}
           </div>
         </div>
-        <div className="file-viewer-title">{fileName}</div>
+        {!readOnly && onRenameTitle ? (
+          <input
+            className="file-viewer-title file-viewer-title-input"
+            value={titleDraft}
+            placeholder="Untitled"
+            spellCheck={false}
+            aria-label="File title"
+            onChange={e => setTitleDraft(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
+              else if (e.key === 'Escape') { setTitleDraft(displayName(fileName)); e.currentTarget.blur() }
+            }}
+            onBlur={() => {
+              const clean = titleDraft.trim()
+              if (clean && clean !== displayName(fileName)) onRenameTitle(clean)
+              else setTitleDraft(displayName(fileName))
+            }}
+          />
+        ) : (
+          <div className="file-viewer-title">{displayName(fileName)}</div>
+        )}
         <div className="file-viewer-meta">
           {lastModified && <span>Last edited {lastModified}</span>}
           {readOnly && <span className="file-viewer-readonly">· Read only</span>}
           {writeStatus === 'writing' && <span className="file-viewer-saving">· Saving...</span>}
           {writeStatus === 'written' && <span className="file-viewer-saved">· Saved</span>}
         </div>
+        {editor && !readOnly && <EditorBubbleMenu editor={editor} />}
         <EditorContent editor={editor} className="file-viewer-body" />
+        {tableMenu && editor && (
+          <>
+            <div className="tcm-overlay" onClick={() => setTableMenu(null)} onContextMenu={e => { e.preventDefault(); setTableMenu(null) }} />
+            <div className="tcm" style={{ left: tableMenu.x, top: tableMenu.y }}>
+              <button className="tcm-item" onClick={() => tableCmd(() => editor.chain().focus().addColumnBefore().run())}>Insert column left</button>
+              <button className="tcm-item" onClick={() => tableCmd(() => editor.chain().focus().addColumnAfter().run())}>Insert column right</button>
+              <button className="tcm-item" onClick={() => tableCmd(() => editor.chain().focus().addRowBefore().run())}>Insert row above</button>
+              <button className="tcm-item" onClick={() => tableCmd(() => editor.chain().focus().addRowAfter().run())}>Insert row below</button>
+              <div className="tcm-sep" />
+              <button className="tcm-item" onClick={() => tableCmd(() => editor.chain().focus().toggleHeaderRow().run())}>Toggle header row</button>
+              <div className="tcm-sep" />
+              <button className="tcm-item danger" onClick={() => tableCmd(() => editor.chain().focus().deleteColumn().run())}>Delete column</button>
+              <button className="tcm-item danger" onClick={() => tableCmd(() => editor.chain().focus().deleteRow().run())}>Delete row</button>
+              <button className="tcm-item danger" onClick={() => tableCmd(() => editor.chain().focus().deleteTable().run())}>Delete table</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

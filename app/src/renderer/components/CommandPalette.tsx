@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { SearchIcon, DocIcon } from './SystemIcons'
+import { displayName } from '../utils/naming'
 import './CommandPalette.css'
 
 interface CommandPaletteProps {
@@ -130,7 +131,7 @@ export default function CommandPalette({ isOpen, rootPath, onClose, onSelect }: 
                 onClick={() => choose(m)}
               >
                 <span className="cmdk-item-icon"><DocIcon size={16} /></span>
-                <span className="cmdk-item-name">{m.name}</span>
+                <span className="cmdk-item-name">{displayName(m.name)}</span>
                 {m.dir && <span className="cmdk-item-dir">{m.dir.split('/').join(' / ')}</span>}
               </button>
             ))

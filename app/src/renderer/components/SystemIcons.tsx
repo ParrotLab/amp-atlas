@@ -54,6 +54,17 @@ export const SearchIcon = ({ size = 18 }: { size?: number }) => <I size={size}><
 export const FilePlusIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M11 2H5a1.5 1.5 0 00-1.5 1.5v13A1.5 1.5 0 005 18h10a1.5 1.5 0 001.5-1.5V7.5L11 2z"/><path d="M11 2v5.5h5.5"/><path d="M10 11v4M8 13h4"/></I>
 export const FolderPlusIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M2 5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"/><path d="M10 9v4M8 11h4"/></I>
 export const ChevronDownIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M5.5 8l4.5 4.5L14.5 8"/></I>
+export const ChevronRightIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8 5.5l4.5 4.5L8 14.5"/></I>
+
+// Rich-text / formatting icons (bubble + slash menus)
+export const LinkIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M9 11a3.5 3.5 0 004.9 0l2.1-2.1a3.5 3.5 0 00-4.9-4.9l-1.2 1.2"/><path d="M11 9a3.5 3.5 0 00-4.9 0L4 11.1a3.5 3.5 0 004.9 4.9l1.2-1.2"/></I>
+export const ListBulletIcon = ({ size = 18 }: { size?: number }) => <I size={size}><circle cx="3.5" cy="5.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="3.5" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="3.5" cy="14.5" r="1.1" fill="currentColor" stroke="none"/><path d="M7.5 5.5h9M7.5 10h9M7.5 14.5h9"/></I>
+export const ListOrderedIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M7.5 5.5h9M7.5 10h9M7.5 14.5h9"/><path d="M2.6 4.4h1.2v3M2.5 15.3c0-.6.5-1 1.1-1s1 .4 1 .9-.4.8-1 1.3l-1.1 1h2.1"/></I>
+export const QuoteIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 5v10"/><path d="M8 6.5h8M8 10h8M8 13.5h5"/></I>
+export const DividerIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 10h14"/></I>
+export const TableIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8.5h14M3 12.5h14M8.5 4v12"/></I>
+export const CheckSquareIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3.5" y="3.5" width="13" height="13" rx="2.5"/><path d="M7 10l2 2 4-4.5"/></I>
+export const TextIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 5.5h12M4 10h12M4 14.5h8"/></I>
 export const ExpandIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5"/></I>
 export const CompressIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 8h5V3M17 8h-5V3M3 12h5v5M17 12h-5v5"/></I>
 export const PanelIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M12 4v12"/></I>

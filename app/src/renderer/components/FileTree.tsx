@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import TreeContextMenu, { ContextTarget } from './TreeContextMenu'
 import { SearchIcon, FilePlusIcon, FolderPlusIcon, PlusIcon, BookIcon, DocIcon } from './SystemIcons'
+import { displayName } from '../utils/naming'
 import './FileTree.css'
 
 interface TreeNode {
@@ -12,6 +13,10 @@ interface TreeNode {
 }
 
 interface Section { key: string; label: string; nodes: TreeNode[]; isPlaybook?: boolean }
+
+// Case-insensitive alphabetical order, by the user-facing name (extension hidden).
+const byName = (a: { name: string }, b: { name: string }) =>
+  displayName(a.name).localeCompare(displayName(b.name), undefined, { sensitivity: 'base' })
 
 interface FileTreeProps {
   rootPath: string
@@ -25,8 +30,8 @@ interface FileTreeProps {
   onSearch?: () => void
   onNeedDraft?: () => void
   onNewScaffold?: (type: 'playbook' | 'project' | 'sub-system') => void
-  onNewFile?: (parentAbs: string) => void
-  onNewFolder?: (parentAbs: string) => void
+  onNewFile?: (parentAbs?: string) => void
+  onNewFolder?: (parentAbs?: string) => void
   onRename?: (absPath: string, isDir: boolean) => void
   onMove?: (fromAbs: string, toFolderAbs: string) => void
   onDelete?: (absPath: string, isDir: boolean) => void
@@ -39,22 +44,26 @@ export default function FileTree({
   const [sections, setSections] = useState<Section[]>([])
   const [expandedNodes, setExpandedNodes] = useState<Map<string, TreeNode[]>>(new Map())
   const [menu, setMenu] = useState<{ x: number; y: number; target: ContextTarget } | null>(null)
+  // Drag-to-reorganize: the item being dragged + the folder currently highlighted as the drop target.
+  const [draggingPath, setDraggingPath] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
 
   const loadDirectory = useCallback(async (dirPath: string): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
     if (!result.ok || !result.entries) return []
-    return result.entries.map(entry => ({ ...entry, depth: 0, expanded: false }))
+    return result.entries.map(entry => ({ ...entry, depth: 0, expanded: false })).sort(byName)
   }, [])
 
   const loadCategories = useCallback(async () => {
     const readSection = async (folderRel: string): Promise<TreeNode[]> => {
       const res = await window.api.fs.readDirectory(`${rootPath}/${folderRel}`)
-      return res.ok && res.entries ? res.entries.map(e => ({ ...e, depth: 0, expanded: false })) : []
+      return res.ok && res.entries ? res.entries.map(e => ({ ...e, depth: 0, expanded: false })).sort(byName) : []
     }
     const rootRes = await window.api.fs.readDirectory(rootPath)
     const instructions = (rootRes.ok && rootRes.entries ? rootRes.entries : [])
-      .filter(e => !e.isDirectory && (e.name === 'README.md' || e.name === 'CLAUDE.md'))
+      .filter(e => !e.isDirectory && e.name.toLowerCase().endsWith('.md'))
       .map(e => ({ ...e, depth: 0, expanded: false }))
+      .sort(byName)
     const skills = await readSection('.claude/skills')
     const readmes = await readSection('readmes')
     const reference = await readSection('reference')
@@ -124,6 +133,50 @@ export default function FileTree({
 
   const relOf = (abs: string) => abs.replace(rootPath + '/', '')
 
+  // Section key → its base folder (mirrors the tree sections + FolderPicker).
+  const SECTION_BASE: Record<string, string> = {
+    instructions: '', playbooks: '.claude/skills', readmes: 'readmes', reference: 'reference', work: 'work',
+  }
+  const sectionBaseAbs = (key: string) => {
+    const rel = SECTION_BASE[key] ?? ''
+    return rel ? `${rootPath}/${rel}` : rootPath
+  }
+
+  // Can the dragged item land in this folder? Not itself, not its own descendant, not where it already lives.
+  const canDropOn = (targetAbs: string): boolean => {
+    const from = draggingPath
+    if (!from || !canEdit) return false
+    if (targetAbs === from || targetAbs.startsWith(from + '/')) return false
+    return targetAbs !== from.replace(/\/[^/]+$/, '')
+  }
+
+  const doDrop = (targetAbs: string) => {
+    const from = draggingPath
+    clearSpring(); setDropTarget(null); setDraggingPath(null)
+    if (from && canEdit && targetAbs !== from && !targetAbs.startsWith(from + '/')) onMove?.(from, targetAbs)
+  }
+
+  // Spring-loaded folders: pause over a collapsed folder mid-drag and it opens on its own.
+  const springTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const springNode = useRef<string | null>(null)
+  const clearSpring = () => {
+    if (springTimer.current) clearTimeout(springTimer.current)
+    springTimer.current = undefined
+    springNode.current = null
+  }
+  const scheduleSpringOpen = (node: TreeNode) => {
+    if (springNode.current === node.path) return          // already counting down for this folder
+    clearSpring()
+    if (expandedNodes.has(node.path)) return               // already open
+    springNode.current = node.path
+    springTimer.current = setTimeout(() => {
+      if (!expandedNodes.has(node.path)) toggleExpand(node)
+      springTimer.current = undefined
+      springNode.current = null
+    }, 900)
+  }
+  useEffect(() => () => clearSpring(), [])
+
   const openMenu = (e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault(); e.stopPropagation()
     if (!canEdit) { onNeedDraft?.(); return }
@@ -148,20 +201,34 @@ export default function FileTree({
     ].filter(Boolean).join(' ')
 
     return (
-      <div key={node.path}>
+      <div key={node.path} className={`tree-node${node.isDirectory && dropTarget === node.path ? ' drop-region' : ''}`}>
         <div
-          className={classes}
+          className={`${classes}${draggingPath === node.path ? ' dragging' : ''}`}
           style={{ paddingLeft: `${14 + depth * 16}px` }}
           onClick={() => handleClick(node)}
           onContextMenu={(e) => openMenu(e, node)}
           draggable={canEdit}
-          onDragStart={(e) => { e.dataTransfer.setData('text/plain', node.path) }}
-          onDragOver={(e) => { if (node.isDirectory && canEdit) e.preventDefault() }}
+          onDragStart={(e) => {
+            if (!canEdit) return
+            e.dataTransfer.setData('text/plain', node.path)
+            e.dataTransfer.effectAllowed = 'move'
+            setDraggingPath(node.path)
+          }}
+          onDragEnd={() => { clearSpring(); setDraggingPath(null); setDropTarget(null) }}
+          onDragOver={(e) => {
+            if (!node.isDirectory || !canDropOn(node.path)) return
+            e.preventDefault(); e.dataTransfer.dropEffect = 'move'
+            if (dropTarget !== node.path) setDropTarget(node.path)
+            scheduleSpringOpen(node)
+          }}
+          onDragLeave={() => {
+            if (dropTarget === node.path) setDropTarget(null)
+            if (springNode.current === node.path) clearSpring()
+          }}
           onDrop={(e) => {
-            if (!node.isDirectory || !canEdit) return
+            if (!node.isDirectory || !canDropOn(node.path)) return
             e.preventDefault(); e.stopPropagation()
-            const from = e.dataTransfer.getData('text/plain')
-            if (from && from !== node.path) onMove?.(from, node.path)
+            doDrop(node.path)
           }}
         >
           {node.isDirectory ? (
@@ -175,7 +242,7 @@ export default function FileTree({
           ) : (
             <span className="tree-item-icon" style={{ color: '#B5B1AC' }}><DocIcon size={15} /></span>
           )}
-          <span className="tree-item-name">{node.name}</span>
+          <span className="tree-item-name">{node.isDirectory ? node.name : displayName(node.name)}</span>
           {changeCount > 0 && <span className="tree-item-change-count">{changeCount}</span>}
           {isGitModified && <span className="tree-item-git-dot modified" />}
           {isGitNew && <span className="tree-item-git-dot new" />}
@@ -191,8 +258,6 @@ export default function FileTree({
 
   const parentOf = (t: ContextTarget) => (t.isDirectory ? t.path : t.path.replace(/\/[^/]+$/, ''))
 
-  // New file/folder land next to the open file (or at the system root if nothing is open).
-  const contextFolder = selectedFile ? selectedFile.replace(/\/[^/]+$/, '') : rootPath
   const guardedCreate = (run: () => void) => { if (canEdit) run(); else onNeedDraft?.() }
 
   // Each section's "+" creates the type that belongs in that section.
@@ -218,7 +283,7 @@ export default function FileTree({
           title={canEdit ? 'New file' : 'Switch to a draft to add files'}
           aria-label="New file"
           aria-disabled={!canEdit}
-          onClick={() => guardedCreate(() => onNewFile?.(contextFolder))}
+          onClick={() => guardedCreate(() => onNewFile?.())}
         >
           <FilePlusIcon size={17} />
         </button>
@@ -227,7 +292,7 @@ export default function FileTree({
           title={canEdit ? 'New folder' : 'Switch to a draft to add folders'}
           aria-label="New folder"
           aria-disabled={!canEdit}
-          onClick={() => guardedCreate(() => onNewFolder?.(contextFolder))}
+          onClick={() => guardedCreate(() => onNewFolder?.())}
         >
           <FolderPlusIcon size={17} />
         </button>
@@ -236,8 +301,23 @@ export default function FileTree({
         {sections.map(sec => {
           const add = sectionAdd(sec.key)
           return (
-            <div key={sec.key} className="tree-section">
-              <div className="tree-section-header">
+            <div key={sec.key} className={`tree-section${dropTarget === sectionBaseAbs(sec.key) ? ' drop-region' : ''}`}>
+              <div
+                className="tree-section-header"
+                onDragOver={(e) => {
+                  const base = sectionBaseAbs(sec.key)
+                  if (!canDropOn(base)) return
+                  e.preventDefault(); e.dataTransfer.dropEffect = 'move'
+                  if (dropTarget !== base) setDropTarget(base)
+                }}
+                onDragLeave={() => { const base = sectionBaseAbs(sec.key); if (dropTarget === base) setDropTarget(null) }}
+                onDrop={(e) => {
+                  const base = sectionBaseAbs(sec.key)
+                  if (!canDropOn(base)) return
+                  e.preventDefault(); e.stopPropagation()
+                  doDrop(base)
+                }}
+              >
                 <span className="tree-section-label">{sec.label}</span>
                 {add && (
                   <button

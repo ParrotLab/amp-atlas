@@ -25,4 +25,9 @@ describe('classifyInboxPR', () => {
   it("someone else's PR not requesting me is hidden", () => {
     expect(classifyInboxPR(pr({ requestedReviewers: ['other2'] }), me).tab).toBeNull()
   })
+  it('tolerates a PR missing requestedReviewers without throwing', () => {
+    const partial = { author: { login: 'other' }, reviewDecision: null } as unknown as Parameters<typeof classifyInboxPR>[0]
+    expect(() => classifyInboxPR(partial, me)).not.toThrow()
+    expect(classifyInboxPR(partial, me).tab).toBeNull()
+  })
 })

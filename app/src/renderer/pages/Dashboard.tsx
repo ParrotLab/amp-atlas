@@ -1,35 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import SystemCard from '../components/SystemCard'
+import JumpBackInCard from '../components/JumpBackInCard'
+import { iconMap, BookIcon, GlobeIcon } from '../components/SystemIcons'
 import { getSystems, SystemConfig, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
 import { listActive } from '../utils/draftStore'
-import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
+import { getLastPull, setLastPull } from '../utils/pullStatus'
+import { getPlaybookCount } from '../utils/playbookCount'
+import { describeSystemStatus, metaLine, SystemStatus } from '../utils/systemStatus'
 import { useProfile } from '../hooks/useProfile'
 import NewSystemModal from '../components/NewSystemModal'
-import Badge, { reviewVariant, reviewLabel } from '../components/Badge'
+import { reviewVariant, reviewLabel, BadgeVariant } from '../components/Badge'
 import './Dashboard.css'
-
-const BookIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 3h5a3.5 3.5 0 013.5 3.5V18a2.5 2.5 0 00-2.5-2.5H2V3z"/>
-    <path d="M18 3h-5a3.5 3.5 0 00-3.5 3.5V18a2.5 2.5 0 012.5-2.5H18V3z"/>
-  </svg>
-)
-
-const MonitorIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 3H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V4a1 1 0 00-1-1z"/>
-    <path d="M2 8h16"/><path d="M6 15v3M14 15v3M4 18h12"/>
-  </svg>
-)
-
-const LayersIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10 2L2 6l8 4 8-4-8-4z"/><path d="M2 14l8 4 8-4"/><path d="M2 10l8 4 8-4"/>
-  </svg>
-)
-
-const iconMap: Record<string, React.FC> = { book: BookIcon, monitor: MonitorIcon, layers: LayersIcon }
 
 function humanize(branch: string): string {
   return branch
@@ -41,65 +22,76 @@ function humanize(branch: string): string {
 interface DraftInfo {
   systemId: string
   systemName: string
+  systemColor: string
+  systemIcon: string
   branchName: string
   displayName: string
   modifiedCount: number
-  isClean: boolean
-  prStatus: string | null // 'OPEN', null
-  reviewDecision: string | null
+  badgeVariant: BadgeVariant
+  badgeLabel: string
 }
 
 export default function Dashboard() {
   const now = new Date()
-  const nowMs = now.getTime()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening'
   const profile = useProfile()
+  const firstName = profile.name ? profile.name.split(' ')[0] : ''
   const [systems, setSystems] = useState<SystemConfig[]>([])
   const [drafts, setDrafts] = useState<DraftInfo[]>([])
-  const [pullTimes, setPullTimes] = useState<Record<string, number | null>>({})
-  const [refreshing, setRefreshing] = useState(false)
+  const [counts, setCounts] = useState<Record<string, number | null>>({})
+  const [statuses, setStatuses] = useState<Record<string, SystemStatus>>({})
   const [showAddSystem, setShowAddSystem] = useState(false)
 
   useEffect(() => {
     setSystems(getSystems())
-    // Re-read systems on window focus and whenever a system is added/edited/removed.
     const reread = () => setSystems(getSystems())
     window.addEventListener('focus', reread)
     window.addEventListener(SYSTEMS_CHANGED_EVENT, reread)
     return () => { window.removeEventListener('focus', reread); window.removeEventListener(SYSTEMS_CHANGED_EVENT, reread) }
   }, [])
 
-  // Refresh the Live Version for connected systems.
-  // `force` ignores the freshness throttle; `silent` skips the visible "Refreshing…" state (used on load).
-  const refreshSystems = async (force: boolean, silent = false) => {
-    const connected = getSystems().filter(s => s.folderPath)
-    // seed display with any stored timestamps immediately
-    setPullTimes(Object.fromEntries(connected.map(s => [s.folderPath!, getLastPull(s.folderPath!)])))
-    if (!silent) setRefreshing(true)
-    for (const sys of connected) {
-      const folder = sys.folderPath!
-      const last = getLastPull(folder)
-      if (!force && last && Date.now() - last < 60_000) continue // fresh enough
-      const r = await window.api.git.refreshMain(folder)
-      if (r.ok) { const now = Date.now(); setLastPull(folder, now); setPullTimes(p => ({ ...p, [folder]: now })) }
+  // Silently refresh connected systems on open (throttled), then read status + playbook counts.
+  useEffect(() => {
+    const load = async () => {
+      const connected = getSystems().filter(s => s.folderPath)
+      for (const sys of connected) {
+        const folder = sys.folderPath
+        const last = getLastPull(folder)
+        if (!last || Date.now() - last >= 60_000) {
+          const r = await window.api.git.refreshMain(folder)
+          if (r.ok) setLastPull(folder, Date.now())
+        }
+      }
+      const nextCounts: Record<string, number | null> = {}
+      const nextStatuses: Record<string, SystemStatus> = {}
+      for (const sys of getSystems()) {
+        if (!sys.folderPath) {
+          nextCounts[sys.id] = null
+          nextStatuses[sys.id] = describeSystemStatus(false, false)
+          continue
+        }
+        nextCounts[sys.id] = await getPlaybookCount(sys.folderPath)
+        let hasWork = false
+        try {
+          const w = await window.api.git.hasUnpublishedWork(sys.folderPath)
+          hasWork = !!(w.ok && w.hasWork)
+        } catch { /* ignore */ }
+        nextStatuses[sys.id] = describeSystemStatus(true, hasWork)
+      }
+      setCounts(nextCounts)
+      setStatuses(nextStatuses)
     }
-    if (!silent) setRefreshing(false)
-  }
-
-  // On open (launch / navigating home), silently refresh connected systems (throttled).
-  useEffect(() => { void refreshSystems(false, true) }, [])
+    void load()
+  }, [systems.length])
 
   useEffect(() => {
     const loadDrafts = async () => {
       const allDrafts: DraftInfo[] = []
-
       for (const sys of systems) {
         if (!sys.folderPath) continue
-        // Only drafts the user created/adopted in the app (the registry) — never the repo's own branches.
         const registered = listActive(sys.id)
         if (registered.length === 0) continue
 
-        // Enrich the draft the repo is currently on with live status/PR; others show without live counts.
         let current: string | null = null
         let modifiedCount = 0
         try {
@@ -111,109 +103,116 @@ export default function Dashboard() {
         } catch { /* ignore */ }
 
         for (const d of registered) {
-          let prState: string | null = null
-          let reviewDecision: string | null = null
+          let variant: BadgeVariant = 'neutral'
+          let label = 'Draft'
           if (d.branch === current) {
             try {
               const prResult = await window.api.git.prStatus(sys.folderPath)
               if (prResult.ok && prResult.hasPR) {
-                prState = prResult.pr?.state || null
-                reviewDecision = prResult.pr?.reviewDecision || null
+                variant = reviewVariant(prResult.pr?.reviewDecision)
+                label = reviewLabel(prResult.pr?.reviewDecision)
               }
             } catch { /* ignore */ }
           }
           allDrafts.push({
             systemId: sys.id,
             systemName: sys.name,
+            systemColor: sys.gradient,
+            systemIcon: sys.icon,
             branchName: d.branch,
             displayName: d.title || humanize(d.branch),
             modifiedCount: d.branch === current ? modifiedCount : 0,
-            isClean: true,
-            prStatus: prState,
-            reviewDecision,
+            badgeVariant: variant,
+            badgeLabel: label,
           })
         }
       }
-
       setDrafts(allDrafts)
     }
-
     if (systems.length > 0) loadDrafts()
   }, [systems])
 
+  if (systems.length === 0) {
+    return (
+      <div className="dashboard">
+        <div className="dashboard-empty">
+          <div className="dashboard-empty-badge"><GlobeIcon size={30} /></div>
+          <h1 className="dashboard-empty-title">Welcome to Atlas{firstName ? `, ${firstName}` : ''}</h1>
+          <p className="dashboard-empty-sub">Your systems live here — each one holds a set of playbooks you can write, refine, and publish. Add your first to get started.</p>
+          <button className="dashboard-empty-btn" onClick={() => setShowAddSystem(true)}>+ Add your first system</button>
+        </div>
+        <NewSystemModal
+          isOpen={showAddSystem}
+          onClose={() => setShowAddSystem(false)}
+          onCreated={() => setSystems(getSystems())}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="dashboard">
-      <h1 className="dashboard-greeting">{greeting}{profile.name ? `, ${profile.name.split(' ')[0]}` : ''}</h1>
+      <h1 className="dashboard-greeting">{greeting}{firstName ? `, ${firstName}` : ''}</h1>
       <p className="dashboard-subtitle">Here's what's happening across your systems.</p>
 
-      <div className="dashboard-section-head">
-        <div className="section-label">Your Systems</div>
-        {systems.length > 0 && (
-          <button className="dashboard-refresh" onClick={() => refreshSystems(true)} disabled={refreshing}>
-            {refreshing ? 'Refreshing…' : '⟳ Refresh'}
-          </button>
-        )}
-      </div>
-      {systems.length === 0 ? (
-        <div className="systems-empty">
-          <div className="systems-empty-title">No systems yet</div>
-          <div className="systems-empty-sub">Add a system and connect it to your GitHub-backed folder to get started.</div>
-          <button className="systems-empty-btn" onClick={() => setShowAddSystem(true)}>+ Add a system</button>
-        </div>
-      ) : (
-        <div className="systems-grid">
-          {systems.map(sys => {
-            const Icon = iconMap[sys.icon] || BookIcon
-            const rel = sys.folderPath ? relativeTime(pullTimes[sys.folderPath] ?? getLastPull(sys.folderPath), nowMs) : ''
-            return (
-              <SystemCard
-                key={sys.id}
-                name={sys.name}
-                path={`/system/${sys.id}`}
-                gradient={sys.gradient}
-                meta={sys.folderPath ? (rel ? `Updated ${rel}` : 'Connected') : 'Not connected'}
-                connected={!!sys.folderPath}
-                icon={<Icon />}
-              />
-            )
-          })}
-        </div>
-      )}
-
-      {drafts.length > 0 && (
-        <>
-          <div className="section-label">Jump Back In</div>
-          <div className="drafts-list">
-            {drafts.map(draft => (
-              <Link
-                key={`${draft.systemId}-${draft.branchName}`}
-                to={`/system/${draft.systemId}`}
-                className="draft-card"
-              >
-                <div className="draft-card-left">
-                  <span className="draft-card-dot" />
-                  <div>
-                    <div className="draft-card-name">Draft: {draft.displayName}</div>
-                    <div className="draft-card-system">{draft.systemName}{draft.modifiedCount > 0 ? ` · ${draft.modifiedCount} edited` : ''}</div>
-                  </div>
-                </div>
-                <div className="draft-card-right">
-                  {draft.prStatus === 'OPEN' ? (
-                    <Badge variant={reviewVariant(draft.reviewDecision)}>{reviewLabel(draft.reviewDecision)}</Badge>
-                  ) : (
-                    <Badge variant="neutral">Editing</Badge>
-                  )}
-                </div>
-              </Link>
-            ))}
+      <div className="dashboard-columns">
+        <div className="dashboard-main">
+          <div className="section-label">Your Systems</div>
+          <div className="systems-grid">
+            {systems.map(sys => {
+              const Icon = iconMap[sys.icon] || BookIcon
+              const status = statuses[sys.id] || describeSystemStatus(!!sys.folderPath, false)
+              return (
+                <SystemCard
+                  key={sys.id}
+                  name={sys.name}
+                  path={`/system/${sys.id}`}
+                  color={sys.gradient}
+                  meta={metaLine(status, counts[sys.id] ?? null)}
+                  tone={status.tone}
+                  connected={!!sys.folderPath}
+                  icon={<Icon size={22} />}
+                />
+              )
+            })}
+            <button className="system-add-tile" onClick={() => setShowAddSystem(true)}>
+              <span className="system-add-plus">+</span>
+              <span className="system-add-label">Add system</span>
+            </button>
           </div>
-        </>
-      )}
+        </div>
+
+        <div className="dashboard-rail">
+          <div className="section-label">Jump Back In</div>
+          {drafts.length === 0 ? (
+            <div className="rail-empty">Nothing in progress yet. Open a system to start a draft.</div>
+          ) : (
+            <div className="drafts-list">
+              {drafts.map(draft => {
+                const Icon = iconMap[draft.systemIcon] || BookIcon
+                const sub = `${draft.systemName}${draft.modifiedCount > 0 ? ` · ${draft.modifiedCount} edited` : ''}`
+                return (
+                  <JumpBackInCard
+                    key={`${draft.systemId}-${draft.branchName}`}
+                    to={`/system/${draft.systemId}`}
+                    title={draft.displayName}
+                    subtitle={sub}
+                    color={draft.systemColor}
+                    icon={<Icon size={16} />}
+                    badgeVariant={draft.badgeVariant}
+                    badgeLabel={draft.badgeLabel}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       <NewSystemModal
         isOpen={showAddSystem}
         onClose={() => setShowAddSystem(false)}
-        onCreated={() => { setSystems(getSystems()); void refreshSystems(true) }}
+        onCreated={() => setSystems(getSystems())}
       />
     </div>
   )

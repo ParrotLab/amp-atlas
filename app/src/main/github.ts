@@ -45,7 +45,7 @@ export async function createPR(repoPath: string, title: string, body: string, re
 
 export async function listPRs(repoPath: string) {
   const { owner, repo } = await ownerRepo(repoPath)
-  const prs = await gh(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`) as Array<{ number: number; title: string; state: string; user: { login: string }; created_at: string; head: { ref: string }; html_url: string }>
+  const prs = await gh(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`) as Array<{ number: number; title: string; state: string; user: { login: string }; created_at: string; head: { ref: string }; html_url: string; body: string | null; requested_reviewers: { login: string }[] | null }>
   return Promise.all(prs.map(async p => {
     const detail = await gh(`/repos/${owner}/${repo}/pulls/${p.number}`) as { additions: number; deletions: number; changed_files: number }
     return {
@@ -53,6 +53,7 @@ export async function listPRs(repoPath: string) {
       author: { login: p.user.login, name: p.user.login }, createdAt: p.created_at,
       headRefName: p.head.ref, reviewDecision: await reviewDecision(owner, repo, p.number),
       url: p.html_url, additions: detail.additions, deletions: detail.deletions, changedFiles: detail.changed_files,
+      body: p.body || '', requestedReviewers: (p.requested_reviewers ?? []).map(u => u.login),
     }
   }))
 }

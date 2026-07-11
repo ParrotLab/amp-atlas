@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import logo from '../assets/logos/logo-wordmark-dark.svg'
 import { getSystems, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
-import { iconMap, DiamondIcon, MailIcon, GearIcon } from './SystemIcons'
+import { iconMap, GlobeIcon, MailIcon, GearIcon } from './SystemIcons'
 import { useProfile } from '../hooks/useProfile'
 import './Sidebar.css'
 
@@ -48,7 +48,7 @@ export default function Sidebar() {
 
       <nav className="sidebar-nav">
         <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-          <DiamondIcon size={18} /> Dashboard
+          <GlobeIcon size={18} /> Dashboard
         </NavLink>
         <NavLink to="/inbox" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <MailIcon size={18} /> Inbox

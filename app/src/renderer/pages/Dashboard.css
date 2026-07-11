@@ -1,5 +1,10 @@
 .dashboard {
-  max-width: 1400px;
+  /* width:100% is required: .app-main is a flex column, and `margin:0 auto` alone
+     makes a flex child shrink-wrap to its content instead of filling. Setting an
+     explicit width lets max-width actually take effect (auto margins just center
+     the leftover space). Without this the page collapses to ~content width. */
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 52px 48px 60px; /* 38px titlebar + spacing */
   overflow-y: auto;

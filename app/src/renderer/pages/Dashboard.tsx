@@ -31,14 +31,21 @@ interface DraftInfo {
   badgeLabel: string
 }
 
+// Cached across mounts so navigating back to the dashboard shows the last-known
+// state immediately, then refreshes behind the scenes — no empty-state flash.
+let metasCache: Record<string, string> = {}
+let draftsCache: DraftInfo[] = []
+
 export default function Dashboard() {
   const now = new Date()
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening'
   const profile = useProfile()
   const firstName = profile.name ? profile.name.split(' ')[0] : ''
-  const [systems, setSystems] = useState<SystemConfig[]>([])
-  const [drafts, setDrafts] = useState<DraftInfo[]>([])
-  const [metas, setMetas] = useState<Record<string, string>>({})
+  // Seed synchronously from localStorage / caches so the first paint already has
+  // content — prevents the empty state flashing before the effects run.
+  const [systems, setSystems] = useState<SystemConfig[]>(() => getSystems())
+  const [drafts, setDrafts] = useState<DraftInfo[]>(() => draftsCache)
+  const [metas, setMetas] = useState<Record<string, string>>(() => metasCache)
   const [showAddSystem, setShowAddSystem] = useState(false)
 
   useEffect(() => {
@@ -75,6 +82,7 @@ export default function Dashboard() {
         } catch { /* ignore */ }
         nextMetas[sys.id] = cardMeta(true, playbooks, updatedRel)
       }
+      metasCache = nextMetas
       setMetas(nextMetas)
     }
     void load()
@@ -123,6 +131,7 @@ export default function Dashboard() {
           })
         }
       }
+      draftsCache = allDrafts
       setDrafts(allDrafts)
     }
     if (systems.length > 0) loadDrafts()

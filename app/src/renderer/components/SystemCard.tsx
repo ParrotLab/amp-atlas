@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { primaryColor, softTint } from '../utils/appearance'
-import { StatusTone } from '../utils/systemStatus'
 import './SystemCard.css'
 
 interface SystemCardProps {
@@ -8,21 +7,17 @@ interface SystemCardProps {
   path: string
   color: string            // the system's stored gradient string
   icon: React.ReactNode
-  meta: string             // from metaLine(status, playbooks)
-  tone: StatusTone
+  meta: string             // from cardMeta(connected, playbooks, updatedRel)
   connected?: boolean
 }
 
-export default function SystemCard({ name, path, color, icon, meta, tone, connected = true }: SystemCardProps) {
+export default function SystemCard({ name, path, color, icon, meta, connected = true }: SystemCardProps) {
   const tint = softTint(primaryColor(color))
   return (
     <Link to={path} className={`system-card ${connected ? '' : 'disconnected'}`}>
       <div className="system-card-chip" style={{ background: tint }}>{icon}</div>
       <div className="system-card-name">{name}</div>
-      <div className="system-card-meta">
-        <span className={`system-card-dot tone-${tone}`} />
-        {meta}
-      </div>
+      <div className="system-card-meta">{meta}</div>
     </Link>
   )
 }

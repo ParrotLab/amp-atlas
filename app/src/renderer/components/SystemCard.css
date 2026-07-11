@@ -1,5 +1,7 @@
 .system-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
   background: var(--amp-white);
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-lg);
@@ -8,6 +10,9 @@
   color: inherit;
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
+
+/* Name + meta sit at the bottom; the chip anchors the top. */
+.system-card-name { margin-top: auto; }
 
 .system-card:hover {
   border-color: var(--amp-violet-700);
@@ -35,17 +40,9 @@
 }
 
 .system-card-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
-
-.system-card-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-.system-card-dot.tone-ok { background: var(--color-status-success); }
-.system-card-dot.tone-attention { background: var(--amp-violet-700); }
-.system-card-dot.tone-idle { background: var(--amp-gray-400); }
 
 .system-card.disconnected { opacity: 0.6; }
 .system-card.disconnected:hover { opacity: 0.85; transform: none; }

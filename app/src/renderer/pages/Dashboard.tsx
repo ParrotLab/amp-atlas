@@ -4,9 +4,9 @@ import JumpBackInCard from '../components/JumpBackInCard'
 import { iconMap, BookIcon, GlobeIcon } from '../components/SystemIcons'
 import { getSystems, SystemConfig, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
 import { listActive } from '../utils/draftStore'
-import { getLastPull, setLastPull } from '../utils/pullStatus'
+import { getLastPull, setLastPull, relativeTime } from '../utils/pullStatus'
 import { getPlaybookCount } from '../utils/playbookCount'
-import { describeSystemStatus, metaLine, SystemStatus } from '../utils/systemStatus'
+import { cardMeta } from '../utils/systemCardMeta'
 import { useProfile } from '../hooks/useProfile'
 import NewSystemModal from '../components/NewSystemModal'
 import { reviewVariant, reviewLabel, BadgeVariant } from '../components/Badge'
@@ -38,8 +38,7 @@ export default function Dashboard() {
   const firstName = profile.name ? profile.name.split(' ')[0] : ''
   const [systems, setSystems] = useState<SystemConfig[]>([])
   const [drafts, setDrafts] = useState<DraftInfo[]>([])
-  const [counts, setCounts] = useState<Record<string, number | null>>({})
-  const [statuses, setStatuses] = useState<Record<string, SystemStatus>>({})
+  const [metas, setMetas] = useState<Record<string, string>>({})
   const [showAddSystem, setShowAddSystem] = useState(false)
 
   useEffect(() => {
@@ -50,7 +49,9 @@ export default function Dashboard() {
     return () => { window.removeEventListener('focus', reread); window.removeEventListener(SYSTEMS_CHANGED_EVENT, reread) }
   }, [])
 
-  // Silently refresh connected systems on open (throttled), then read status + playbook counts.
+  // Silently refresh connected systems on open (throttled), then build each card's meta
+  // line: "N playbooks · Updated 2h ago" (last-updated comes from the latest commit, not
+  // the local refresh time, which would always read "just now").
   useEffect(() => {
     const load = async () => {
       const connected = getSystems().filter(s => s.folderPath)
@@ -62,24 +63,19 @@ export default function Dashboard() {
           if (r.ok) setLastPull(folder, Date.now())
         }
       }
-      const nextCounts: Record<string, number | null> = {}
-      const nextStatuses: Record<string, SystemStatus> = {}
+      const nextMetas: Record<string, string> = {}
       for (const sys of getSystems()) {
-        if (!sys.folderPath) {
-          nextCounts[sys.id] = null
-          nextStatuses[sys.id] = describeSystemStatus(false, false)
-          continue
-        }
-        nextCounts[sys.id] = await getPlaybookCount(sys.folderPath)
-        let hasWork = false
+        if (!sys.folderPath) { nextMetas[sys.id] = cardMeta(false, null, ''); continue }
+        const playbooks = await getPlaybookCount(sys.folderPath)
+        let updatedRel = ''
         try {
-          const w = await window.api.git.hasUnpublishedWork(sys.folderPath)
-          hasWork = !!(w.ok && w.hasWork)
+          const lg = await window.api.git.log(sys.folderPath, 1)
+          const date = lg.ok && lg.log && lg.log[0] ? lg.log[0].date : null
+          if (date) updatedRel = relativeTime(Date.parse(date), Date.now())
         } catch { /* ignore */ }
-        nextStatuses[sys.id] = describeSystemStatus(true, hasWork)
+        nextMetas[sys.id] = cardMeta(true, playbooks, updatedRel)
       }
-      setCounts(nextCounts)
-      setStatuses(nextStatuses)
+      setMetas(nextMetas)
     }
     void load()
   }, [systems.length])
@@ -161,15 +157,13 @@ export default function Dashboard() {
           <div className="systems-grid">
             {systems.map(sys => {
               const Icon = iconMap[sys.icon] || BookIcon
-              const status = statuses[sys.id] || describeSystemStatus(!!sys.folderPath, false)
               return (
                 <SystemCard
                   key={sys.id}
                   name={sys.name}
                   path={`/system/${sys.id}`}
                   color={sys.gradient}
-                  meta={metaLine(status, counts[sys.id] ?? null)}
-                  tone={status.tone}
+                  meta={metas[sys.id] ?? (sys.folderPath ? 'Connected' : 'Not connected')}
                   connected={!!sys.folderPath}
                   icon={<Icon size={22} />}
                 />

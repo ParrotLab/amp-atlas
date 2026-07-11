@@ -40,8 +40,25 @@
   white-space: nowrap;
   flex-shrink: 0;
   border-radius: 8px 8px 0 0;
+  position: relative;
   -webkit-app-region: no-drag;
 }
+
+/* Drag-to-reorder */
+.tab.dragging { opacity: 0.4; }
+.tab.drop-before::before,
+.tab.drop-after::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  background: #8B2BFF;
+  border-radius: 1px;
+  z-index: 2;
+}
+.tab.drop-before::before { left: -1px; }
+.tab.drop-after::after { right: -1px; }
 
 .tab:hover {
   color: #4A4743;

@@ -12,7 +12,8 @@
 .newsystem-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .newsystem-preview {
   width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; color: #fff;
+  display: flex; align-items: center; justify-content: center; color: #1a1a2e;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 .newsystem-input {
   flex: 1; padding: 10px 12px; font-size: 14px; font-family: inherit;
@@ -26,9 +27,10 @@
 }
 .newsystem-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .newsystem-swatch {
-  width: 26px; height: 26px; border-radius: 7px; border: 2px solid transparent; cursor: pointer; padding: 0;
+  width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer; padding: 0; transition: box-shadow 80ms ease, border-color 80ms ease;
 }
-.newsystem-swatch.active { border-color: #3b2a44; }
+.newsystem-swatch.active { border-color: #8B2BFF; box-shadow: 0 0 0 2px rgba(139, 43, 255, 0.22); }
 
 .newsystem-icons { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
 .newsystem-icon {

@@ -96,32 +96,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #1a1a2e;
+  border: 1px solid rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
-  cursor: pointer;
-  transition: transform 100ms ease;
-  position: relative;
-}
-
-.settings-system-color:hover {
-  transform: scale(1.05);
-}
-
-.settings-system-color-edit {
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 100ms ease;
-  font-size: 14px;
-}
-
-.settings-system-color:hover .settings-system-color-edit {
-  opacity: 1;
 }
 
 .settings-system-info {
@@ -134,24 +111,6 @@
   font-weight: 600;
   color: #1a1a2e;
   margin-bottom: 3px;
-}
-
-.settings-system-name-input {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a2e;
-  border: none;
-  background: none;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  font-family: inherit;
-  outline: none;
-  border-bottom: 1px solid transparent;
-}
-
-.settings-system-name-input:focus {
-  border-bottom-color: #8B2BFF;
 }
 
 .settings-system-path {
@@ -176,6 +135,9 @@
 }
 
 .settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 14px;
   font-size: 12px;
   font-weight: 500;
@@ -211,90 +173,6 @@
 
 .settings-btn.danger:hover {
   background: #FEF2F2;
-}
-
-/* Appearance picker popover */
-.appearance-picker-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-}
-
-.appearance-picker {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  background: white;
-  border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
-  padding: 16px;
-  z-index: 1000;
-  width: 280px;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.appearance-picker-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #B5B1AC;
-  margin-bottom: 8px;
-}
-
-.appearance-picker-label:not(:first-child) {
-  margin-top: 14px;
-}
-
-.appearance-picker-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.appearance-swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 80ms ease;
-}
-
-.appearance-swatch:hover {
-  transform: scale(1.1);
-}
-
-.appearance-swatch.active {
-  border-color: #1a1a2e;
-  box-shadow: 0 0 0 2px white, 0 0 0 4px #1a1a2e;
-}
-
-.appearance-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 2px solid #EDE8E2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  background: white;
-  transition: all 80ms ease;
-  color: #6B6966;
-}
-
-.appearance-icon:hover {
-  border-color: #D4D0CC;
-  background: #FEFCF9;
-}
-
-.appearance-icon.active {
-  border-color: #8B2BFF;
-  background: rgba(139, 43, 255, 0.06);
-  color: #8B2BFF;
 }
 
 /* Info cards */

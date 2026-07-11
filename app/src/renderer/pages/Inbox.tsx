@@ -49,18 +49,24 @@ const EMPTY: Record<InboxTab, string> = {
   drafts: 'No drafts in progress.',
 }
 
+// Cached across mounts so landing on the Inbox shows the last-known list
+// immediately, then refreshes behind the scenes — no visible reload.
+let itemsCache: Item[] = []
+
 export default function Inbox() {
-  const [items, setItems] = useState<Item[]>([])
+  const [items, setItems] = useState<Item[]>(() => itemsCache)
   const [tab, setTab] = useState<InboxTab>('review')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(itemsCache.length === 0)
   const [publishing, setPublishing] = useState<number | null>(null)
   const online = useOnline()
   const profile = useProfile()
   const navigate = useNavigate()
 
   const load = async () => {
-    if (!online || !profile.login) { setLoading(false); return }
-    setLoading(true)
+    if (!online) { setLoading(false); return }
+    if (!profile.login) return   // wait for identity; keep whatever we're already showing
+    // No setLoading(true) here: on repeat visits we already have cached items and
+    // refresh silently. The visible "Loading…" only appears on a cold first load.
     const all: Item[] = []
     for (const sys of getSystems()) {
       if (!sys.folderPath) continue
@@ -82,6 +88,7 @@ export default function Inbox() {
       } catch { /* a single system's PR fetch failing shouldn't drop the rest */ }
     }
     all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    itemsCache = all
     setItems(all)
     setLoading(false)
   }

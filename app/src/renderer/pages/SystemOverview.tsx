@@ -68,16 +68,16 @@ export default function SystemOverview() {
   }, [])
 
   const handleTabClose = useCallback((path: string) => {
-    setTabs(prev => {
-      const updated = prev.filter(t => t.path !== path)
-      if (path === selectedFile) {
-        const idx = prev.findIndex(t => t.path === path)
-        const next = updated[Math.min(idx, updated.length - 1)]
-        setSelectedFile(next?.path)
-      }
-      return updated
-    })
-  }, [selectedFile])
+    // Compute the next selection OUTSIDE the setTabs updater — calling setSelectedFile
+    // inside a state updater is a side-effect that makes the selection (and the file
+    // content that follows it) update unreliably.
+    const idx = tabs.findIndex(t => t.path === path)
+    const updated = tabs.filter(t => t.path !== path)
+    setTabs(updated)
+    if (path === selectedFile) {
+      setSelectedFile(updated.length ? updated[Math.min(idx, updated.length - 1)]?.path : undefined)
+    }
+  }, [tabs, selectedFile])
 
   const [gitModified, setGitModified] = useState<Set<string>>(new Set())
   const [gitNew, setGitNew] = useState<Set<string>>(new Set())
@@ -737,6 +737,15 @@ export default function SystemOverview() {
           activeTab={selectedFile}
           onTabClick={handleTabClick}
           onTabClose={handleTabClose}
+          onReorder={(fromPath, toIndex) => setTabs(prev => {
+            const fromIdx = prev.findIndex(t => t.path === fromPath)
+            if (fromIdx < 0) return prev
+            const arr = [...prev]
+            const [moved] = arr.splice(fromIdx, 1)
+            const adj = fromIdx < toIndex ? toIndex - 1 : toIndex
+            arr.splice(Math.max(0, Math.min(adj, arr.length)), 0, moved)
+            return arr
+          })}
         />
         {isMainBranch && isDirty && !moveBannerDismissed && (
           <div style={{ position: 'relative', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 40px 10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5 }}>

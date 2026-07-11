@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import logo from '../assets/logos/logo-wordmark-dark.svg'
+import mark from '../assets/logos/amp-mark-color.png'
 import { getSystems, SYSTEMS_CHANGED_EVENT } from '../utils/systemStore'
 import { iconMap, GlobeIcon, MailIcon, GearIcon } from './SystemIcons'
 import { useProfile } from '../hooks/useProfile'
@@ -43,7 +43,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar no-select">
       <div className="sidebar-logo">
-        <img src={logo} alt="AI Momentum Protocols" />
+        <img src={mark} className="sidebar-logo-mark" alt="AMP Atlas" />
+        <span className="sidebar-logo-text">AMP Atlas</span>
       </div>
 
       <nav className="sidebar-nav">

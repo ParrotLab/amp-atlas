@@ -5,6 +5,7 @@ import { useFileWatchers } from '../hooks/useFileWatchers'
 import { ExpandIcon, CompressIcon, PanelIcon, EyeIcon } from './SystemIcons'
 import { displayName } from '../utils/naming'
 import EditorBubbleMenu from './EditorBubbleMenu'
+import EditorLinkMenu from './EditorLinkMenu'
 import { SlashCommand } from './slashCommand'
 import './FileViewer.css'
 
@@ -46,6 +47,15 @@ export default function FileViewer({
     extensions: [...editorExtensions(), SlashCommand],
     editable: !readOnly,
     content: '',
+    editorProps: {
+      // ⌘/Ctrl-click a link to open it in the browser (plain click keeps editing).
+      handleClick(view, pos, event) {
+        if (!(event.metaKey || event.ctrlKey)) return false
+        const href = view.state.doc.resolve(pos).marks().find(m => m.type.name === 'link')?.attrs.href as string | undefined
+        if (href) { window.open(href, '_blank'); return true }
+        return false
+      },
+    },
     onUpdate: ({ editor: ed }) => {
       if (readOnly) return
       onBodyChange(ed.getMarkdown())
@@ -201,6 +211,7 @@ export default function FileViewer({
           {writeStatus === 'written' && <span className="file-viewer-saved">· Saved</span>}
         </div>
         {editor && !readOnly && <EditorBubbleMenu editor={editor} />}
+        {editor && !readOnly && <EditorLinkMenu editor={editor} />}
         <EditorContent editor={editor} className="file-viewer-body" />
         {tableMenu && editor && (
           <>

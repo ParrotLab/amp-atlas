@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { addSystem, updateSystemFolder } from '../utils/systemStore'
-import { GRADIENTS } from '../utils/appearance'
+import { addSystem, updateSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
+import { GRADIENTS, primaryColor, softTint } from '../utils/appearance'
 import { iconMap, iconList } from './SystemIcons'
 import Modal from './Modal'
 import Button from './Button'
@@ -8,31 +8,39 @@ import './NewSystemModal.css'
 
 interface NewSystemModalProps {
   isOpen: boolean
+  system?: SystemConfig | null   // present => edit an existing system
   onClose: () => void
-  onCreated: () => void
+  onCreated: () => void          // called after create OR save
 }
 
-/** Create a new system: name, appearance (color + icon), and the local folder it lives in. */
-export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystemModalProps) {
+/** Create or edit a system: name, appearance (color + icon), and the local folder it lives in. */
+export default function NewSystemModal({ isOpen, system, onClose, onCreated }: NewSystemModalProps) {
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('book')
   const [gradient, setGradient] = useState(GRADIENTS[0].value)
   const [folder, setFolder] = useState('')
 
   useEffect(() => {
-    if (isOpen) { setName(''); setIcon('book'); setGradient(GRADIENTS[0].value); setFolder('') }
-  }, [isOpen])
+    if (!isOpen) return
+    if (system) { setName(system.name); setIcon(system.icon); setGradient(system.gradient); setFolder(system.folderPath) }
+    else { setName(''); setIcon('book'); setGradient(GRADIENTS[0].value); setFolder('') }
+  }, [isOpen, system])
 
   const chooseFolder = async () => {
     const r = await window.api.dialog.selectFolder()
     if (r.ok && r.path) setFolder(r.path)
   }
 
-  const create = () => {
+  const save = () => {
     if (!name.trim()) return
-    const updated = addSystem(name.trim(), icon, gradient)
-    const created = updated[updated.length - 1]
-    if (folder && created) updateSystemFolder(created.id, folder)
+    if (system) {
+      updateSystem(system.id, { name: name.trim(), icon, gradient })
+      updateSystemFolder(system.id, folder)
+    } else {
+      const updated = addSystem(name.trim(), icon, gradient)
+      const created = updated[updated.length - 1]
+      if (folder && created) updateSystemFolder(created.id, folder)
+    }
     onCreated()
     onClose()
   }
@@ -44,18 +52,20 @@ export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystem
       isOpen={isOpen}
       onClose={onClose}
       maxWidth={480}
-      title="Add a system"
-      subtitle="A system is like a vault in Obsidian — pick the folder on your computer where its files live, and give it a name and look."
+      title={system ? 'Edit system' : 'Add a system'}
+      subtitle={system
+        ? 'Update this system’s name, look, or the folder its files live in.'
+        : 'A system is like a vault in Obsidian — pick the folder on your computer where its files live, and give it a name and look.'}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={!name.trim()} onClick={create}>Create system</Button>
+          <Button variant="primary" disabled={!name.trim()} onClick={save}>{system ? 'Save changes' : 'Create system'}</Button>
         </>
       }
     >
         {/* Live preview + name */}
         <div className="newsystem-head">
-          <div className="newsystem-preview" style={{ background: gradient }}>
+          <div className="newsystem-preview" style={{ background: softTint(primaryColor(gradient)) }}>
             <PreviewIcon size={22} />
           </div>
           <input
@@ -64,7 +74,7 @@ export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystem
             value={name}
             placeholder="System name (e.g. Marketing System)"
             onChange={e => setName(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') create() }}
+            onKeyDown={e => { if (e.key === 'Enter') save() }}
           />
         </div>
 
@@ -74,7 +84,7 @@ export default function NewSystemModal({ isOpen, onClose, onCreated }: NewSystem
             <button
               key={g.value}
               className={`newsystem-swatch ${gradient === g.value ? 'active' : ''}`}
-              style={{ background: g.value }}
+              style={{ background: softTint(primaryColor(g.value)) }}
               onClick={() => setGradient(g.value)}
               aria-label="Choose color"
             />

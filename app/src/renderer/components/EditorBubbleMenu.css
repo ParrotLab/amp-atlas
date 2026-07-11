@@ -44,6 +44,27 @@
   flex-shrink: 0;
 }
 
+/* Existing-link popover (open · edit · remove) */
+.lm-view { display: flex; align-items: center; gap: 2px; }
+.lm-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  padding: 0 8px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  color: #8B2BFF;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+.lm-url:hover { background: rgba(139, 43, 255, 0.08); }
+.lm-url-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-btn.lm-text { font-size: 13px; padding: 0 10px; }
+
 .bm-link { display: flex; align-items: center; gap: 2px; padding: 0 2px; }
 .bm-link-input {
   width: 220px;

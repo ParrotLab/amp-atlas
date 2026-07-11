@@ -106,6 +106,14 @@ export async function reviewPR(repoPath: string, num: number, action: 'approve' 
   await gh(`/repos/${owner}/${repo}/pulls/${num}/reviews`, { method: 'POST', body: JSON.stringify({ event, body: body || '' }) })
 }
 
+export async function mergePR(repoPath: string, num: number) {
+  const { owner, repo } = await ownerRepo(repoPath)
+  const pr = await gh(`/repos/${owner}/${repo}/pulls/${num}`) as { head: { ref: string } }
+  await gh(`/repos/${owner}/${repo}/pulls/${num}/merge`, { method: 'PUT', body: JSON.stringify({ merge_method: 'squash' }) })
+  // Deleting the merged branch is best-effort (may be protected or already gone).
+  try { await gh(`/repos/${owner}/${repo}/git/refs/heads/${pr.head.ref}`, { method: 'DELETE' }) } catch { /* ignore */ }
+}
+
 export async function collaborators(repoPath: string) {
   const { owner, repo } = await ownerRepo(repoPath)
   const cols = await gh(`/repos/${owner}/${repo}/collaborators?per_page=100`) as { login: string }[]

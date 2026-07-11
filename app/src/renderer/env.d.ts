@@ -90,6 +90,7 @@ interface ElectronAPI {
     draftChanges: (repoPath: string) => Promise<{ ok: boolean; error?: string; commits?: GitLogEntry[]; filesChanged?: string[] }>
     save: (repoPath: string, message: string) => Promise<{ ok: boolean; error?: string; summary?: { changes: number; insertions: number; deletions: number } }>
     publish: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
+    mergePR: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; error?: string }>
     updateFromLive: (repoPath: string) => Promise<
       | { ok: true; updated: boolean }
       | { ok: false; conflicted: true; files: string[] }

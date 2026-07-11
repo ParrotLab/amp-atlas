@@ -255,6 +255,11 @@ ipcMain.handle('git:publish', async (_event, repoPath: string) => {
   }
 })
 
+ipcMain.handle('git:mergePR', async (_event, repoPath: string, num: number) => {
+  try { await github.mergePR(repoPath, num); return { ok: true } }
+  catch (error) { logError('mergePR', error); return { ok: false, error: String(error) } }
+})
+
 ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
   try {
     return { ok: true, ...(await github.createPR(repoPath, title, body, reviewers)) }

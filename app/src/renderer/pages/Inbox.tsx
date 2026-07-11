@@ -1,27 +1,29 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { getSystems } from '../utils/systemStore'
-import { iconMap } from '../components/SystemIcons'
+import { iconMap, BookIcon } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
-import Badge, { reviewVariant } from '../components/Badge'
+import { useProfile } from '../hooks/useProfile'
+import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
+import InboxRow from '../components/InboxRow'
 import './Inbox.css'
 
-interface PRItem {
+interface Item {
   systemId: string
   systemName: string
+  systemColor: string
   systemIcon: string
-  systemGradient: string
   repoPath: string
   number: number
   title: string
-  author: { login: string; name: string }
-  createdAt: string
+  authorName: string
   headRefName: string
-  reviewDecision: string | null
-  url: string
-  additions: number
-  deletions: number
+  createdAt: string
   changedFiles: number
+  url: string
+  tab: InboxTab
+  action: ReturnType<typeof classifyInboxPR>['action']
+  badge: ReturnType<typeof classifyInboxPR>['badge']
 }
 
 function timeAgo(dateStr: string): string {
@@ -35,95 +37,114 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function avatarColor(name: string): string {
-  const colors = ['#8B2BFF', '#FF7B00', '#3D0052', '#16A34A', '#2563EB', '#E11D48', '#0D9488', '#D97706']
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return colors[Math.abs(hash) % colors.length]
+const TABS: { key: InboxTab; label: string }[] = [
+  { key: 'review', label: 'Needs your review' },
+  { key: 'publish', label: 'Ready to publish' },
+  { key: 'drafts', label: 'Your drafts' },
+]
+
+const EMPTY: Record<InboxTab, string> = {
+  review: "You're all caught up — no reviews waiting on you.",
+  publish: 'Nothing to publish right now.',
+  drafts: 'No drafts in progress.',
 }
 
 export default function Inbox() {
-  const [prs, setPrs] = useState<PRItem[]>([])
-  const [filter, setFilter] = useState<'all' | 'review' | 'mine'>('all')
+  const [items, setItems] = useState<Item[]>([])
+  const [tab, setTab] = useState<InboxTab>('review')
   const [loading, setLoading] = useState(true)
+  const [publishing, setPublishing] = useState<number | null>(null)
   const online = useOnline()
+  const profile = useProfile()
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    if (!online) { setLoading(false); return }   // don't fetch offline; re-runs when back online
-    const loadPRs = async () => {
-      setLoading(true)
-      const systems = getSystems()
-      const allPRs: PRItem[] = []
-
-      for (const sys of systems) {
-        if (!sys.folderPath) continue
-        try {
-          const result = await window.api.git.listPRs(sys.folderPath)
-          if (result.ok && result.prs) {
-            for (const pr of result.prs) {
-              allPRs.push({ ...pr, systemId: sys.id, systemName: sys.name, systemIcon: sys.icon, systemGradient: sys.gradient, repoPath: sys.folderPath })
-            }
+  const load = async () => {
+    if (!online || !profile.login) { setLoading(false); return }
+    setLoading(true)
+    const all: Item[] = []
+    for (const sys of getSystems()) {
+      if (!sys.folderPath) continue
+      try {
+        const result = await window.api.git.listPRs(sys.folderPath)
+        if (result.ok && result.prs) {
+          for (const pr of result.prs) {
+            const c = classifyInboxPR(pr, profile.login)
+            if (!c.tab) continue
+            all.push({
+              systemId: sys.id, systemName: sys.name, systemColor: sys.gradient, systemIcon: sys.icon,
+              repoPath: sys.folderPath, number: pr.number, title: pr.title,
+              authorName: pr.author.name || pr.author.login, headRefName: pr.headRefName,
+              createdAt: pr.createdAt, changedFiles: pr.changedFiles, url: pr.url,
+              tab: c.tab, action: c.action, badge: c.badge,
+            })
           }
-        } catch { /* ignore */ }
-      }
-
-      // Sort by newest first
-      allPRs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      setPrs(allPRs)
-      setLoading(false)
+        }
+      } catch { /* ignore */ }
     }
+    all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    setItems(all)
+    setLoading(false)
+  }
 
-    loadPRs()
-  }, [online])
+  useEffect(() => { void load() }, [online, profile.login])
 
-  const filteredPRs = prs.filter(pr => {
-    if (filter === 'mine') return pr.author.login === 'kristinannedowns'
-    if (filter === 'review') return pr.author.login !== 'kristinannedowns'
-    return true
-  })
+  const count = (t: InboxTab) => items.filter(i => i.tab === t).length
+  const shown = items.filter(i => i.tab === tab)
+
+  const metaFor = (i: Item) =>
+    i.tab === 'review'
+      ? `${i.authorName} · ${i.systemName} · ${i.changedFiles} file${i.changedFiles === 1 ? '' : 's'} · ${timeAgo(i.createdAt)}`
+      : `${i.systemName} · ${i.changedFiles} file${i.changedFiles === 1 ? '' : 's'} · ${timeAgo(i.createdAt)}`
+
+  const publish = async (i: Item) => {
+    setPublishing(i.number)
+    const r = await window.api.git.mergePR(i.repoPath, i.number)
+    setPublishing(null)
+    if (r.ok) { await load() } else { alert(`Couldn't publish: ${r.error}`) }
+  }
+
+  const makeEdits = async (i: Item) => {
+    await window.api.git.switchBranch(i.repoPath, i.headRefName)
+    navigate(`/system/${i.systemId}`)
+  }
 
   return (
     <div className="inbox-page">
       <div className="inbox-inner">
-        <div className="inbox-header">
-          <h1 className="inbox-title">Inbox</h1>
-          <div className="inbox-filters">
-            <button className={`inbox-filter ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
-            <button className={`inbox-filter ${filter === 'review' ? 'active' : ''}`} onClick={() => setFilter('review')}>To Review</button>
-            <button className={`inbox-filter ${filter === 'mine' ? 'active' : ''}`} onClick={() => setFilter('mine')}>My Drafts</button>
-          </div>
-        </div>
+        <h1 className="inbox-title">Inbox</h1>
+        <p className="inbox-subtitle">Reviews waiting on you, and your work in progress.</p>
 
-        <div className="inbox-count">{filteredPRs.length} open</div>
+        <div className="inbox-tabs">
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              className={`inbox-tab ${tab === t.key ? 'on' : ''} ${t.key === 'publish' ? 'publish' : ''}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label} <span className="inbox-tab-count">{count(t.key)}</span>
+            </button>
+          ))}
+        </div>
 
         <div className="inbox-list">
           {!online && <div className="inbox-empty">You're offline — your inbox will refresh when you reconnect.</div>}
-          {online && loading && <div className="inbox-empty">Loading...</div>}
-          {online && !loading && filteredPRs.length === 0 && <div className="inbox-empty">No open reviews right now.</div>}
-          {online && !loading && filteredPRs.map(pr => (
-            <Link
-              key={`${pr.systemId}-${pr.number}`}
-              to={`/review/${pr.systemId}/${pr.number}`}
-              className="inbox-item"
-            >
-              <div className="inbox-item-avatar" style={{ background: pr.systemGradient }}>
-                {(() => { const Icon = iconMap[pr.systemIcon]; return Icon ? <Icon size={18} /> : pr.systemName.charAt(0) })()}
-              </div>
-              <div className="inbox-item-body">
-                <div className="inbox-item-title">{pr.title}</div>
-                <div className="inbox-item-meta">
-                  {pr.author.name || pr.author.login} · {pr.systemName} · {timeAgo(pr.createdAt)}
-                </div>
-              </div>
-              <div className="inbox-item-stats">
-                <span style={{ color: '#16A34A' }}>+{pr.additions}</span>
-                <span style={{ color: '#DC2626' }}>-{pr.deletions}</span>
-                <span>{pr.changedFiles} files</span>
-              </div>
-              <Badge variant={reviewVariant(pr.reviewDecision)}>
-                {pr.reviewDecision === 'APPROVED' ? 'Approved' : pr.reviewDecision === 'CHANGES_REQUESTED' ? 'Changes Requested' : 'Open'}
-              </Badge>
-            </Link>
+          {online && loading && <div className="inbox-empty">Loading…</div>}
+          {online && !loading && shown.length === 0 && <div className="inbox-empty">{EMPTY[tab]}</div>}
+          {online && !loading && shown.map(i => (
+            <InboxRow
+              key={`${i.systemId}-${i.number}`}
+              to={`/review/${i.systemId}/${i.number}`}
+              title={i.title}
+              meta={metaFor(i)}
+              color={i.systemColor}
+              icon={(() => { const Icon = iconMap[i.systemIcon] || BookIcon; return <Icon size={17} /> })()}
+              action={i.action}
+              badge={i.badge}
+              url={i.url}
+              publishing={publishing === i.number}
+              onPublish={() => publish(i)}
+              onMakeEdits={() => makeEdits(i)}
+            />
           ))}
         </div>
       </div>

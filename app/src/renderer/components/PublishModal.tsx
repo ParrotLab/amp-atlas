@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
 import Modal from './Modal'
 import Button from './Button'
 import Input from './Input'
+import { editorExtensions } from '../utils/markdownSerializer'
 import './PublishModal.css'
 
 interface PublishModalProps {
@@ -26,8 +28,8 @@ function avatarColor(login: string): string {
 
 export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody }: PublishModalProps) {
   const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
+  const descEditor = useEditor({ extensions: editorExtensions(), editable: true, content: '' })
   const [members, setMembers] = useState<{ login: string; name: string }[]>([])
   const [draftCommits, setDraftCommits] = useState<{ hash: string; message: string; date: string }[]>([])
   const [draftFiles, setDraftFiles] = useState<string[]>([])
@@ -37,7 +39,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
   useEffect(() => {
     if (isOpen) {
       setTitle(hasPR ? (existingTitle || draftName || '') : (draftName || ''))
-      setDescription(hasPR ? (existingBody || '') : '')
+      descEditor?.commands.setContent(hasPR ? (existingBody || '') : '', { contentType: 'markdown' })
       setSelectedReviewers([])
       setStatus('idle')
       setDraftCommits([])
@@ -55,7 +57,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
         window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
       }
     }
-  }, [isOpen, draftName, repoPath, hasPR, existingTitle, existingBody])
+  }, [isOpen, draftName, repoPath, hasPR, existingTitle, existingBody, descEditor])
 
 
   const toggleReviewer = (name: string) => {
@@ -67,9 +69,9 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
   const handlePublish = async () => {
     if (!title.trim() || status !== 'idle') return
     setStatus('publishing')
-    await onPublish(title.trim(), description.trim(), selectedReviewers)
+    const description = (descEditor?.getMarkdown() || '').trim()
+    await onPublish(title.trim(), description, selectedReviewers)
     setStatus('done')
-    setTimeout(() => onClose(), 1500)
   }
 
   if (status === 'done') {
@@ -160,12 +162,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
             <div className="publish-field">
               <div className="publish-label">Description (optional)</div>
-              <textarea
-                className="publish-textarea"
-                placeholder="Add any context for your reviewers..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-              />
+              <EditorContent editor={descEditor} className="publish-editor" />
             </div>
 
             <div className="publish-field">

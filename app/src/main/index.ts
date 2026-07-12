@@ -265,6 +265,11 @@ ipcMain.handle('git:latestReview', async (_event, repoPath: string, num: number)
   catch (error) { logError('latestReview', error); return { ok: false, review: null, error: String(error) } }
 })
 
+ipcMain.handle('git:updatePR', async (_event, repoPath: string, num: number, title: string, body: string, reviewers: string[]) => {
+  try { await github.updatePR(repoPath, num, title, body, reviewers); return { ok: true } }
+  catch (error) { logError('updatePR', error); return { ok: false, error: String(error) } }
+})
+
 ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
   try {
     return { ok: true, ...(await github.createPR(repoPath, title, body, reviewers)) }

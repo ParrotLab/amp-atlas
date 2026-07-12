@@ -92,6 +92,7 @@ interface ElectronAPI {
     publish: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
     mergePR: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; error?: string }>
     latestReview: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; review: { state: string; body: string; authorName: string } | null; error?: string }>
+    updatePR: (repoPath: string, prNumber: number, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string }>
     updateFromLive: (repoPath: string) => Promise<
       | { ok: true; updated: boolean }
       | { ok: false; conflicted: true; files: string[] }
@@ -104,7 +105,7 @@ interface ElectronAPI {
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     deleteBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
-    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null } }>
+    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null; body: string } }>
     checkMerged: (repoPath: string) => Promise<{ ok: boolean; merged: boolean; branch?: string }>
     listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewDecision: string | null; url: string; additions: number; deletions: number; changedFiles: number; body: string; requestedReviewers: string[] }> }>
     prDiff: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; files: string[]; error?: string }>

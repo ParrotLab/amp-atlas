@@ -67,6 +67,12 @@ export default function Review() {
   const isAuthor = !!pr && !!profile.login && pr.author.login === profile.login
 
   const editor = useEditor({ extensions: editorExtensions(), editable: false, content: '' })
+  // Separate read-only editor for the PR description (markdown), independent of the file view.
+  const descEditor = useEditor({ extensions: editorExtensions(), editable: false, content: '' })
+
+  useEffect(() => {
+    if (descEditor && pr?.body) descEditor.commands.setContent(pr.body, { contentType: 'markdown' })
+  }, [descEditor, pr?.body])
 
   useEffect(() => {
     if (!repoPath || !prNum) return
@@ -226,7 +232,7 @@ export default function Review() {
             {pr.body && (
               <div className="review-desc">
                 <div className="review-desc-label">Description</div>
-                <p>{pr.body}</p>
+                <EditorContent editor={descEditor} className="review-tiptap-body review-desc-body" />
               </div>
             )}
 

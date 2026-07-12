@@ -9,24 +9,24 @@ describe('slugify', () => {
 })
 
 describe('scaffoldFor', () => {
-  it('playbook → .claude/skills/<slug>/SKILL.md with the name substituted', () => {
+  it('playbook → .claude/skills/<name>/SKILL.md, name preserved as typed', () => {
     const { folder, files } = scaffoldFor('playbook', 'Onboarding', '2026-07-08')
-    expect(folder).toBe('.claude/skills/onboarding')
+    expect(folder).toBe('.claude/skills/Onboarding')
     expect(files).toHaveLength(1)
-    expect(files[0].path).toBe('.claude/skills/onboarding/SKILL.md')
+    expect(files[0].path).toBe('.claude/skills/Onboarding/SKILL.md')
     expect(files[0].content).toContain('name: Onboarding')
     expect(files[0].content).not.toContain('{{name}}')
   })
 
-  it('project → work/<slug>/pitch.md + braindump.md', () => {
+  it('project → work/<name>/pitch.md + braindump.md, spaces + case preserved', () => {
     const { files } = scaffoldFor('project', 'Launch Plan', '2026-07-08')
-    expect(files.map(f => f.path).sort()).toEqual(['work/launch-plan/braindump.md', 'work/launch-plan/pitch.md'])
+    expect(files.map(f => f.path).sort()).toEqual(['work/Launch Plan/braindump.md', 'work/Launch Plan/pitch.md'])
     expect(files[0].content).toContain('2026-07-08')
   })
 
-  it('sub-system → reference/<slug>/README.md', () => {
+  it('sub-system → reference/<name>/README.md, name preserved', () => {
     const { files } = scaffoldFor('sub-system', 'Sales', '2026-07-08')
-    expect(files[0].path).toBe('reference/sales/README.md')
+    expect(files[0].path).toBe('reference/Sales/README.md')
   })
 })
 

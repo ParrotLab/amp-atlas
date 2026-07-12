@@ -393,9 +393,10 @@ export default function SystemOverview() {
       return false
     }
 
-    // Existing PR → update body + re-request reviewers ("Add to review"); otherwise create.
+    // OPEN PR → update body + re-request reviewers ("Add to review"). A closed-not-merged
+    // PR is done, so a resubmit starts a fresh review (create a new PR).
     if (!isMainBranch) {
-      if (prStatus.hasPR && prStatus.number) {
+      if (prStatus.hasPR && prStatus.number && prStatus.state === 'OPEN') {
         const upd = await window.api.git.updatePR(rootPath, prStatus.number, title, description, reviewers)
         if (!upd.ok) { showToast("Couldn't update the review — try again."); return false }
       } else {

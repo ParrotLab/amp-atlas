@@ -365,8 +365,10 @@ export default function SystemOverview() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isMainBranch, isDirty, caps.isGitRepo])
 
-  const handleDoPublish = async (title: string, description: string, reviewers: string[]) => {
-    if (!rootPath) return
+  // Returns true on success; false (with a toast) on failure, so the modal knows
+  // whether to show the success state or return to the form.
+  const handleDoPublish = async (title: string, description: string, reviewers: string[]): Promise<boolean> => {
+    if (!rootPath) return false
 
     // First commit any uncommitted changes
     const status = await window.api.git.status(rootPath)
@@ -378,33 +380,33 @@ export default function SystemOverview() {
     const update = await window.api.git.updateFromLive(rootPath)
     if (!update.ok) {
       setConflictFiles(update.files)   // real overlap — escalate calmly, do not push
-      return
+      return false
     }
 
     // Push to GitHub
     const pushResult = await window.api.git.publish(rootPath)
     if (!pushResult.ok) {
-      showToast("Couldn't publish — check your connection.", {
+      showToast("Couldn't submit — check your connection.", {
         label: 'Retry',
         onClick: () => { void handleDoPublish(title, description, reviewers) },
       })
-      return
+      return false
     }
 
-    // Existing PR → update body + re-request reviewers ("Publish Changes"); otherwise create.
+    // Existing PR → update body + re-request reviewers ("Add to review"); otherwise create.
     if (!isMainBranch) {
       if (prStatus.hasPR && prStatus.number) {
         const upd = await window.api.git.updatePR(rootPath, prStatus.number, title, description, reviewers)
-        if (!upd.ok) console.warn('PR update failed:', upd.error)
+        if (!upd.ok) { showToast("Couldn't update the review — try again."); return false }
       } else {
         const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
-        if (prResult.ok && prResult.url) console.log('PR created:', prResult.url)
-        else if (!prResult.ok && !prResult.alreadyExists) console.warn('PR creation failed:', prResult.error)
+        if (!prResult.ok && !prResult.alreadyExists) { showToast("Couldn't submit for review — try again."); return false }
       }
     }
 
     await fetchGitStatus()
     await fetchPrStatus()   // reflect the new/updated PR (In Review tag) without a reload
+    return true
   }
 
   // Run `action`, but if there are unsaved edits in a draft, prompt Save/Discard first.

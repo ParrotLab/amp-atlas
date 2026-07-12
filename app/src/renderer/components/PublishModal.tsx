@@ -9,7 +9,7 @@ import './PublishModal.css'
 interface PublishModalProps {
   isOpen: boolean
   onClose: () => void
-  onPublish: (title: string, description: string, reviewers: string[]) => Promise<void>
+  onPublish: (title: string, description: string, reviewers: string[]) => Promise<boolean>
   draftName: string
   modifiedCount: number
   newCount: number
@@ -36,28 +36,35 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
   const [status, setStatus] = useState<'idle' | 'publishing' | 'done'>('idle')
   const [submittedPR, setSubmittedPR] = useState<{ number: number; title: string; url: string } | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
+  const prevOpen = useRef(false)
 
+  // Initialize ONLY when the modal transitions closed→open. Guarding on the
+  // open transition (not every prop change) prevents a mid-submit prop refresh
+  // — e.g. prStatus updating after "Add to review" — from resetting the form
+  // and flashing it between the publishing and success states.
   useEffect(() => {
-    if (isOpen) {
-      setTitle(hasPR ? (existingTitle || draftName || '') : (draftName || ''))
-      descEditor?.commands.setContent(hasPR ? (existingBody || '') : '', { contentType: 'markdown' })
-      setSelectedReviewers([])
-      setStatus('idle')
-      setSubmittedPR(null)
-      setDraftCommits([])
-      setDraftFiles([])
-      setTimeout(() => titleRef.current?.focus(), 100)
+    const justOpened = isOpen && !prevOpen.current
+    prevOpen.current = isOpen
+    if (!justOpened) return
 
-      // Fetch what this draft adds vs Live Version
-      if (repoPath) {
-        window.api.git.draftChanges(repoPath).then(result => {
-          if (result.ok) {
-            setDraftCommits(result.commits || [])
-            setDraftFiles(result.filesChanged || [])
-          }
-        })
-        window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
-      }
+    setTitle(hasPR ? (existingTitle || draftName || '') : (draftName || ''))
+    descEditor?.commands.setContent(hasPR ? (existingBody || '') : '', { contentType: 'markdown' })
+    setSelectedReviewers([])
+    setStatus('idle')
+    setSubmittedPR(null)
+    setDraftCommits([])
+    setDraftFiles([])
+    setTimeout(() => titleRef.current?.focus(), 100)
+
+    // Fetch what this draft adds vs Live Version
+    if (repoPath) {
+      window.api.git.draftChanges(repoPath).then(result => {
+        if (result.ok) {
+          setDraftCommits(result.commits || [])
+          setDraftFiles(result.filesChanged || [])
+        }
+      })
+      window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
     }
   }, [isOpen, draftName, repoPath, hasPR, existingTitle, existingBody, descEditor])
 
@@ -72,7 +79,8 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
     if (!title.trim() || status !== 'idle') return
     setStatus('publishing')
     const description = (descEditor?.getMarkdown() || '').trim()
-    await onPublish(title.trim(), description, selectedReviewers)
+    const ok = await onPublish(title.trim(), description, selectedReviewers)
+    if (!ok) { setStatus('idle'); return }   // failure → stay on the form (error toast shown upstream)
     // Surface the resulting PR so the user knows what to reference later.
     try {
       const s = await window.api.git.prStatus(repoPath)

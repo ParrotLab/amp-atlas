@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { getSystem } from '../utils/systemStore'
 import { editorExtensions } from '../utils/markdownSerializer'
 import { parseDocument } from '../utils/fileDocument'
 import { useOnline } from '../hooks/useOnline'
+import { useProfile } from '../hooks/useProfile'
+import { iconMap, BookIcon } from '../components/SystemIcons'
+import { primaryColor, softTint } from '../utils/appearance'
+import Badge, { BadgeVariant } from '../components/Badge'
 import './Review.css'
 
-interface DiffLine {
-  type: string
-  content: string
+interface DiffLine { type: string; content: string }
+interface PRInfo {
+  title: string
+  author: { login: string; name: string }
+  createdAt: string
+  reviewDecision: string | null
+  url: string
+  body: string
+  headRefName: string
 }
+interface Feedback { state: string; body: string; authorName: string }
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -24,32 +35,19 @@ function timeAgo(dateStr: string): string {
 
 function Chevron({ open }: { open: boolean }) {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 140ms ease' }}
-    >
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 140ms ease' }}>
       <path d="M7 5l6 5-6 5" />
     </svg>
   )
 }
 
-function avatarColor(name: string): string {
-  const colors = ['#8B2BFF', '#FF7B00', '#3D0052', '#16A34A', '#2563EB', '#E11D48']
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return colors[Math.abs(hash) % colors.length]
-}
-
 export default function Review() {
   const { systemId, prNumber } = useParams<{ systemId: string; prNumber: string }>()
-  const [pr, setPr] = useState<{ title: string; author: { login: string; name: string }; createdAt: string; reviewDecision: string | null; additions: number; deletions: number } | null>(null)
+  const navigate = useNavigate()
+  const profile = useProfile()
+  const [pr, setPr] = useState<PRInfo | null>(null)
+  const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [files, setFiles] = useState<string[]>([])
   const [expandedFile, setExpandedFile] = useState<string | null>(null)
   const [fileDiffs, setFileDiffs] = useState<Record<string, DiffLine[]>>({})
@@ -59,92 +57,78 @@ export default function Review() {
   const [comment, setComment] = useState('')
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
   const [action, setAction] = useState<'approve' | 'request-changes' | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const online = useOnline()
 
   const system = systemId ? getSystem(systemId) : undefined
   const repoPath = system?.folderPath || ''
   const prNum = parseInt(prNumber || '0')
+  const isAuthor = !!pr && !!profile.login && pr.author.login === profile.login
 
-  // TipTap editor for Final view
-  const editor = useEditor({
-    extensions: editorExtensions(),
-    editable: false,
-    content: '',
-  })
+  const editor = useEditor({ extensions: editorExtensions(), editable: false, content: '' })
 
   useEffect(() => {
     if (!repoPath || !prNum) return
     window.api.git.listPRs(repoPath).then(result => {
       if (result.ok) {
         const found = result.prs.find(p => p.number === prNum)
-        if (found) setPr(found)
+        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewDecision: found.reviewDecision, url: found.url, body: found.body, headRefName: found.headRefName })
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
-      if (result.ok && result.files.length > 0) {
-        setFiles(result.files)
-        setExpandedFile(result.files[0])
-      }
+      if (result.ok && result.files.length > 0) { setFiles(result.files); setExpandedFile(result.files[0]) }
+    })
+    window.api.git.latestReview(repoPath, prNum).then(result => {
+      if (result.ok && result.review) setFeedback(result.review)
     })
   }, [repoPath, prNum])
 
-  // Load diff and content when a file is expanded
+  const getViewMode = (file: string) => viewMode[file] || 'final'
+
+  // Load diff + content when a file is expanded (cached).
   useEffect(() => {
     if (!expandedFile || !repoPath || !prNum) return
-
-    // Load diff if not cached
     if (!fileDiffs[expandedFile]) {
       window.api.git.prFileDiff(repoPath, prNum, expandedFile).then(result => {
         if (result.ok) setFileDiffs(prev => ({ ...prev, [expandedFile]: result.lines }))
       })
     }
-
-    // Load file content if not cached (for Final view)
     if (!fileContents[expandedFile]) {
       window.api.git.prFileContent(repoPath, prNum, expandedFile).then(result => {
         if (result.ok) {
           setFileContents(prev => ({ ...prev, [expandedFile]: result.content }))
-          // If we're on Final view, update the editor
           if (getViewMode(expandedFile) === 'final' && editor) {
             const isMarkdown = expandedFile.endsWith('.md') || expandedFile.endsWith('.mdx')
-            if (isMarkdown) {
-              editor.commands.setContent(parseDocument(result.content).body, { contentType: 'markdown' })
-            } else {
-              editor.commands.setContent(`<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
-            }
+            if (isMarkdown) editor.commands.setContent(parseDocument(result.content).body, { contentType: 'markdown' })
+            else editor.commands.setContent(`<pre><code>${result.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
           }
         }
       })
     }
   }, [expandedFile, repoPath, prNum])
 
-  // Update TipTap when switching to Final view
+  // Update TipTap when switching to the Updated-version view.
   useEffect(() => {
     if (!expandedFile || !editor) return
     const mode = getViewMode(expandedFile)
     const content = fileContents[expandedFile]
     if (mode === 'final' && content) {
       const isMarkdown = expandedFile.endsWith('.md') || expandedFile.endsWith('.mdx')
-      if (isMarkdown) {
-        editor.commands.setContent(parseDocument(content).body, { contentType: 'markdown' })
-      } else {
-        editor.commands.setContent(`<pre><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
-      }
+      if (isMarkdown) editor.commands.setContent(parseDocument(content).body, { contentType: 'markdown' })
+      else editor.commands.setContent(`<pre><code>${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
     }
   }, [viewMode, expandedFile, fileContents, editor])
 
   const toggleFile = (file: string) => setExpandedFile(expandedFile === file ? null : file)
-  const getViewMode = (file: string) => viewMode[file] || 'final'
   const toggleViewMode = (file: string) => setViewMode(prev => ({ ...prev, [file]: prev[file] === 'changes' ? 'final' : 'changes' }))
 
   const toggleReviewed = (file: string) => {
     setReviewedFiles(prev => {
       const next = new Set(prev)
-      if (next.has(file)) {
-        next.delete(file)
-      } else {
+      if (next.has(file)) next.delete(file)
+      else {
         next.add(file)
-        // Auto-advance to next unreviewed file (or collapse if none)
         const remaining = files.find(f => f !== file && !next.has(f))
         setExpandedFile(remaining ?? null)
       }
@@ -154,7 +138,6 @@ export default function Review() {
 
   const allReviewed = files.length > 0 && files.every(f => reviewedFiles.has(f))
   const hasComment = comment.trim().length > 0
-  const intent: 'approve' | 'request-changes' = hasComment ? 'request-changes' : 'approve'
 
   const handleSubmitReview = async (reviewAction: 'approve' | 'request-changes') => {
     if (!repoPath) return
@@ -162,44 +145,90 @@ export default function Review() {
     setAction(reviewAction)
     setStatus('submitting')
     const result = await window.api.git.reviewPR(repoPath, prNum, reviewAction, comment)
-    if (result.ok) { setStatus('done') } else { alert(`Couldn't submit review: ${result.error}`); setStatus('idle') }
+    if (result.ok) setStatus('done')
+    else { alert(`Couldn't submit review: ${result.error}`); setStatus('idle') }
+  }
+
+  const makeEdits = async () => {
+    if (!pr) return
+    await window.api.git.switchBranch(repoPath, pr.headRefName)
+    navigate(`/system/${systemId}`)
+  }
+
+  const publish = async () => {
+    setPublishing(true)
+    const r = await window.api.git.mergePR(repoPath, prNum)
+    setPublishing(false)
+    if (r.ok) navigate('/inbox')
+    else alert(`Couldn't publish: ${r.error}`)
   }
 
   const fileNameOf = (path: string) => path.split('/').pop() || path
   const filePathOf = (path: string) => { const p = path.split('/'); return p.length > 1 ? p.slice(0, -1).join('/') + '/' : '' }
 
+  const badge: { variant: BadgeVariant; label: string } =
+    !isAuthor ? { variant: 'brand', label: 'Needs your review' }
+    : pr?.reviewDecision === 'APPROVED' ? { variant: 'success', label: 'Approved' }
+    : pr?.reviewDecision === 'CHANGES_REQUESTED' ? { variant: 'warning', label: 'Changes requested' }
+    : { variant: 'neutral', label: 'In review' }
+
+  const Icon = system ? (iconMap[system.icon] || BookIcon) : BookIcon
+  const chipTint = system ? softTint(primaryColor(system.gradient)) : undefined
+
   return (
     <div className="review-page">
       <div className="review-inner">
-        <Link to="/inbox" className="review-back">&#8592; Back to Inbox</Link>
+        <Link to="/inbox" className="review-back">← Inbox</Link>
 
         {status === 'done' ? (
           <div className="review-header">
             <div className="review-success">
-              {action === 'approve' ? '✓ Review approved!' : '✓ Changes requested — the author will be notified.'}
+              {action === 'approve' ? '✓ Approved — the author can publish when ready.' : '✓ Changes requested — the author will be notified.'}
             </div>
             <div style={{ textAlign: 'center', marginTop: '12px' }}>
-              <Link to="/inbox" style={{ color: '#8B2BFF', fontSize: '13px' }}>Back to Inbox</Link>
+              <Link to="/inbox" style={{ color: 'var(--amp-violet-700)', fontSize: '13px' }}>Back to Inbox</Link>
             </div>
           </div>
         ) : pr ? (
           <>
             <div className="review-header">
-              <div className="review-title">{pr.title}</div>
-              <div className="review-meta">
-                <div className="review-meta-avatar" style={{ background: avatarColor(pr.author.login) }}>
-                  {(pr.author.name || pr.author.login).charAt(0).toUpperCase()}
+              <div className="review-header-chip" style={{ background: chipTint }}><Icon size={20} /></div>
+              <div className="review-header-main">
+                <div className="review-title">{pr.title}</div>
+                <div className="review-meta">
+                  {pr.author.name || pr.author.login} · {system?.name} · {files.length} file{files.length !== 1 ? 's' : ''} · {timeAgo(pr.createdAt)}
                 </div>
-                <span>{pr.author.name || pr.author.login}</span>
-                <span>·</span>
-                <span>{system?.name}</span>
-                <span>·</span>
-                <span>{timeAgo(pr.createdAt)}</span>
-                <span>·</span>
-                <span style={{ color: '#16A34A' }}>+{pr.additions}</span>
-                <span style={{ color: '#DC2626' }}>-{pr.deletions}</span>
+              </div>
+              <Badge variant={badge.variant}>{badge.label}</Badge>
+              <div className="review-menu-wrap">
+                <button className="review-kebab" onClick={() => setMenuOpen(o => !o)} aria-label="More actions">⋯</button>
+                {menuOpen && (
+                  <>
+                    <div className="review-menu-scrim" onClick={() => setMenuOpen(false)} />
+                    <div className="review-menu">
+                      <button className="review-menu-item" onClick={() => { setMenuOpen(false); window.open(pr.url) }}>View on GitHub</button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
+
+            {isAuthor && feedback && feedback.state === 'CHANGES_REQUESTED' && feedback.body && (
+              <div className="review-feedback">
+                <div className="review-feedback-avatar">{feedback.authorName.charAt(0).toUpperCase()}</div>
+                <div>
+                  <div className="review-feedback-name">{feedback.authorName} asked for changes</div>
+                  <div className="review-feedback-text">{feedback.body}</div>
+                </div>
+              </div>
+            )}
+
+            {pr.body && (
+              <div className="review-desc">
+                <div className="review-desc-label">Description</div>
+                <p>{pr.body}</p>
+              </div>
+            )}
 
             <div className="review-files-label">{files.length} file{files.length !== 1 ? 's' : ''} changed</div>
             <div className="review-files">
@@ -207,7 +236,6 @@ export default function Review() {
                 const isExpanded = expandedFile === file
                 const diff = fileDiffs[file]
                 const mode = getViewMode(file)
-
                 return (
                   <div key={file} className={`review-file-card ${isExpanded ? 'expanded' : ''}`}>
                     <div className="review-file-header" onClick={() => toggleFile(file)}>
@@ -216,36 +244,29 @@ export default function Review() {
                         <span className="review-file-name-label">{fileNameOf(file)}</span>
                         <span className="review-file-path">{filePathOf(file)}</span>
                       </div>
-                      <button
-                        className={`review-file-reviewed ${reviewedFiles.has(file) ? 'reviewed' : ''}`}
-                        onClick={e => { e.stopPropagation(); toggleReviewed(file) }}
-                      >
-                        {reviewedFiles.has(file) ? '✓ Reviewed' : 'Mark reviewed'}
-                      </button>
+                      {isAuthor ? (
+                        <span className="review-file-readonly">Read-only</span>
+                      ) : (
+                        <button className={`review-file-reviewed ${reviewedFiles.has(file) ? 'reviewed' : ''}`} onClick={e => { e.stopPropagation(); toggleReviewed(file) }}>
+                          {reviewedFiles.has(file) ? '✓ Reviewed' : 'Mark reviewed'}
+                        </button>
+                      )}
                     </div>
-
                     {isExpanded && (
                       <div className="review-file-content">
                         <div className="review-file-toolbar">
-                          <button className={`review-view-toggle ${mode === 'final' ? 'active' : ''}`} onClick={() => { if (mode !== 'final') toggleViewMode(file) }}>Final</button>
-                          <button className={`review-view-toggle ${mode === 'changes' ? 'active' : ''}`} onClick={() => { if (mode !== 'changes') toggleViewMode(file) }}>Changes</button>
+                          <button className={`review-view-toggle ${mode === 'final' ? 'active' : ''}`} onClick={() => { if (mode !== 'final') toggleViewMode(file) }}>Updated version</button>
+                          <button className={`review-view-toggle ${mode === 'changes' ? 'active' : ''}`} onClick={() => { if (mode !== 'changes') toggleViewMode(file) }}>What changed</button>
                         </div>
-
                         {mode === 'final' ? (
                           <div className="review-tiptap-container">
-                            {fileContents[file] ? (
-                              <EditorContent editor={editor} className="review-tiptap-body" />
-                            ) : (
-                              <div style={{ padding: '20px', color: '#B5B1AC' }}>Loading...</div>
-                            )}
+                            {fileContents[file] ? <EditorContent editor={editor} className="review-tiptap-body" /> : <div style={{ padding: '20px', color: 'var(--color-text-tertiary)' }}>Loading…</div>}
                           </div>
                         ) : (
                           <div className="review-diff-doc">
-                            {!diff && <div style={{ padding: '20px', color: '#B5B1AC' }}>Loading...</div>}
+                            {!diff && <div style={{ padding: '20px', color: 'var(--color-text-tertiary)' }}>Loading…</div>}
                             {diff && diff.filter(l => l.type !== 'header').map((line, i) => (
-                              <div key={i} className={`review-diff-doc-line ${line.type}`}>
-                                {line.content || '\u00A0'}
-                              </div>
+                              <div key={i} className={`review-diff-doc-line ${line.type}`}>{line.content || ' '}</div>
                             ))}
                           </div>
                         )}
@@ -256,49 +277,46 @@ export default function Review() {
               })}
             </div>
 
-            <div className="review-comment">
-              <textarea
-                placeholder={allReviewed ? "Add a note — or describe what should change..." : "What should change? (required to request changes)"}
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-              />
-              <div className="review-comment-actions">
-                <div className="review-comment-hint">
-                  {!allReviewed
-                    ? `${reviewedFiles.size} of ${files.length} file${files.length === 1 ? '' : 's'} reviewed`
-                    : hasComment
-                      ? 'You have a note — requesting changes'
-                      : 'All files reviewed — ready to approve'}
-                </div>
-                <div className="review-comment-buttons">
-                  <button
-                    className={`review-action-btn request-changes ${intent === 'request-changes' ? 'primary' : ''}`}
-                    onClick={() => handleSubmitReview('request-changes')}
-                    disabled={!hasComment || status === 'submitting' || !online}
-                    title={!online ? "You're offline — reconnect to submit" : !hasComment ? 'Add a note above describing what should change' : ''}
-                  >
-                    {status === 'submitting' && action === 'request-changes' ? 'Submitting...' : 'Request Changes'}
-                  </button>
-                  <button
-                    className={`review-action-btn approve ${intent !== 'approve' ? 'ghost' : ''}`}
-                    onClick={() => handleSubmitReview('approve')}
-                    disabled={!allReviewed || status === 'submitting' || hasComment || !online}
-                    title={!online ? "You're offline — reconnect to submit" : !allReviewed ? 'Mark all files as reviewed first' : hasComment ? 'Clear the comment to approve, or click Request Changes' : ''}
-                  >
-                    {status === 'submitting' && action === 'approve'
-                      ? 'Approving...'
-                      : allReviewed
-                        ? '✓ Approve'
-                        : `Approve (${reviewedFiles.size}/${files.length})`}
-                  </button>
+            {isAuthor ? (
+              <div className="review-actionbar">
+                <span className="review-actionbar-note">
+                  {pr.reviewDecision === 'CHANGES_REQUESTED' ? 'Make your changes, then it goes back for another look.'
+                    : pr.reviewDecision === 'APPROVED' ? 'Approved — ready to publish.'
+                    : 'Waiting on your reviewer.'}
+                </span>
+                <div className="review-actionbar-btns">
+                  <button className="review-btn ghost" onClick={makeEdits}>Make edits</button>
+                  {pr.reviewDecision === 'APPROVED' && (
+                    <button className="review-btn publish" onClick={publish} disabled={publishing || !online}>{publishing ? 'Publishing…' : 'Publish'}</button>
+                  )}
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="review-actionbar reviewer">
+                <textarea
+                  className="review-ta"
+                  placeholder="Optional note — or say what should change if you're requesting changes…"
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                />
+                <div className="review-actionbar-row">
+                  <span className="review-actionbar-hint">{reviewedFiles.size} of {files.length} file{files.length === 1 ? '' : 's'} reviewed</span>
+                  <div className="review-actionbar-btns">
+                    <button className="review-btn req" onClick={() => handleSubmitReview('request-changes')} disabled={!hasComment || status === 'submitting' || !online}
+                      title={!online ? "You're offline — reconnect to submit" : !hasComment ? 'Add a note describing what should change' : ''}>
+                      {status === 'submitting' && action === 'request-changes' ? 'Submitting…' : 'Request changes'}
+                    </button>
+                    <button className="review-btn approve" onClick={() => handleSubmitReview('approve')} disabled={!allReviewed || status === 'submitting' || !online}
+                      title={!online ? "You're offline — reconnect to submit" : !allReviewed ? 'Mark all files as reviewed first' : ''}>
+                      {status === 'submitting' && action === 'approve' ? 'Approving…' : allReviewed ? 'Approve' : `Approve (${reviewedFiles.size}/${files.length})`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
-          <div className="review-header">
-            <div style={{ color: '#B5B1AC', textAlign: 'center', padding: '20px' }}>Loading...</div>
-          </div>
+          <div className="review-header"><div style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '20px' }}>Loading…</div></div>
         )}
       </div>
     </div>

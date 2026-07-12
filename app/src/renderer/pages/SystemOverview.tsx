@@ -98,7 +98,7 @@ export default function SystemOverview() {
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -250,6 +250,9 @@ export default function SystemOverview() {
       if (result.ok) {
         setPrStatus({
           hasPR: result.hasPR,
+          number: result.pr?.number,
+          title: result.pr?.title,
+          body: result.pr?.body,
           state: result.pr?.state,
           reviewDecision: result.pr?.reviewDecision
         })
@@ -388,15 +391,15 @@ export default function SystemOverview() {
       return
     }
 
-    // Create PR via gh CLI (TODO: replace with GitHub OAuth API before shipping)
+    // Existing PR → update body + re-request reviewers ("Publish Changes"); otherwise create.
     if (!isMainBranch) {
-      const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
-      if (prResult.ok && prResult.url) {
-        console.log('PR created:', prResult.url)
-      } else if (prResult.alreadyExists) {
-        console.log('PR already exists for this branch')
-      } else if (!prResult.ok) {
-        console.warn('PR creation failed:', prResult.error)
+      if (prStatus.hasPR && prStatus.number) {
+        const upd = await window.api.git.updatePR(rootPath, prStatus.number, title, description, reviewers)
+        if (!upd.ok) console.warn('PR update failed:', upd.error)
+      } else {
+        const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
+        if (prResult.ok && prResult.url) console.log('PR created:', prResult.url)
+        else if (!prResult.ok && !prResult.alreadyExists) console.warn('PR creation failed:', prResult.error)
       }
     }
 
@@ -873,6 +876,9 @@ export default function SystemOverview() {
         modifiedCount={gitModified.size}
         newCount={gitNew.size}
         repoPath={rootPath}
+        hasPR={prStatus.hasPR}
+        existingTitle={prStatus.title}
+        existingBody={prStatus.body}
       />
       <ConflictModal
         isOpen={conflictFiles !== null}

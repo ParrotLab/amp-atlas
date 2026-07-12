@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Button from './Button'
 import Badge, { reviewVariant, reviewLabel } from './Badge'
 import SplitButton from './SplitButton'
-import { RefreshIcon, ChevronDownIcon } from './SystemIcons'
+import { RefreshIcon, ChevronDownIcon, ArchiveIcon } from './SystemIcons'
 import './StatusBar.css'
 
 interface DraftItem {
@@ -19,7 +19,6 @@ interface StatusBarProps {
   branchName?: string
   isMain?: boolean
   activeDrafts: DraftItem[]
-  archivedDrafts: DraftItem[]
   lastSaved?: string
   lastRefreshedLabel?: string
   onSave: () => void
@@ -29,7 +28,6 @@ interface StatusBarProps {
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
-  onUnarchive?: (branch: string) => void
   onAddExistingWork?: (branch: string) => void
   repoPath?: string
   prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
@@ -49,8 +47,8 @@ function humanize(branch: string): string {
 export default function StatusBar({
   editedCount, newCount, isDirty, hasUnpublishedWork = false,
   branchName, isMain,
-  activeDrafts, archivedDrafts, lastSaved, lastRefreshedLabel,
-  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch, onUnarchive,
+  activeDrafts, lastSaved, lastRefreshedLabel,
+  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
   onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
@@ -68,11 +66,11 @@ export default function StatusBar({
     if (!showAdopt || !repoPath) return
     window.api.git.listAdoptableBranches(repoPath).then(r => {
       if (r.ok) {
-        const known = new Set([...activeDrafts, ...archivedDrafts].map(d => d.branch))
+        const known = new Set(activeDrafts.map(d => d.branch))
         setAdoptable(r.branches.filter(b => !known.has(b.name)))
       }
     })
-  }, [showAdopt, repoPath, activeDrafts, archivedDrafts])
+  }, [showAdopt, repoPath, activeDrafts])
 
   const prBadge = prOpen && (
     <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
@@ -131,22 +129,15 @@ export default function StatusBar({
                             {d.branch === branchName && prBadge}
                             {d.branch === branchName && <span className="status-dropdown-check">✓</span>}
                             {d.branch !== branchName && (
-                              <button className="status-archive-btn" title="Archive this draft" onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(d.branch); setShowDropdown(false) }}>✕</button>
+                              <button
+                                className="status-archive-btn"
+                                title="Archive this draft"
+                                aria-label="Archive this draft"
+                                onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(d.branch); setShowDropdown(false) }}
+                              >
+                                <ArchiveIcon size={14} />
+                              </button>
                             )}
-                          </div>
-                        ))}
-                      </>
-                    )}
-
-                    {archivedDrafts.length > 0 && (
-                      <>
-                        <div className="status-dropdown-divider" />
-                        <div className="status-dropdown-label">Archived</div>
-                        {archivedDrafts.map(d => (
-                          <div key={d.branch} className="status-dropdown-item" style={{ color: '#8E8B87' }}>
-                            <span className="status-dot" style={{ background: '#B5B1AC' }} />
-                            <span className="status-dropdown-item-name">Draft: {d.title}</span>
-                            <button className="status-archive-btn" title="Restore this draft" onClick={(e) => { e.stopPropagation(); onUnarchive?.(d.branch); setShowDropdown(false) }}>↩</button>
                           </div>
                         ))}
                       </>

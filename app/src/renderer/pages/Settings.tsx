@@ -38,8 +38,10 @@ export default function Settings() {
 
   const handleCopyLogs = async () => {
     const r = await window.api.diagnostics.recent()
-    if (r.ok) { await navigator.clipboard.writeText(r.text); showToast('Logs copied to clipboard.') }
-    else showToast("Couldn't read logs.")
+    if (!r.ok) { showToast("Couldn't read logs."); return }
+    if (!r.text.trim()) { showToast('No activity logged yet — the log fills as you use the app.'); return }
+    await navigator.clipboard.writeText(r.text)
+    showToast('Logs copied to clipboard.')
   }
 
   const handleRevealLogs = () => { window.api.diagnostics.reveal() }

@@ -5,6 +5,7 @@ import { iconMap, BookIcon } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
 import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
+import { logCrumb } from '../utils/breadcrumb'
 import InboxRow from '../components/InboxRow'
 import './Inbox.css'
 
@@ -105,6 +106,7 @@ export default function Inbox() {
 
   const publish = async (i: Item) => {
     setPublishing(i.number)
+    logCrumb(`published "${i.title}" (#${i.number}) from Inbox`)
     const r = await window.api.git.mergePR(i.repoPath, i.number)
     setPublishing(null)
     if (r.ok) { await load() } else { alert(`Couldn't publish: ${r.error}`) }

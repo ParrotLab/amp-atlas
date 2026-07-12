@@ -60,6 +60,7 @@ const api = {
   diagnostics: {
     recent: () => ipcRenderer.invoke('diagnostics:recent'),
     reveal: () => ipcRenderer.invoke('diagnostics:reveal'),
+    log: (message: string) => ipcRenderer.send('diagnostics:log', message),
   },
   auth: {
     startDeviceFlow: () => ipcRenderer.invoke('auth:startDeviceFlow'),

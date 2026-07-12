@@ -107,6 +107,17 @@
   background: rgba(139, 43, 255, 0.03);
 }
 
+/* Not yet available — shown for context but not selectable */
+.new-draft-option.disabled {
+  opacity: 0.55;
+  cursor: default;
+  background: #FAF8F5;
+}
+
+.new-draft-option.disabled:hover {
+  background: #FAF8F5;
+}
+
 .new-draft-radio {
   width: 18px;
   height: 18px;

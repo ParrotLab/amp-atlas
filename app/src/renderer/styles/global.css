@@ -19,16 +19,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.titlebar-drag-region {
-  -webkit-app-region: drag;
-  height: 38px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 3px; }
@@ -37,4 +27,9 @@ body {
 .no-select {
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Focus mode: collapse the app nav rail for a distraction-free writing surface */
+body.focus-mode .sidebar {
+  display: none;
 }

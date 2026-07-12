@@ -43,12 +43,14 @@ describe('draftStore', () => {
     expect(getDraft('sys1', 'draft/a')).toBeUndefined()
   })
 
-  it('re-registering an existing branch keeps it and refreshes title', () => {
-    registerDraft('sys1', 'draft/a', 'Old')
+  it('re-registering an existing branch reactivates it but keeps the original title', () => {
+    // The git-status poller re-registers with a humanized branch name; the user's
+    // original title (capitalization) must survive.
+    registerDraft('sys1', 'draft/a', 'Testing PR')
     setDraftState('sys1', 'draft/a', 'archived')
-    registerDraft('sys1', 'draft/a', 'New')
+    registerDraft('sys1', 'draft/a', 'Testing Pr')
     const d = getDraft('sys1', 'draft/a')!
-    expect(d.title).toBe('New')
+    expect(d.title).toBe('Testing PR')
     expect(d.state).toBe('active')
   })
 })

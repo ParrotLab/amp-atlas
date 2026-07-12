@@ -1,17 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
 import Modal from './Modal'
 import Button from './Button'
 import Input from './Input'
+import { editorExtensions } from '../utils/markdownSerializer'
 import './PublishModal.css'
 
 interface PublishModalProps {
   isOpen: boolean
   onClose: () => void
-  onPublish: (title: string, description: string, reviewers: string[]) => Promise<void>
+  onPublish: (title: string, description: string, reviewers: string[]) => Promise<boolean>
   draftName: string
   modifiedCount: number
   newCount: number
   repoPath: string
+  hasPR?: boolean
+  existingTitle?: string
+  existingBody?: string
 }
 
 const AVATAR_COLORS = ['#8B2BFF', '#FF7B00', '#7A3D8F', '#16A34A', '#2563EB', '#E11D48']
@@ -21,38 +26,47 @@ function avatarColor(login: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody }: PublishModalProps) {
   const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
+  const descEditor = useEditor({ extensions: editorExtensions(), editable: true, content: '' })
   const [members, setMembers] = useState<{ login: string; name: string }[]>([])
   const [draftCommits, setDraftCommits] = useState<{ hash: string; message: string; date: string }[]>([])
   const [draftFiles, setDraftFiles] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'publishing' | 'done'>('idle')
+  const [submittedPR, setSubmittedPR] = useState<{ number: number; title: string; url: string } | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
+  const prevOpen = useRef(false)
 
+  // Initialize ONLY when the modal transitions closed→open. Guarding on the
+  // open transition (not every prop change) prevents a mid-submit prop refresh
+  // — e.g. prStatus updating after "Add to review" — from resetting the form
+  // and flashing it between the publishing and success states.
   useEffect(() => {
-    if (isOpen) {
-      setTitle(draftName || '')
-      setDescription('')
-      setSelectedReviewers([])
-      setStatus('idle')
-      setDraftCommits([])
-      setDraftFiles([])
-      setTimeout(() => titleRef.current?.focus(), 100)
+    const justOpened = isOpen && !prevOpen.current
+    prevOpen.current = isOpen
+    if (!justOpened) return
 
-      // Fetch what this draft adds vs Live Version
-      if (repoPath) {
-        window.api.git.draftChanges(repoPath).then(result => {
-          if (result.ok) {
-            setDraftCommits(result.commits || [])
-            setDraftFiles(result.filesChanged || [])
-          }
-        })
-        window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
-      }
+    setTitle(hasPR ? (existingTitle || draftName || '') : (draftName || ''))
+    descEditor?.commands.setContent(hasPR ? (existingBody || '') : '', { contentType: 'markdown' })
+    setSelectedReviewers([])
+    setStatus('idle')
+    setSubmittedPR(null)
+    setDraftCommits([])
+    setDraftFiles([])
+    setTimeout(() => titleRef.current?.focus(), 100)
+
+    // Fetch what this draft adds vs Live Version
+    if (repoPath) {
+      window.api.git.draftChanges(repoPath).then(result => {
+        if (result.ok) {
+          setDraftCommits(result.commits || [])
+          setDraftFiles(result.filesChanged || [])
+        }
+      })
+      window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
     }
-  }, [isOpen, draftName, repoPath])
+  }, [isOpen, draftName, repoPath, hasPR, existingTitle, existingBody, descEditor])
 
 
   const toggleReviewer = (name: string) => {
@@ -64,9 +78,15 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
   const handlePublish = async () => {
     if (!title.trim() || status !== 'idle') return
     setStatus('publishing')
-    await onPublish(title.trim(), description.trim(), selectedReviewers)
+    const description = (descEditor?.getMarkdown() || '').trim()
+    const ok = await onPublish(title.trim(), description, selectedReviewers)
+    if (!ok) { setStatus('idle'); return }   // failure → stay on the form (error toast shown upstream)
+    // Surface the resulting PR so the user knows what to reference later.
+    try {
+      const s = await window.api.git.prStatus(repoPath)
+      if (s.ok && s.hasPR && s.pr) setSubmittedPR({ number: s.pr.number, title: s.pr.title, url: s.pr.url })
+    } catch { /* ignore */ }
     setStatus('done')
-    setTimeout(() => onClose(), 1500)
   }
 
   if (status === 'done') {
@@ -74,10 +94,18 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       <Modal isOpen={isOpen} onClose={onClose} maxWidth={520}>
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
-          <div className="publish-title">Published!</div>
+          <div className="publish-title">{hasPR ? 'Added to review' : 'Submitted for review'}</div>
           <div className="publish-subtitle">
-            Your changes are now visible to the team.
-            {selectedReviewers.length > 0 && ` ${selectedReviewers.join(' and ')} will be notified.`}
+            {selectedReviewers.length > 0 ? `${selectedReviewers.join(' and ')} will be notified.` : 'Your work is ready for a reviewer.'}
+          </div>
+          {submittedPR && (
+            <div className="publish-pr-ref">
+              <div className="publish-pr-title">{submittedPR.title}</div>
+              <button className="publish-pr-link" onClick={() => window.open(submittedPR.url)}>Review #{submittedPR.number} · View on GitHub</button>
+            </div>
+          )}
+          <div style={{ marginTop: '18px' }}>
+            <Button variant="ghost" onClick={onClose}>Done</Button>
           </div>
         </div>
       </Modal>
@@ -89,13 +117,13 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       isOpen={isOpen}
       onClose={onClose}
       maxWidth={520}
-      title="Publish Your Changes"
-      subtitle="Share your work with the team and request a review."
+      title={hasPR ? 'Add to review' : 'Submit for review'}
+      subtitle={hasPR ? 'Update the title or description, and request more reviewers.' : 'Share your work and request a review.'}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim() || status === 'publishing'} onClick={handlePublish}>
-            {status === 'publishing' ? 'Publishing…' : 'Publish & Request Review'}
+            {status === 'publishing' ? 'Submitting…' : hasPR ? 'Add to review' : 'Submit for review'}
           </Button>
         </>
       }
@@ -157,16 +185,11 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
             <div className="publish-field">
               <div className="publish-label">Description (optional)</div>
-              <textarea
-                className="publish-textarea"
-                placeholder="Add any context for your reviewers..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-              />
+              <EditorContent editor={descEditor} className="publish-editor" />
             </div>
 
             <div className="publish-field">
-              <div className="publish-label">Request review from</div>
+              <div className="publish-label">{hasPR ? 'Request additional reviewers' : 'Request review from'}</div>
               <div className="publish-reviewers">
                 {members.length === 0 && <div style={{ fontSize: '12px', color: '#B5B1AC' }}>No collaborators found for this system.</div>}
                 {members.map(member => (

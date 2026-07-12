@@ -68,7 +68,7 @@ export default function NewDraftModal({ isOpen, onClose, onCreate }: NewDraftMod
             <div className="new-draft-option-desc">Start fresh from the latest published version</div>
           </div>
         </div>
-        <div className={`new-draft-option ${startFrom === 'draft' ? 'selected' : ''}`} onClick={() => setStartFrom('draft')}>
+        <div className="new-draft-option disabled" aria-disabled="true">
           <div className="new-draft-radio"><div className="new-draft-radio-inner" /></div>
           <div>
             <div className="new-draft-option-title">

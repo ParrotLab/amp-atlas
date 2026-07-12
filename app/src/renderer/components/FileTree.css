@@ -1,37 +1,73 @@
 .file-tree {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: 4px 0 28px;
 }
 
-.file-tree-search {
-  padding: 44px 12px 8px; /* 38px titlebar + 6px spacing */
+/* Header toolbar: search + create actions, sitting where the files live.
+   The bar itself is draggable (window move); the buttons opt out with no-drag. */
+.file-tree-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 0 8px;
   flex-shrink: 0;
+  position: relative;
+  -webkit-app-region: drag;
 }
 
-.file-tree-search input {
-  width: 100%;
-  padding: 7px 10px 7px 30px;
-  background: #F5F0EB;
-  border: 1px solid #EDE8E2;
+/* Partial separator, inset to match the nav-rail dividers */
+.file-tree-toolbar::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 1px;
+  background: #EDE8E2;
+}
+
+.tree-tool-spacer { flex: 1; }
+
+.tree-tool-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
-  color: #4A4743;
-  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: #8E8B87;
+  cursor: pointer;
   font-family: inherit;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%238E8B87' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 9px center;
+  transition: background 80ms ease, color 80ms ease, transform 80ms ease;
+  -webkit-app-region: no-drag;
 }
 
-.file-tree-search input::placeholder {
-  color: #B5B1AC;
+.tree-tool-btn:hover {
+  background: #F0EBE5;
+  color: #3D3832;
 }
 
-.file-tree-search input:focus {
-  outline: none;
-  border-color: rgba(139,43,255,0.4);
-  box-shadow: 0 0 0 3px rgba(139,43,255,0.08);
-  background-color: white;
+.tree-tool-btn:active {
+  transform: scale(0.92);
+}
+
+/* Read-only (Live Version): greyed so it's clear you can't create here yet */
+.tree-tool-btn.disabled {
+  color: #D4D0CC;
+  cursor: default;
+}
+
+.tree-tool-btn.disabled:hover {
+  background: transparent;
+  color: #D4D0CC;
+}
+
+.tree-tool-btn.disabled:active {
+  transform: none;
 }
 
 .tree-item {
@@ -101,17 +137,56 @@
 .tree-item-git-dot.new { background: #16A34A; }
 .tree-item-git-dot.deleted { background: #DC2626; }
 
+.tree-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 8px 6px 14px;
+}
+
+.tree-section:first-child .tree-section-header {
+  padding-top: 8px;
+}
+
 .tree-section-label {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #B5B1AC;
-  padding: 14px 14px 6px;
 }
 
-.tree-section-label:first-child {
-  padding-top: 8px;
+.tree-section-add {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: #B5B1AC;
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0;
+  transition: opacity 80ms ease, background 80ms ease, color 80ms ease;
+}
+
+.tree-section:hover .tree-section-add { opacity: 1; }
+
+.tree-section-add:hover {
+  background: rgba(139, 43, 255, 0.08);
+  color: #8B2BFF;
+}
+
+/* Read-only: still hint on hover, but greyed to signal it's unavailable */
+.tree-section:hover .tree-section-add.disabled { opacity: 0.5; }
+
+.tree-section-add.disabled,
+.tree-section-add.disabled:hover {
+  color: #D4D0CC;
+  background: transparent;
+  cursor: default;
 }
 
 .tree-item-change-count {
@@ -130,9 +205,24 @@
   padding: 0 5px;
 }
 
-.file-tree-header { padding: 10px 12px 4px; }
-.file-tree-newwrap { position: relative; }
-.file-tree-new { width: 100%; padding: 8px; font-size: 13px; font-weight: 500; color: #fff; background: #8B2BFF; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
-.file-tree-new:hover { background: #7A1FE6; }
 .tcm-overlay { position: fixed; inset: 0; z-index: 1299; }
 .tree-empty { padding: 6px 14px 10px; font-size: 12px; color: #C4BFB9; }
+
+/* Drag-to-reorganize — Obsidian-style: tint the whole folder region, colour its name */
+.tree-item.dragging { opacity: 0.4; }
+
+.tree-node.drop-region,
+.tree-section.drop-region {
+  background: rgba(139, 43, 255, 0.09);
+  border-radius: 8px;
+}
+
+/* The target folder's own row shouldn't add a second background over the region tint */
+.tree-node.drop-region > .tree-item { background: transparent; }
+
+/* Highlight the destination folder's name (and its icon) in purple */
+.tree-node.drop-region > .tree-item .tree-item-name,
+.tree-node.drop-region > .tree-item .tree-item-icon,
+.tree-section.drop-region > .tree-section-header .tree-section-label {
+  color: #8B2BFF;
+}

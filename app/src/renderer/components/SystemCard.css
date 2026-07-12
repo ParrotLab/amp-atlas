@@ -1,69 +1,52 @@
 .system-card {
-  border-radius: 16px;
-  padding: 24px;
-  cursor: pointer;
-  transition: all 200ms ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-decoration: none;
-  color: white;
   display: block;
-  overflow: hidden;
+  background: var(--amp-white);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .system-card:hover {
+  border-color: var(--amp-violet-700);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
-.system-card-icon {
+.system-card-chip {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.2);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-}
-
-.system-card-icon svg {
-  width: 22px;
-  height: 22px;
-  stroke: white;
+  margin-bottom: var(--space-3);
+  color: var(--color-text-primary);
 }
 
 .system-card-name {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-2);
 }
 
 .system-card-meta {
-  font-size: 13px;
-  opacity: 0.85;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
 }
 
-.systems-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
+.system-card.disconnected { opacity: 0.6; }
+.system-card.disconnected:hover { opacity: 0.85; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .system-card { transition: opacity 140ms ease; }
+  .system-card:hover { transform: none; }
 }
 
-.section-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #B0ADA8;
-  margin-bottom: 14px;
-}
-
-/* Not-connected systems read as inactive: fade the card but keep its color. Still clickable to connect. */
-.system-card.disconnected {
-  opacity: 0.5;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-}
-.system-card.disconnected:hover {
-  opacity: 0.7;
+@media (prefers-contrast: more) {
+  .system-card { border-color: var(--color-border-strong); }
 }

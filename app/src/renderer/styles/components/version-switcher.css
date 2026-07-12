@@ -62,11 +62,20 @@
   cursor: pointer;
   font-family: var(--font-sans);
   transition: all 80ms ease;
-  max-width: 280px;
+  max-width: 360px;
 }
 
 .status-branch-btn:hover {
   border-color: #D4D0CC;
+  background: #F5F0EB;
+}
+
+.status-branch-btn:active {
+  transform: scale(0.985);
+}
+
+.status-branch-btn.open {
+  border-color: #C9BEDB;
   background: #F5F0EB;
 }
 
@@ -76,12 +85,29 @@
   white-space: nowrap;
 }
 
-.status-branch-chevron {
-  font-size: 15px;
-  line-height: 1;
-  color: #8E8B87;
-  margin-left: 4px;
+/* Read-only state, shown as a muted pill inside the selector itself */
+.status-readonly-pill {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #A9A49D;
+  background: #F0EBE5;
+  padding: 2px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
 }
+
+.status-branch-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: #A9A49D;
+  margin-left: 2px;
+  transition: transform 150ms ease, color 80ms ease;
+}
+
+.status-branch-btn:hover .status-branch-chevron { color: #6B6966; }
+.status-branch-btn.open .status-branch-chevron { transform: rotate(180deg); }
 
 /* Dropdown overlay */
 .status-dropdown-overlay {
@@ -188,8 +214,8 @@
 }
 
 .status-archive-btn:hover {
-  background: #FEF2F2;
-  color: #DC2626;
+  background: #F0EBE5;
+  color: #6B6966;
 }
 
 .status-dropdown-divider {

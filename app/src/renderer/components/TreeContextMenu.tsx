@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './TreeContextMenu.css'
 
 export interface ContextTarget { path: string; isDirectory: boolean; relPath: string }
@@ -17,6 +17,22 @@ interface TreeContextMenuProps {
 }
 
 export default function TreeContextMenu(p: TreeContextMenuProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: p.x, top: p.y })
+
+  // Flip the menu up/left when it would overflow the viewport (measured before paint, no flicker).
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const { width, height } = el.getBoundingClientRect()
+    const margin = 8
+    let left = p.x
+    let top = p.y
+    if (top + height > window.innerHeight - margin) top = Math.max(margin, p.y - height)
+    if (left + width > window.innerWidth - margin) left = Math.max(margin, p.x - width)
+    setPos({ left, top })
+  }, [p.x, p.y])
+
   useEffect(() => {
     const h = () => p.onClose()
     window.addEventListener('click', h)
@@ -28,7 +44,7 @@ export default function TreeContextMenu(p: TreeContextMenuProps) {
   )
 
   return (
-    <div className="tcm" style={{ left: p.x, top: p.y }} onClick={e => e.stopPropagation()}>
+    <div ref={ref} className="tcm" style={{ left: pos.left, top: pos.top }} onClick={e => e.stopPropagation()}>
       {p.target.isDirectory && item('New file here', () => p.onNewFile(p.target))}
       {p.target.isDirectory && item('New folder here', () => p.onNewFolder(p.target))}
       {item('Rename', () => p.onRename(p.target))}

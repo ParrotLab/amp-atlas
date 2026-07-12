@@ -45,7 +45,7 @@ export async function createPR(repoPath: string, title: string, body: string, re
 
 export async function listPRs(repoPath: string) {
   const { owner, repo } = await ownerRepo(repoPath)
-  const prs = await gh(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`) as Array<{ number: number; title: string; state: string; user: { login: string }; created_at: string; head: { ref: string }; html_url: string }>
+  const prs = await gh(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`) as Array<{ number: number; title: string; state: string; user: { login: string }; created_at: string; head: { ref: string }; html_url: string; body: string | null; requested_reviewers: { login: string }[] | null }>
   return Promise.all(prs.map(async p => {
     const detail = await gh(`/repos/${owner}/${repo}/pulls/${p.number}`) as { additions: number; deletions: number; changed_files: number }
     return {
@@ -53,6 +53,7 @@ export async function listPRs(repoPath: string) {
       author: { login: p.user.login, name: p.user.login }, createdAt: p.created_at,
       headRefName: p.head.ref, reviewDecision: await reviewDecision(owner, repo, p.number),
       url: p.html_url, additions: detail.additions, deletions: detail.deletions, changedFiles: detail.changed_files,
+      body: p.body || '', requestedReviewers: (p.requested_reviewers ?? []).map(u => u.login),
     }
   }))
 }
@@ -61,11 +62,11 @@ export async function prStatus(repoPath: string) {
   const branch = (await simpleGit(repoPath).status()).current
   if (!branch || branch === 'main' || branch === 'master') return { hasPR: false }
   const { owner, repo } = await ownerRepo(repoPath)
-  const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as Array<{ number: number; title: string; state: string; merged_at: string | null; html_url: string }>
+  const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as Array<{ number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null }>
   const p = list[0]
   if (!p) return { hasPR: false }
   const state = p.merged_at ? 'MERGED' : p.state.toUpperCase()
-  return { hasPR: true, pr: { number: p.number, title: p.title, url: p.html_url, state, reviewDecision: await reviewDecision(owner, repo, p.number) } }
+  return { hasPR: true, pr: { number: p.number, title: p.title, url: p.html_url, state, reviewDecision: await reviewDecision(owner, repo, p.number), body: p.body || '' } }
 }
 
 export async function checkMerged(repoPath: string) {
@@ -103,6 +104,30 @@ export async function reviewPR(repoPath: string, num: number, action: 'approve' 
   const { owner, repo } = await ownerRepo(repoPath)
   const event = action === 'approve' ? 'APPROVE' : 'REQUEST_CHANGES'
   await gh(`/repos/${owner}/${repo}/pulls/${num}/reviews`, { method: 'POST', body: JSON.stringify({ event, body: body || '' }) })
+}
+
+export async function mergePR(repoPath: string, num: number) {
+  const { owner, repo } = await ownerRepo(repoPath)
+  const pr = await gh(`/repos/${owner}/${repo}/pulls/${num}`) as { head: { ref: string } }
+  await gh(`/repos/${owner}/${repo}/pulls/${num}/merge`, { method: 'PUT', body: JSON.stringify({ merge_method: 'squash' }) })
+  // Deleting the merged branch is best-effort (may be protected or already gone).
+  try { await gh(`/repos/${owner}/${repo}/git/refs/heads/${pr.head.ref}`, { method: 'DELETE' }) } catch { /* ignore */ }
+}
+
+export async function latestReview(repoPath: string, num: number) {
+  const { owner, repo } = await ownerRepo(repoPath)
+  const reviews = await gh(`/repos/${owner}/${repo}/pulls/${num}/reviews`) as { state: string; body: string; user: { login: string } }[]
+  const decisive = [...reviews].reverse().find(r => r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED')
+  if (!decisive) return null
+  return { state: decisive.state, body: decisive.body || '', authorName: await resolveUserName(decisive.user.login) }
+}
+
+export async function updatePR(repoPath: string, num: number, title: string, body: string, reviewers: string[]) {
+  const { owner, repo } = await ownerRepo(repoPath)
+  await gh(`/repos/${owner}/${repo}/pulls/${num}`, { method: 'PATCH', body: JSON.stringify({ title, body: body || '' }) })
+  if (reviewers.length) {
+    try { await gh(`/repos/${owner}/${repo}/pulls/${num}/requested_reviewers`, { method: 'POST', body: JSON.stringify({ reviewers }) }) } catch { /* best-effort */ }
+  }
 }
 
 export async function collaborators(repoPath: string) {

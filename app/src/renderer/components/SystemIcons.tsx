@@ -65,6 +65,7 @@ export const DividerIcon = ({ size = 18 }: { size?: number }) => <I size={size}>
 export const TableIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8.5h14M3 12.5h14M8.5 4v12"/></I>
 export const CheckSquareIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3.5" y="3.5" width="13" height="13" rx="2.5"/><path d="M7 10l2 2 4-4.5"/></I>
 export const TextIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 5.5h12M4 10h12M4 14.5h8"/></I>
+export const ArchiveIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="3.5" rx="1"/><path d="M4.5 7.5v7a1 1 0 001 1h9a1 1 0 001-1v-7"/><path d="M8.5 11h3"/></I>
 export const ExpandIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5"/></I>
 export const CompressIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 8h5V3M17 8h-5V3M3 12h5v5M17 12h-5v5"/></I>
 export const PanelIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M12 4v12"/></I>

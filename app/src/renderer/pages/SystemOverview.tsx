@@ -25,7 +25,7 @@ import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
 import { setLastPull, getLastPull, relativeTime } from '../utils/pullStatus'
 import { getStoredTabs, setStoredTabs } from '../utils/tabStore'
-import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
+import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
   return branch
@@ -184,7 +184,6 @@ export default function SystemOverview() {
   }, [rootPath])
 
   const [activeDrafts, setActiveDrafts] = useState<DraftEntry[]>([])
-  const [archivedDrafts, setArchivedDrafts] = useState<DraftEntry[]>([])
   const [lastSaved, setLastSaved] = useState<string>('')
   // pending action awaiting Save/Discard resolution when the tree is dirty
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
@@ -192,7 +191,6 @@ export default function SystemOverview() {
   const refreshDrafts = useCallback(() => {
     if (!systemId) return
     setActiveDrafts(listActive(systemId))
-    setArchivedDrafts(listArchived(systemId))
   }, [systemId])
 
   useEffect(() => { refreshDrafts() }, [refreshDrafts, branch])
@@ -215,7 +213,6 @@ export default function SystemOverview() {
         registerDraft(systemId, cur, humanize(cur))
         touchDraft(systemId, cur)
         setActiveDrafts(listActive(systemId))
-        setArchivedDrafts(listArchived(systemId))
       }
 
       // Is there anything to publish? (uncommitted edits OR committed-but-unpublished work)
@@ -445,18 +442,23 @@ export default function SystemOverview() {
   const handleSwitchBranch = (branchName: string) => guarded(() => doSwitch(branchName))
 
   // Archive = mark archived in the registry (keep the branch); switch off it first if current.
-  const handleArchiveBranch = (branchName: string) => guarded(async () => {
+  const handleArchiveBranch = (branchName: string) => {
+    setConfirm({
+      title: 'Archive this draft?',
+      message: `“${humanize(branchName)}” will move out of your drafts and won’t be editable in Atlas anymore. Nothing is deleted — it stays on your computer, and you can add it back anytime from “Add existing work…”.`,
+      confirmLabel: 'Archive',
+      danger: true,
+      onConfirm: () => doArchiveBranch(branchName),
+    })
+  }
+
+  const doArchiveBranch = (branchName: string) => guarded(async () => {
     if (!systemId) return
     if (branch === branchName) await doSwitch('main')
     setDraftState(systemId, branchName, 'archived')
     refreshDrafts()
-    showToast(`Archived "${humanize(branchName)}". You can restore it anytime.`)
+    showToast(`Archived "${humanize(branchName)}".`)
   })
-
-  const handleUnarchive = (branchName: string) => {
-    if (!systemId) return
-    setDraftState(systemId, branchName, 'active'); refreshDrafts()
-  }
 
   const handleNewDraft = () => {
     setShowNewDraft(true)
@@ -802,7 +804,6 @@ export default function SystemOverview() {
           branchName={branch}
           isMain={isMainBranch}
           activeDrafts={activeDrafts}
-          archivedDrafts={archivedDrafts}
           lastSaved={lastSaved}
           lastRefreshedLabel={(() => { void refreshTick; const rel = rootPath ? relativeTime(getLastPull(rootPath), Date.now()) : ''; return rel ? `Updated ${rel}` : '' })()}
           onSave={handleSave}
@@ -812,7 +813,6 @@ export default function SystemOverview() {
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
-          onUnarchive={handleUnarchive}
           onAddExistingWork={handleAddExistingWork}
           repoPath={rootPath}
           prStatus={prStatus}

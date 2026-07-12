@@ -12,6 +12,9 @@ interface PublishModalProps {
   modifiedCount: number
   newCount: number
   repoPath: string
+  hasPR?: boolean
+  existingTitle?: string
+  existingBody?: string
 }
 
 const AVATAR_COLORS = ['#8B2BFF', '#FF7B00', '#7A3D8F', '#16A34A', '#2563EB', '#E11D48']
@@ -21,7 +24,7 @@ function avatarColor(login: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody }: PublishModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
@@ -33,8 +36,8 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
   useEffect(() => {
     if (isOpen) {
-      setTitle(draftName || '')
-      setDescription('')
+      setTitle(hasPR ? (existingTitle || draftName || '') : (draftName || ''))
+      setDescription(hasPR ? (existingBody || '') : '')
       setSelectedReviewers([])
       setStatus('idle')
       setDraftCommits([])
@@ -52,7 +55,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
         window.api.github.collaborators(repoPath).then(r => { if (r.ok) setMembers(r.collaborators) })
       }
     }
-  }, [isOpen, draftName, repoPath])
+  }, [isOpen, draftName, repoPath, hasPR, existingTitle, existingBody])
 
 
   const toggleReviewer = (name: string) => {
@@ -76,7 +79,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
           <div className="publish-title">Published!</div>
           <div className="publish-subtitle">
-            Your changes are now visible to the team.
+            {hasPR ? 'Your changes are in.' : 'Your changes are now visible to the team.'}
             {selectedReviewers.length > 0 && ` ${selectedReviewers.join(' and ')} will be notified.`}
           </div>
         </div>
@@ -89,13 +92,13 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       isOpen={isOpen}
       onClose={onClose}
       maxWidth={520}
-      title="Publish Your Changes"
-      subtitle="Share your work with the team and request a review."
+      title={hasPR ? 'Publish Changes' : 'Publish Your Changes'}
+      subtitle={hasPR ? 'Update your description and send it back for review.' : 'Share your work with the team and request a review.'}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim() || status === 'publishing'} onClick={handlePublish}>
-            {status === 'publishing' ? 'Publishing…' : 'Publish & Request Review'}
+            {status === 'publishing' ? 'Publishing…' : hasPR ? 'Publish Changes' : 'Publish & Request Review'}
           </Button>
         </>
       }

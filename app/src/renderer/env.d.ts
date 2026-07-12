@@ -128,6 +128,7 @@ interface ElectronAPI {
   diagnostics: {
     recent: () => Promise<{ ok: boolean; text: string; error?: string }>
     reveal: () => Promise<{ ok: boolean; error?: string }>
+    log: (message: string) => void
   }
   auth: {
     startDeviceFlow: () => Promise<{ ok: boolean; error?: string; deviceCode?: string; userCode?: string; verificationUri?: string; interval?: number; expiresIn?: number }>

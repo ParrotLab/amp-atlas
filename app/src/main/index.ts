@@ -11,7 +11,7 @@ import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptable
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders, listFiles } from './fsops'
 import { setupAutoUpdate } from './updater'
-import { logError, logFilePath } from './logger'
+import { logError, logInfo, logFilePath } from './logger'
 import { hasUnpublishedWork, resyncFromLive } from './resync'
 
 // Dock/menu name in dev (packaged builds get this from productName). Must run before app is ready.
@@ -256,7 +256,7 @@ ipcMain.handle('git:publish', async (_event, repoPath: string) => {
 })
 
 ipcMain.handle('git:mergePR', async (_event, repoPath: string, num: number) => {
-  try { await github.mergePR(repoPath, num); return { ok: true } }
+  try { logInfo('git', `publish (merge) PR #${num}`); await github.mergePR(repoPath, num); return { ok: true } }
   catch (error) { logError('mergePR', error); return { ok: false, error: String(error) } }
 })
 
@@ -266,12 +266,13 @@ ipcMain.handle('git:latestReview', async (_event, repoPath: string, num: number)
 })
 
 ipcMain.handle('git:updatePR', async (_event, repoPath: string, num: number, title: string, body: string, reviewers: string[]) => {
-  try { await github.updatePR(repoPath, num, title, body, reviewers); return { ok: true } }
+  try { logInfo('git', `update PR #${num}${reviewers.length ? ` · re-request: ${reviewers.join(', ')}` : ''}`); await github.updatePR(repoPath, num, title, body, reviewers); return { ok: true } }
   catch (error) { logError('updatePR', error); return { ok: false, error: String(error) } }
 })
 
 ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
   try {
+    logInfo('git', `create PR "${title}" · reviewers: ${reviewers.join(', ') || 'none'}`)
     return { ok: true, ...(await github.createPR(repoPath, title, body, reviewers)) }
   } catch (error) {
     logError('createPR', error)
@@ -401,7 +402,7 @@ ipcMain.handle('git:prFileContent', async (_event, repoPath: string, prNumber: n
 })
 
 ipcMain.handle('git:reviewPR', async (_event, repoPath: string, prNumber: number, action: 'approve' | 'request-changes', body: string) => {
-  try { await github.reviewPR(repoPath, prNumber, action, body); return { ok: true } } catch (error) { logError('review', error); return { ok: false, error: String(error) } }
+  try { logInfo('git', `review PR #${prNumber}: ${action}`); await github.reviewPR(repoPath, prNumber, action, body); return { ok: true } } catch (error) { logError('review', error); return { ok: false, error: String(error) } }
 })
 
 // --- Diagnostics (local logs, for support/screenshare debugging) ---
@@ -417,6 +418,9 @@ ipcMain.handle('diagnostics:reveal', async () => {
   try { shell.showItemInFolder(logFilePath()); return { ok: true } }
   catch (error) { return { ok: false, error: String(error) } }
 })
+
+// Activity breadcrumbs from the renderer (navigation + key actions).
+ipcMain.on('diagnostics:log', (_event, message: string) => logInfo('ui', String(message)))
 
 // --- Re-sync from GitHub (Settings-only escape hatch) ---
 
@@ -492,6 +496,7 @@ ipcMain.handle('fs:listFiles', async (_event, root: string) => {
 })
 
 app.whenReady().then(() => {
+  logInfo('app', `session started · v${app.getVersion()}`)
   electronApp.setAppUserModelId('com.parrotlabs.amp-up')
   // Packaged builds get the icon from electron-builder; in dev, brand the dock icon too.
   if (is.dev && process.platform === 'darwin' && app.dock) {

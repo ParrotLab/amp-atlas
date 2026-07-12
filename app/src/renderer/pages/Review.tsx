@@ -9,6 +9,7 @@ import { useProfile } from '../hooks/useProfile'
 import { iconMap, BookIcon } from '../components/SystemIcons'
 import { primaryColor, softTint } from '../utils/appearance'
 import Badge, { BadgeVariant } from '../components/Badge'
+import { logCrumb } from '../utils/breadcrumb'
 import './Review.css'
 
 interface DiffLine { type: string; content: string }
@@ -147,6 +148,7 @@ export default function Review() {
     if (!online) { alert("You're offline — keep editing; publishing and review need a connection."); return }
     setAction(reviewAction)
     setStatus('submitting')
+    logCrumb(`${reviewAction === 'approve' ? 'approved' : 'requested changes on'} review #${prNum}${pr ? ` ("${pr.title}")` : ''}`)
     const result = await window.api.git.reviewPR(repoPath, prNum, reviewAction, comment)
     if (result.ok) setStatus('done')
     else { alert(`Couldn't submit review: ${result.error}`); setStatus('idle') }
@@ -154,12 +156,14 @@ export default function Review() {
 
   const makeEdits = async () => {
     if (!pr) return
+    logCrumb(`opened draft to make edits (review #${prNum})`)
     await window.api.git.switchBranch(repoPath, pr.headRefName)
     navigate(`/system/${systemId}`)
   }
 
   const publish = async () => {
     setPublishing(true)
+    logCrumb(`published review #${prNum}${pr ? ` ("${pr.title}")` : ''}`)
     const r = await window.api.git.mergePR(repoPath, prNum)
     setPublishing(false)
     if (r.ok) navigate('/inbox')

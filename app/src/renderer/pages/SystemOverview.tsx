@@ -26,6 +26,7 @@ import { githubActionsAvailable } from '../utils/capabilities'
 import { setLastPull, getLastPull, relativeTime } from '../utils/pullStatus'
 import { getStoredTabs, setStoredTabs } from '../utils/tabStore'
 import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, getDrafts, DraftEntry } from '../utils/draftStore'
+import { logCrumb } from '../utils/breadcrumb'
 
 function humanize(branch: string): string {
   return branch
@@ -296,6 +297,7 @@ export default function SystemOverview() {
     const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
     const result = await window.api.git.save(rootPath, message)
     if (result.ok) {
+      logCrumb(`saved changes on "${humanize(branch)}"`)
       await fetchGitStatus()
     }
   }
@@ -404,6 +406,8 @@ export default function SystemOverview() {
     // OPEN PR → update body + re-request reviewers ("Add to review"). A closed-not-merged
     // PR is done, so a resubmit starts a fresh review (create a new PR).
     if (!isMainBranch) {
+      const open = prStatus.hasPR && prStatus.number && prStatus.state === 'OPEN'
+      logCrumb(open ? `added changes to review #${prStatus.number} ("${title}")` : `submitted "${title}" for review`)
       if (prStatus.hasPR && prStatus.number && prStatus.state === 'OPEN') {
         const upd = await window.api.git.updatePR(rootPath, prStatus.number, title, description, reviewers)
         if (!upd.ok) { showToast("Couldn't update the review — try again."); return false }
@@ -445,7 +449,9 @@ export default function SystemOverview() {
     setTabs([]); setSelectedFile(undefined); setIsDirty(false)
     const result = await window.api.git.switchBranch(rootPath, branchName)
     if (result.ok) {
-      if (systemId && branchName !== 'main' && branchName !== 'master') {
+      const onMain = branchName === 'main' || branchName === 'master'
+      logCrumb(onMain ? 'switched to Live Version' : `switched to draft "${humanize(branchName)}"`)
+      if (systemId && !onMain) {
         registerDraft(systemId, branchName, humanize(branchName)); touchDraft(systemId, branchName)
       }
       await new Promise(r => setTimeout(r, 500))
@@ -467,6 +473,7 @@ export default function SystemOverview() {
       const cur = st.ok && st.status ? st.status.current : ''
       if (!cur || cur === 'main' || cur === 'master') return
       if (connectRef.current.known.has(cur)) return   // reopening a known draft — stay on it
+      logCrumb(`connected folder on branch "${cur}" — starting on Live Version`)
       const goMain = () => doSwitch('main')
       if (st.status && !st.status.isClean) setPending(() => goMain)   // ask Save/Discard first
       else void goMain()
@@ -500,6 +507,7 @@ export default function SystemOverview() {
     if (!rootPath) return
     const result = await window.api.git.createDraft(rootPath, name)
     if (result.ok && result.branch) {
+      logCrumb(`created draft "${name.trim()}"`)
       // Store the user's original name (keeps capitalization); keep tabs open so they
       // can continue right where they were on the Live Version.
       if (systemId) registerDraft(systemId, result.branch, name.trim())
@@ -621,6 +629,7 @@ export default function SystemOverview() {
   const doDelete = async (absPath: string) => {
     const res = await window.api.fs.delete(absPath)
     if (!res.ok) { showToast(res.error || "Couldn't delete"); return }
+    logCrumb(`deleted "${absPath.split('/').pop()}"`)
     // Close tabs for the deleted file — or any file inside a deleted folder.
     const removed = (p: string) => p === absPath || p.startsWith(absPath + '/')
     const remaining = tabs.filter(t => !removed(t.path))

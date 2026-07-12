@@ -34,6 +34,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
   const [draftCommits, setDraftCommits] = useState<{ hash: string; message: string; date: string }[]>([])
   const [draftFiles, setDraftFiles] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'publishing' | 'done'>('idle')
+  const [submittedPR, setSubmittedPR] = useState<{ number: number; title: string; url: string } | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       descEditor?.commands.setContent(hasPR ? (existingBody || '') : '', { contentType: 'markdown' })
       setSelectedReviewers([])
       setStatus('idle')
+      setSubmittedPR(null)
       setDraftCommits([])
       setDraftFiles([])
       setTimeout(() => titleRef.current?.focus(), 100)
@@ -71,6 +73,11 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
     setStatus('publishing')
     const description = (descEditor?.getMarkdown() || '').trim()
     await onPublish(title.trim(), description, selectedReviewers)
+    // Surface the resulting PR so the user knows what to reference later.
+    try {
+      const s = await window.api.git.prStatus(repoPath)
+      if (s.ok && s.hasPR && s.pr) setSubmittedPR({ number: s.pr.number, title: s.pr.title, url: s.pr.url })
+    } catch { /* ignore */ }
     setStatus('done')
   }
 
@@ -79,10 +86,18 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       <Modal isOpen={isOpen} onClose={onClose} maxWidth={520}>
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
-          <div className="publish-title">Published!</div>
+          <div className="publish-title">{hasPR ? 'Added to review' : 'Submitted for review'}</div>
           <div className="publish-subtitle">
-            {hasPR ? 'Your changes are in.' : 'Your changes are now visible to the team.'}
-            {selectedReviewers.length > 0 && ` ${selectedReviewers.join(' and ')} will be notified.`}
+            {selectedReviewers.length > 0 ? `${selectedReviewers.join(' and ')} will be notified.` : 'Your work is ready for a reviewer.'}
+          </div>
+          {submittedPR && (
+            <div className="publish-pr-ref">
+              <div className="publish-pr-title">{submittedPR.title}</div>
+              <button className="publish-pr-link" onClick={() => window.open(submittedPR.url)}>Review #{submittedPR.number} · View on GitHub</button>
+            </div>
+          )}
+          <div style={{ marginTop: '18px' }}>
+            <Button variant="ghost" onClick={onClose}>Done</Button>
           </div>
         </div>
       </Modal>
@@ -94,13 +109,13 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       isOpen={isOpen}
       onClose={onClose}
       maxWidth={520}
-      title={hasPR ? 'Publish Changes' : 'Publish Your Changes'}
-      subtitle={hasPR ? 'Update your description and send it back for review.' : 'Share your work with the team and request a review.'}
+      title={hasPR ? 'Add to review' : 'Submit for review'}
+      subtitle={hasPR ? 'Update the title or description, and request more reviewers.' : 'Share your work and request a review.'}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim() || status === 'publishing'} onClick={handlePublish}>
-            {status === 'publishing' ? 'Publishing…' : hasPR ? 'Publish Changes' : 'Publish & Request Review'}
+            {status === 'publishing' ? 'Submitting…' : hasPR ? 'Add to review' : 'Submit for review'}
           </Button>
         </>
       }
@@ -166,7 +181,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
             </div>
 
             <div className="publish-field">
-              <div className="publish-label">Request review from</div>
+              <div className="publish-label">{hasPR ? 'Request additional reviewers' : 'Request review from'}</div>
               <div className="publish-reviewers">
                 {members.length === 0 && <div style={{ fontSize: '12px', color: '#B5B1AC' }}>No collaborators found for this system.</div>}
                 {members.map(member => (

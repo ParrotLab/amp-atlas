@@ -593,7 +593,13 @@ export default function SystemOverview() {
   const doDelete = async (absPath: string) => {
     const res = await window.api.fs.delete(absPath)
     if (!res.ok) { showToast(res.error || "Couldn't delete"); return }
-    if (selectedFile === absPath) { setSelectedFile(undefined); setTabs(prev => prev.filter(t => t.path !== absPath)) }
+    // Close tabs for the deleted file — or any file inside a deleted folder.
+    const removed = (p: string) => p === absPath || p.startsWith(absPath + '/')
+    const remaining = tabs.filter(t => !removed(t.path))
+    if (remaining.length !== tabs.length) setTabs(remaining)
+    if (selectedFile && removed(selectedFile)) {
+      setSelectedFile(remaining.length ? remaining[remaining.length - 1].path : undefined)
+    }
     await refreshAfterFs()
   }
 

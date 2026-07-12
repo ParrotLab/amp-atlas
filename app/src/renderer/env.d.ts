@@ -91,6 +91,7 @@ interface ElectronAPI {
     save: (repoPath: string, message: string) => Promise<{ ok: boolean; error?: string; summary?: { changes: number; insertions: number; deletions: number } }>
     publish: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
     mergePR: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; error?: string }>
+    latestReview: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; review: { state: string; body: string; authorName: string } | null; error?: string }>
     updateFromLive: (repoPath: string) => Promise<
       | { ok: true; updated: boolean }
       | { ok: false; conflicted: true; files: string[] }

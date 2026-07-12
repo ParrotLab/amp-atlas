@@ -31,6 +31,7 @@ const api = {
     save: (repoPath: string, message: string) => ipcRenderer.invoke('git:save', repoPath, message),
     publish: (repoPath: string) => ipcRenderer.invoke('git:publish', repoPath),
     mergePR: (repoPath: string, prNumber: number) => ipcRenderer.invoke('git:mergePR', repoPath, prNumber),
+    latestReview: (repoPath: string, prNumber: number) => ipcRenderer.invoke('git:latestReview', repoPath, prNumber),
     updateFromLive: (repoPath: string) => ipcRenderer.invoke('git:updateFromLive', repoPath),
     refreshMain: (repoPath: string) => ipcRenderer.invoke('git:refreshMain', repoPath),
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => ipcRenderer.invoke('git:createPR', repoPath, title, body, reviewers),

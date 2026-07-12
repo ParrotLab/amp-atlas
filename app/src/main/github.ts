@@ -62,11 +62,11 @@ export async function prStatus(repoPath: string) {
   const branch = (await simpleGit(repoPath).status()).current
   if (!branch || branch === 'main' || branch === 'master') return { hasPR: false }
   const { owner, repo } = await ownerRepo(repoPath)
-  const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as Array<{ number: number; title: string; state: string; merged_at: string | null; html_url: string }>
+  const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as Array<{ number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null }>
   const p = list[0]
   if (!p) return { hasPR: false }
   const state = p.merged_at ? 'MERGED' : p.state.toUpperCase()
-  return { hasPR: true, pr: { number: p.number, title: p.title, url: p.html_url, state, reviewDecision: await reviewDecision(owner, repo, p.number) } }
+  return { hasPR: true, pr: { number: p.number, title: p.title, url: p.html_url, state, reviewDecision: await reviewDecision(owner, repo, p.number), body: p.body || '' } }
 }
 
 export async function checkMerged(repoPath: string) {
@@ -120,6 +120,14 @@ export async function latestReview(repoPath: string, num: number) {
   const decisive = [...reviews].reverse().find(r => r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED')
   if (!decisive) return null
   return { state: decisive.state, body: decisive.body || '', authorName: await resolveUserName(decisive.user.login) }
+}
+
+export async function updatePR(repoPath: string, num: number, title: string, body: string, reviewers: string[]) {
+  const { owner, repo } = await ownerRepo(repoPath)
+  await gh(`/repos/${owner}/${repo}/pulls/${num}`, { method: 'PATCH', body: JSON.stringify({ title, body: body || '' }) })
+  if (reviewers.length) {
+    try { await gh(`/repos/${owner}/${repo}/pulls/${num}/requested_reviewers`, { method: 'POST', body: JSON.stringify({ reviewers }) }) } catch { /* best-effort */ }
+  }
 }
 
 export async function collaborators(repoPath: string) {

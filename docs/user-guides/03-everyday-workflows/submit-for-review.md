@@ -33,6 +33,9 @@ in the status bar. A window opens where you:
 - Give it a **title** and, optionally, a short **description** of what changed and why.
 - **Pick your reviewer(s)** — the teammate(s) you want to look it over.
 
+![The Submit-for-review window: change summary, title/description, and reviewer picker](../images/submit-review-modal.png)
+*Submitting: a summary of your changes, a title, and who should review.*
+
 Once you submit, your Draft lands in your reviewer's **Inbox**, under **Needs your review**.
 
 > **Note:** submitting doesn't make your work official. Your Draft stays a Draft — nothing
@@ -83,7 +86,10 @@ starts over. Your reviewer takes another look.
 
 ### If it was approved — publish it
 Go to your **Inbox → Ready to publish**, and **Publish**. That's the final step: your Draft
-becomes the new **Live Version**, and everyone on the team sees it. (Publishing is deliberate
+becomes the new **Live Version**, and everyone on the team sees it.
+
+![The Inbox "Ready to publish" tab with an approved Draft and a Publish button](../images/inbox-ready-to-publish.png)
+*Approved Drafts wait in "Ready to publish" until you publish them.* (Publishing is deliberate
 and done by you, the author — approval clears the way, but publishing is the moment it goes
 live.)
 

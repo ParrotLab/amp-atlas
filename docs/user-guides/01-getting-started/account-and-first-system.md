@@ -43,6 +43,9 @@ AMP Atlas can act on your behalf.
 3. Enter the code and approve the connection in the browser.
 4. Come back to AMP Atlas — you're connected.
 
+![Connect screen: the device code and the "Connect to GitHub" button](../images/connect-screen.png)
+*The Connect screen you see on first launch.*
+
 That's it. You won't have to do this again on this computer. (If your connection ever drops
 later, AMP Atlas won't kick you out — your local work keeps running, and you just click
 **Connect to GitHub** again in **Settings** to reconnect. There's also a **Sign out** button
@@ -59,6 +62,9 @@ Now connect AMP Atlas to a System that's already on your computer. You can start
 
 - the **Add system** tile on your dashboard, or
 - **Settings → + Add System**.
+
+![The Add-system modal with fields for name, color, icon, and folder](../images/add-system-modal.png)
+*Adding a System: give it a name, color, icon, and point it at its folder.*
 
 You'll be asked for a few things:
 
@@ -83,6 +89,9 @@ it shows up right away, ready to work with.
 
 Once you've added a System, it appears on your **dashboard** as a card, showing its status
 and how many playbooks it has. Click it to open it up and look around.
+
+![A System card on the dashboard showing its status and playbook count](../images/dashboard-card.png)
+*Your connected System, ready to open.*
 
 From here, a good next move is the [tour of the app](./app-tour.md) so you know where
 everything is — or dive straight into [editing basics](../03-everyday-workflows/editing-basics.md)

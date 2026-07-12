@@ -20,6 +20,9 @@ in two columns:
 
 Whenever you want to get back to neutral ground, the dashboard is home.
 
+![The full dashboard: a "Your systems" grid on the left and a "Jump back in" rail on the right](../images/dashboard-full.png)
+*The dashboard: your Systems, plus what you can jump back into.*
+
 ---
 
 ## The sidebar — moving around
@@ -34,6 +37,9 @@ The **sidebar** runs down the side of the app and is always there. It contains:
   reconnect).
 
 At the bottom, you'll see your own name and avatar.
+
+![The sidebar: Dashboard, Inbox, a link per System, and Settings](../images/sidebar.png)
+*The sidebar is always there for moving between areas.*
 
 > _Adding a System isn't a sidebar item — you do it from the **Add system** tile on the
 > dashboard, or from **Settings**. See [Set up your first System](./account-and-first-system.md)._
@@ -52,12 +58,21 @@ and documents that make up that System, organized in the [standard shape](../02-
 The editor is a clean, friendly writing space — no code, no clutter. There's more on it in
 [Editing basics](../03-everyday-workflows/editing-basics.md).
 
+![A System open with the file tree on the left and the editor on the right](../images/system-tree-editor.png)
+*Inside a System: the file tree and the editor.*
+
 ### Two handy shortcuts
 
 - **Quick file search (⌘K or ⌘P).** Press it anywhere in a System to pop open a search box
   and jump to any file by name — faster than hunting through the tree.
 - **The "/" menu.** While editing, type **`/`** on a new line to insert things like
   headings, lists, checklists, quotes, tables, and dividers, without any formatting know-how.
+
+![The ⌘K file-search palette listing files by name](../images/command-palette.png)
+*⌘K (or ⌘P) jumps you to any file by name.*
+
+![The "/" block menu open in the editor](../images/slash-menu.png)
+*Typing "/" inserts headings, lists, tables, and more.*
 
 ---
 
@@ -75,6 +90,9 @@ Each item has a clear next action. Reviewing is covered in
 [Reviewing someone else's work](../03-everyday-workflows/review-someones-work.md); publishing
 in [Submitting your work for review](../03-everyday-workflows/submit-for-review.md).
 
+![The Inbox with its three tabs: Needs your review, Ready to publish, Your drafts](../images/inbox-tabs.png)
+*The Inbox groups your actions into three tabs.*
+
 ---
 
 ## The status bar — where you are right now
@@ -89,6 +107,9 @@ shows:
   plus a **Save** button (which can also **Submit for review** or **Discard**).
 - **On the Live Version:** when it was last updated, plus a **Refresh** button to pull in the
   latest.
+
+![The version switcher in the status bar showing "Live Version · Read only" and a Draft](../images/status-bar-switcher.png)
+*The status bar's version switcher tells you where you are.*
 
 It's a quick glance to answer "where am I, and is everything current?" — no need to go
 digging.

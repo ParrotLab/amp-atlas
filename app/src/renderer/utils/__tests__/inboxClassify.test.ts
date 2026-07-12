@@ -30,4 +30,12 @@ describe('classifyInboxPR', () => {
     expect(() => classifyInboxPR(partial, me)).not.toThrow()
     expect(classifyInboxPR(partial, me).tab).toBeNull()
   })
+  it('my PR with a pending requested reviewer is In review even if changes were requested', () => {
+    expect(classifyInboxPR(pr({ author: { login: me }, reviewDecision: 'CHANGES_REQUESTED', requestedReviewers: ['rachel'] }), me))
+      .toEqual({ tab: 'drafts', action: 'view', badge: 'inreview' })
+  })
+  it('my fresh PR out for review is In review', () => {
+    expect(classifyInboxPR(pr({ author: { login: me }, requestedReviewers: ['rachel'] }), me))
+      .toEqual({ tab: 'drafts', action: 'view', badge: 'inreview' })
+  })
 })

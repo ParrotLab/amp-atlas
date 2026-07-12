@@ -17,11 +17,15 @@ export interface InboxClassification {
 /** Map an open PR + the current user's login to a tab, primary action, and badge. */
 export function classifyInboxPR(pr: ClassifiablePR, login: string): InboxClassification {
   const mine = pr.author.login === login
+  const pending = pr.requestedReviewers ?? []
   if (mine) {
+    // A pending requested reviewer means it's out for review again — takes precedence
+    // over a stale decision (e.g. after the author re-requests following changes).
+    if (pending.length > 0) return { tab: 'drafts', action: 'view', badge: 'inreview' }
     if (pr.reviewDecision === 'APPROVED') return { tab: 'publish', action: 'publish', badge: 'approved' }
     if (pr.reviewDecision === 'CHANGES_REQUESTED') return { tab: 'drafts', action: 'make-edits', badge: 'changes' }
     return { tab: 'drafts', action: 'view', badge: 'inreview' }
   }
-  if ((pr.requestedReviewers ?? []).includes(login)) return { tab: 'review', action: 'review', badge: null }
+  if (pending.includes(login)) return { tab: 'review', action: 'review', badge: null }
   return { tab: null, action: 'view', badge: null }
 }

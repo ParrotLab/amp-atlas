@@ -13,7 +13,8 @@ A home for one part of your team's knowledge — like a **Learning System**, a *
 System**, or a **Marketing System**. Each System owns exactly one area of your business
 and is the single source of truth for it. When you open AMP Atlas, your Systems are what
 you see. _(Think of it as the equivalent of a "vault" or "workspace" if you've used tools
-like Obsidian.)_
+like Obsidian.)_ In this version, Systems are folders your team has already set up — you
+connect to them rather than creating them in the app.
 
 ### Sub-system
 A smaller area **inside** a System — a way to divide a big System into its parts. For
@@ -38,7 +39,7 @@ grading a session or drafting a support answer.
 ### Live Version
 The **official, published, agreed-upon** version of a System. It's what everyone on your
 team sees and works from, and it's always trustworthy — because nothing becomes the Live
-Version without a review. Nobody edits the Live Version directly.
+Version without a review. Nobody edits the Live Version directly; it's read-only.
 
 ### Draft
 Your **private working copy** where you make changes safely. You can edit, save, and
@@ -48,18 +49,34 @@ Draft is ready, you submit it for review. You can have several Drafts going at o
 ### Save
 Keeping your progress inside a Draft as you work. Saving does **not** make anything
 official — it just records where you are so nothing is lost. (This is different from
-Publishing.)
+submitting for review or publishing.)
 
-### Publish
-Sending an **approved** Draft out to become the new Live Version. Once you Publish, your
-changes are official and everyone sees them. Publishing only happens after a review.
+### Submit for review
+Sending your Draft to one or more teammates to look over. This is how a Draft moves from
+"I'm working on it" to "please check this." It doesn't make anything official yet.
 
 ### Review
-The step where a teammate reads your Draft before it's published and either **approves**
-it or **requests changes**. Reviews are how your team keeps quality high and catches
-things before they become official. See
+The step where a teammate reads your Draft and either **approves** it or **requests
+changes**. Reviews are how your team keeps quality high and catches things before they
+become official. See
 [Submitting your work for review](../03-everyday-workflows/submit-for-review.md) and
 [Reviewing someone else's work](../03-everyday-workflows/review-someones-work.md).
+
+### Approve
+A reviewer's sign-off that a Draft is good to become official. **Approving is not the same
+as publishing** — it clears the Draft to be published, but someone still has to take that
+final step.
+
+### Request changes
+A reviewer's signal that something needs to be fixed before the Draft can move forward. It
+comes with a note explaining what. The author then makes the fixes in the same Draft and
+submits again.
+
+### Publish
+The final step, done by the **author** once a Draft has been approved: it makes the Draft
+the new **Live Version** for everyone. You'll find your approved Drafts ready to publish in
+your **Inbox**. (So the full path is: work in a Draft → submit for review → a teammate
+approves → you publish.)
 
 ---
 
@@ -85,11 +102,11 @@ mistaken for the real thing. Think of it as "the workbench."
 
 | Word | What it means |
 |------|----------------|
-| **Dashboard** | Your home screen in AMP Atlas — shows all your Systems and where you left off. |
-| **Inbox** | Where reviews waiting on *you* show up. |
-| **Properties** | The small labeled details attached to a document (like its status or owner). |
-| **Status** | A label on a document showing how finished it is — e.g. _draft_, _needs review_, or _approved_. |
-| **Updates available** | A signal that the Live Version has changed since you started your Draft, so you may want to pull those updates in. See [When the Live Version changes](../03-everyday-workflows/updates-and-conflicts.md). |
+| **Dashboard** | Your home screen in AMP Atlas — shows all your Systems and the work you can jump back into. |
+| **Inbox** | Your action list, in tabs: reviews waiting on you, Drafts ready to publish, and your Drafts in progress. |
+| **Properties** | The small labeled details attached to some documents (mainly playbooks) — like a playbook's status grade. |
+| **Status** _(on a playbook)_ | A quality grade on a playbook showing how proven it is — e.g. _Not Yet Graded_, _A_, _B_, _C_, _F_, or _Future_. |
+| **Refresh** | On the Live Version, a button to pull in the latest published changes. |
 
 ---
 

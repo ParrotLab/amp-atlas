@@ -19,10 +19,11 @@ interface InboxRowProps {
   onMakeEdits: () => void
 }
 
+// Match the canonical review badge variants + labels used across the app (Badge.tsx).
 const BADGE = {
   approved: { variant: 'success' as const, label: 'Approved' },
-  changes: { variant: 'warning' as const, label: 'Changes requested' },
-  inreview: { variant: 'neutral' as const, label: 'In review' },
+  changes: { variant: 'warning' as const, label: 'Changes Requested' },
+  inreview: { variant: 'brand' as const, label: 'In Review' },
 }
 
 export default function InboxRow({ to, title, meta, color, icon, action, badge, url, publishing, onPublish, onMakeEdits }: InboxRowProps) {

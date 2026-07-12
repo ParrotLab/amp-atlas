@@ -125,7 +125,7 @@ export default function Inbox() {
           {TABS.map(t => (
             <button
               key={t.key}
-              className={`inbox-tab ${tab === t.key ? 'on' : ''} ${t.key === 'publish' ? 'publish' : ''}`}
+              className={`inbox-tab ${t.key} ${tab === t.key ? 'on' : ''}`.trim()}
               onClick={() => setTab(t.key)}
             >
               {t.label} <span className="inbox-tab-count">{count(t.key)}</span>

@@ -43,6 +43,7 @@
 .inbox-tab:hover { color: var(--color-text-primary); }
 .inbox-tab.on { background: var(--amp-violet-700); color: var(--amp-white); }
 .inbox-tab.publish.on { background: var(--color-status-success); }
+.inbox-tab.drafts.on { background: #6B6966; }
 .inbox-tab-count {
   font-size: 10px; font-weight: 700;
   background: var(--color-bg-secondary); color: var(--color-text-secondary);

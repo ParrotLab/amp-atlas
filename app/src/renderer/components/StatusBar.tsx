@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Button from './Button'
 import Badge, { reviewVariant, reviewLabel } from './Badge'
 import SplitButton from './SplitButton'
-import { RefreshIcon } from './SystemIcons'
+import { RefreshIcon, ChevronDownIcon, ArchiveIcon } from './SystemIcons'
 import './StatusBar.css'
 
 interface DraftItem {
@@ -15,10 +15,10 @@ interface StatusBarProps {
   savedCount: number
   newCount: number
   isDirty: boolean
+  hasUnpublishedWork?: boolean
   branchName?: string
   isMain?: boolean
   activeDrafts: DraftItem[]
-  archivedDrafts: DraftItem[]
   lastSaved?: string
   lastRefreshedLabel?: string
   onSave: () => void
@@ -28,7 +28,6 @@ interface StatusBarProps {
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
-  onUnarchive?: (branch: string) => void
   onAddExistingWork?: (branch: string) => void
   repoPath?: string
   prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
@@ -46,30 +45,32 @@ function humanize(branch: string): string {
 }
 
 export default function StatusBar({
-  editedCount, newCount, isDirty,
+  editedCount, newCount, isDirty, hasUnpublishedWork = false,
   branchName, isMain,
-  activeDrafts, archivedDrafts, lastSaved, lastRefreshedLabel,
-  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch, onUnarchive,
+  activeDrafts, lastSaved, lastRefreshedLabel,
+  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
   onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAdopt, setShowAdopt] = useState(false)
   const [adoptable, setAdoptable] = useState<{ name: string; isRemoteOnly: boolean }[]>([])
-  const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${humanize(branchName)}` : ''
+  // Prefer the draft's original name (keeps the user's capitalization); fall back to the humanized branch.
+  const currentDraftTitle = activeDrafts.find(d => d.branch === branchName)?.title
+  const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${currentDraftTitle ?? humanize(branchName)}` : ''
   const unsaved = editedCount + newCount
   const prOpen = prStatus?.hasPR && prStatus.state === 'OPEN'
-  const publishLabel = prOpen ? 'Update Review' : 'Publish'
+  const publishLabel = prOpen ? 'Add to review' : 'Submit for review'
 
   useEffect(() => {
     if (!showAdopt || !repoPath) return
     window.api.git.listAdoptableBranches(repoPath).then(r => {
       if (r.ok) {
-        const known = new Set([...activeDrafts, ...archivedDrafts].map(d => d.branch))
+        const known = new Set(activeDrafts.map(d => d.branch))
         setAdoptable(r.branches.filter(b => !known.has(b.name)))
       }
     })
-  }, [showAdopt, repoPath, activeDrafts, archivedDrafts])
+  }, [showAdopt, repoPath, activeDrafts])
 
   const prBadge = prOpen && (
     <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
@@ -78,7 +79,7 @@ export default function StatusBar({
   const doPublish = () => { canUseGitHub ? onPublish() : onNeedGitHub?.() }
   const doDiscard = () => {
     if (!canUseGit) { onNeedGit?.(); return }
-    if (window.confirm('Discard all unsaved changes? This can’t be undone.')) onDiscard()
+    onDiscard() // confirmation handled by the in-app ConfirmModal in SystemOverview
   }
 
   return (
@@ -87,11 +88,17 @@ export default function StatusBar({
         {displayBranch && (
           <>
             <div className="status-branch-wrapper">
-              <button className="status-branch-btn" onClick={() => setShowDropdown(!showDropdown)}>
+              <button
+                className={`status-branch-btn ${showDropdown ? 'open' : ''}`}
+                onClick={() => setShowDropdown(!showDropdown)}
+                aria-haspopup="listbox"
+                aria-expanded={showDropdown}
+              >
                 <span className={`status-dot ${isMain ? 'green' : 'violet'}`} />
                 <span className="branch-label">{displayBranch}</span>
+                {isMain && <span className="status-readonly-pill">Read only</span>}
                 {prBadge}
-                <span className="status-branch-chevron">▾</span>
+                <span className="status-branch-chevron"><ChevronDownIcon size={14} /></span>
               </button>
 
               {showDropdown && (
@@ -105,6 +112,7 @@ export default function StatusBar({
                     >
                       <span className="status-dot green" />
                       Live Version
+                      <span className="status-readonly-pill">Read only</span>
                       {isMain && <span className="status-dropdown-check">✓</span>}
                     </button>
 
@@ -121,22 +129,15 @@ export default function StatusBar({
                             {d.branch === branchName && prBadge}
                             {d.branch === branchName && <span className="status-dropdown-check">✓</span>}
                             {d.branch !== branchName && (
-                              <button className="status-archive-btn" title="Archive this draft" onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(d.branch); setShowDropdown(false) }}>✕</button>
+                              <button
+                                className="status-archive-btn"
+                                title="Archive this draft"
+                                aria-label="Archive this draft"
+                                onClick={(e) => { e.stopPropagation(); onArchiveBranch?.(d.branch); setShowDropdown(false) }}
+                              >
+                                <ArchiveIcon size={14} />
+                              </button>
                             )}
-                          </div>
-                        ))}
-                      </>
-                    )}
-
-                    {archivedDrafts.length > 0 && (
-                      <>
-                        <div className="status-dropdown-divider" />
-                        <div className="status-dropdown-label">Archived</div>
-                        {archivedDrafts.map(d => (
-                          <div key={d.branch} className="status-dropdown-item" style={{ color: '#8E8B87' }}>
-                            <span className="status-dot" style={{ background: '#B5B1AC' }} />
-                            <span className="status-dropdown-item-name">Draft: {d.title}</span>
-                            <button className="status-archive-btn" title="Restore this draft" onClick={(e) => { e.stopPropagation(); onUnarchive?.(d.branch); setShowDropdown(false) }}>↩</button>
                           </div>
                         ))}
                       </>
@@ -154,7 +155,7 @@ export default function StatusBar({
                 </>
               )}
             </div>
-            <span className="status-sep">&middot;</span>
+            {!isMain && <span className="status-sep">&middot;</span>}
           </>
         )}
 
@@ -164,7 +165,6 @@ export default function StatusBar({
             {lastSaved && ` · saved ${lastSaved}`}
           </span>
         )}
-        {isMain && <span className="status-readonly-tag">Read only</span>}
       </div>
 
       {showAdopt && (
@@ -193,8 +193,10 @@ export default function StatusBar({
         ) : (
           <SplitButton
             label="Save"
+            kbd="⌘S"
             title="Save (⌘S)"
             disabled={canUseGit && !isDirty}
+            menuDisabled={canUseGit && !isDirty && !hasUnpublishedWork}
             onClick={() => canUseGit ? onSave() : onNeedGit?.()}
             items={[
               { label: publishLabel, kbd: '⌘↵', onClick: doPublish },

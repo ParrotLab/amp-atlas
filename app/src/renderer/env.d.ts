@@ -78,6 +78,7 @@ interface ElectronAPI {
     move: (from: string, to: string) => Promise<{ ok: boolean; error?: string }>
     delete: (path: string) => Promise<{ ok: boolean; error?: string }>
     listFolders: (root: string) => Promise<{ ok: boolean; error?: string; folders: string[] }>
+    listFiles: (root: string) => Promise<{ ok: boolean; error?: string; files: string[] }>
   }
   dialog: {
     selectFolder: () => Promise<{ ok: boolean; canceled?: boolean; path?: string }>
@@ -89,6 +90,9 @@ interface ElectronAPI {
     draftChanges: (repoPath: string) => Promise<{ ok: boolean; error?: string; commits?: GitLogEntry[]; filesChanged?: string[] }>
     save: (repoPath: string, message: string) => Promise<{ ok: boolean; error?: string; summary?: { changes: number; insertions: number; deletions: number } }>
     publish: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
+    mergePR: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; error?: string }>
+    latestReview: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; review: { state: string; body: string; authorName: string } | null; error?: string }>
+    updatePR: (repoPath: string, prNumber: number, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string }>
     updateFromLive: (repoPath: string) => Promise<
       | { ok: true; updated: boolean }
       | { ok: false; conflicted: true; files: string[] }
@@ -101,9 +105,9 @@ interface ElectronAPI {
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     deleteBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
-    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null } }>
+    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null; body: string } }>
     checkMerged: (repoPath: string) => Promise<{ ok: boolean; merged: boolean; branch?: string }>
-    listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewDecision: string | null; url: string; additions: number; deletions: number; changedFiles: number }> }>
+    listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewDecision: string | null; url: string; additions: number; deletions: number; changedFiles: number; body: string; requestedReviewers: string[] }> }>
     prDiff: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; files: string[]; error?: string }>
     fileWatchers: (repoPath: string, relPath: string) => Promise<{
       ok: boolean
@@ -124,6 +128,7 @@ interface ElectronAPI {
   diagnostics: {
     recent: () => Promise<{ ok: boolean; text: string; error?: string }>
     reveal: () => Promise<{ ok: boolean; error?: string }>
+    log: (message: string) => void
   }
   auth: {
     startDeviceFlow: () => Promise<{ ok: boolean; error?: string; deviceCode?: string; userCode?: string; verificationUri?: string; interval?: number; expiresIn?: number }>

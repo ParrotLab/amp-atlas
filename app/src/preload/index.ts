@@ -13,6 +13,7 @@ const api = {
     move: (from: string, to: string) => ipcRenderer.invoke('fs:move', from, to),
     delete: (path: string) => ipcRenderer.invoke('fs:delete', path),
     listFolders: (root: string) => ipcRenderer.invoke('fs:listFolders', root),
+    listFiles: (root: string) => ipcRenderer.invoke('fs:listFiles', root),
     onChanged: (cb: (paths: string[]) => void) => {
       const handler = (_e: unknown, paths: string[]) => cb(paths)
       ipcRenderer.on('fs:changed', handler)
@@ -29,6 +30,9 @@ const api = {
     draftChanges: (repoPath: string) => ipcRenderer.invoke('git:draftChanges', repoPath),
     save: (repoPath: string, message: string) => ipcRenderer.invoke('git:save', repoPath, message),
     publish: (repoPath: string) => ipcRenderer.invoke('git:publish', repoPath),
+    mergePR: (repoPath: string, prNumber: number) => ipcRenderer.invoke('git:mergePR', repoPath, prNumber),
+    latestReview: (repoPath: string, prNumber: number) => ipcRenderer.invoke('git:latestReview', repoPath, prNumber),
+    updatePR: (repoPath: string, prNumber: number, title: string, body: string, reviewers: string[]) => ipcRenderer.invoke('git:updatePR', repoPath, prNumber, title, body, reviewers),
     updateFromLive: (repoPath: string) => ipcRenderer.invoke('git:updateFromLive', repoPath),
     refreshMain: (repoPath: string) => ipcRenderer.invoke('git:refreshMain', repoPath),
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => ipcRenderer.invoke('git:createPR', repoPath, title, body, reviewers),
@@ -56,6 +60,7 @@ const api = {
   diagnostics: {
     recent: () => ipcRenderer.invoke('diagnostics:recent'),
     reveal: () => ipcRenderer.invoke('diagnostics:reveal'),
+    log: (message: string) => ipcRenderer.send('diagnostics:log', message),
   },
   auth: {
     startDeviceFlow: () => ipcRenderer.invoke('auth:startDeviceFlow'),

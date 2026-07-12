@@ -7,6 +7,12 @@ export function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+/** Folder name from a user-entered name — preserved as typed (Obsidian-style),
+ *  only stripping path separators so it stays a single folder. */
+export function folderName(name: string): string {
+  return name.trim().replace(/[/\\]+/g, '-')
+}
+
 function render(tpl: string, name: string, date: string): string {
   return tpl.split('{{name}}').join(name).split('{{date}}').join(date)
 }
@@ -15,13 +21,13 @@ export interface ScaffoldFile { path: string; content: string }
 
 /** Map a scaffold type + name to system-relative files with rendered content. */
 export function scaffoldFor(type: ScaffoldType, name: string, date: string): { folder: string; files: ScaffoldFile[] } {
-  const slug = slugify(name)
+  const dir = folderName(name)
   if (type === 'playbook') {
-    const folder = `.claude/skills/${slug}`
+    const folder = `.claude/skills/${dir}`
     return { folder, files: [{ path: `${folder}/SKILL.md`, content: render(TEMPLATES.playbookSkill, name, date) }] }
   }
   if (type === 'project') {
-    const folder = `work/${slug}`
+    const folder = `work/${dir}`
     return {
       folder,
       files: [
@@ -30,7 +36,7 @@ export function scaffoldFor(type: ScaffoldType, name: string, date: string): { f
       ],
     }
   }
-  const folder = `reference/${slug}`
+  const folder = `reference/${dir}`
   return { folder, files: [{ path: `${folder}/README.md`, content: render(TEMPLATES.subsystemReadme, name, date) }] }
 }
 

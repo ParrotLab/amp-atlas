@@ -30,18 +30,22 @@
 }
 
 .properties-close {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   color: #B5B1AC;
-  font-size: 16px;
   border: none;
   background: none;
   font-family: inherit;
+  transition: background 80ms ease, color 80ms ease, transform 80ms ease;
+}
+
+.properties-close:active {
+  transform: scale(0.92);
 }
 
 .properties-close:hover {
@@ -88,7 +92,7 @@
 
 .prop-select {
   width: 100%;
-  padding: 7px 10px;
+  padding: 7px 32px 7px 10px;
   font-size: 13px;
   font-family: inherit;
   border: 1px solid #EDE8E2;
@@ -96,7 +100,19 @@
   background: #FEFCF9;
   color: #4A4743;
   cursor: pointer;
-  appearance: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  /* Matches ChevronDownIcon (20x20 viewBox, stroke 1.5, #A9A49D) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%23A9A49D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 8l4.5 4.5L14.5 8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+
+.prop-select:focus {
+  outline: none;
+  border-color: rgba(139,43,255,0.4);
+  box-shadow: 0 0 0 3px rgba(139,43,255,0.08);
+  background-color: white;
 }
 
 .prop-tag {

@@ -1,32 +1,68 @@
-.tab-bar {
+/* -----------------------------------------------------------------------
+   EDITOR TOOLBAR
+   Top chrome of the editor: tabs (left) + action icons (right).
+   The 38px top padding keeps content clear of the macOS traffic lights.
+   ----------------------------------------------------------------------- */
+.editor-toolbar {
   display: flex;
   align-items: flex-end;
+  gap: 8px;
   background: #FEFCF9;
   border-bottom: 1px solid #EDE8E2;
-  min-height: 40px;
-  padding: 38px 4px 0;
+  height: 48px;
+  padding: 0 8px;
   flex-shrink: 0;
+  /* Draggable bar; tabs opt out with no-drag so they stay clickable */
+  -webkit-app-region: drag;
+}
+
+.editor-tabs {
+  display: flex;
+  align-items: flex-end;
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
 }
 
-.tab-bar::-webkit-scrollbar { display: none; }
+.editor-tabs::-webkit-scrollbar { display: none; }
 
 .tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  height: 38px;
+  padding: 0 12px 0 14px;
   font-size: 13px;
   color: #8E8B87;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: all 80ms ease;
+  transition: color 80ms ease, background 80ms ease;
   white-space: nowrap;
   flex-shrink: 0;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  -webkit-app-region: no-drag;
 }
+
+/* Drag-to-reorder */
+.tab.dragging { opacity: 0.4; }
+.tab.drop-before::before,
+.tab.drop-after::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  background: #8B2BFF;
+  border-radius: 1px;
+  z-index: 2;
+}
+.tab.drop-before::before { left: -1px; }
+.tab.drop-after::after { right: -1px; }
 
 .tab:hover {
   color: #4A4743;
+  background: #F5F0EB;
 }
 
 .tab.active {
@@ -34,6 +70,23 @@
   font-weight: 500;
   border-bottom-color: #8B2BFF;
 }
+
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.tab-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Same git-status colors as the file tree, so one dot color = one meaning */
+.tab-dirty.modified { background: #C47A0A; }
+.tab-dirty.new { background: #16A34A; }
 
 .tab-close {
   width: 16px;
@@ -51,9 +104,11 @@
   background: none;
   padding: 0;
   font-family: inherit;
+  flex-shrink: 0;
 }
 
-.tab:hover .tab-close {
+.tab:hover .tab-close,
+.tab.active .tab-close {
   opacity: 0.6;
 }
 
@@ -61,58 +116,4 @@
   opacity: 1 !important;
   background: #F0EBE5;
   color: #6B6966;
-}
-
-.tab-bar-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  flex-shrink: 0;
-}
-
-.draft-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  background: white;
-  border: 1px solid #EDE8E2;
-  border-radius: 8px;
-  cursor: pointer;
-  color: #1a1a2e;
-  font-family: inherit;
-}
-
-.draft-selector:hover {
-  border-color: #D4D0CC;
-}
-
-.draft-selector .draft-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
-.draft-selector .draft-dot.main { background: #16A34A; }
-.draft-selector .draft-dot.draft { background: #8B2BFF; }
-
-.draft-status-pill {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 9px;
-  border-radius: 6px;
-}
-
-.draft-status-pill.editing {
-  background: rgba(196, 122, 10, 0.1);
-  color: #C47A0A;
-}
-
-.draft-status-pill.clean {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16A34A;
 }

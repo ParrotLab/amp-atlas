@@ -15,12 +15,18 @@ import { useToast } from '../components/Toast'
 import ConfirmSwitchModal from '../components/ConfirmSwitchModal'
 import NewItemModal from '../components/NewItemModal'
 import MoveToModal from '../components/MoveToModal'
+import CommandPalette from '../components/CommandPalette'
+import ConfirmModal from '../components/ConfirmModal'
+import { FolderIcon, CloseIcon } from '../components/SystemIcons'
+import { detectFileType, getSchema } from '../utils/frontmatterSchemas'
+import { displayName } from '../utils/naming'
 import { scaffoldFor, ScaffoldType } from '../utils/scaffold'
 import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
 import { setLastPull, getLastPull, relativeTime } from '../utils/pullStatus'
 import { getStoredTabs, setStoredTabs } from '../utils/tabStore'
-import { listActive, listArchived, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
+import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, getDrafts, DraftEntry } from '../utils/draftStore'
+import { logCrumb } from '../utils/breadcrumb'
 
 function humanize(branch: string): string {
   return branch
@@ -63,16 +69,16 @@ export default function SystemOverview() {
   }, [])
 
   const handleTabClose = useCallback((path: string) => {
-    setTabs(prev => {
-      const updated = prev.filter(t => t.path !== path)
-      if (path === selectedFile) {
-        const idx = prev.findIndex(t => t.path === path)
-        const next = updated[Math.min(idx, updated.length - 1)]
-        setSelectedFile(next?.path)
-      }
-      return updated
-    })
-  }, [selectedFile])
+    // Compute the next selection OUTSIDE the setTabs updater — calling setSelectedFile
+    // inside a state updater is a side-effect that makes the selection (and the file
+    // content that follows it) update unreliably.
+    const idx = tabs.findIndex(t => t.path === path)
+    const updated = tabs.filter(t => t.path !== path)
+    setTabs(updated)
+    if (path === selectedFile) {
+      setSelectedFile(updated.length ? updated[Math.min(idx, updated.length - 1)]?.path : undefined)
+    }
+  }, [tabs, selectedFile])
 
   const [gitModified, setGitModified] = useState<Set<string>>(new Set())
   const [gitNew, setGitNew] = useState<Set<string>>(new Set())
@@ -80,33 +86,49 @@ export default function SystemOverview() {
   const [branch, setBranch] = useState<string>('')
   const [isMainBranch, setIsMainBranch] = useState(true)
   const [isDirty, setIsDirty] = useState(false)
-  const [ahead, setAhead] = useState(0)
+  const [hasUnpublished, setHasUnpublished] = useState(false)
   const [propsOpen, setPropsOpen] = useState(false)
   const [treeKey, setTreeKey] = useState(0) // Force file tree remount on branch switch
   const [showNewDraft, setShowNewDraft] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
+  const [showPalette, setShowPalette] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [confirm, setConfirm] = useState<null | {
+    title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void | Promise<void>
+  }>(null)
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; state?: string; reviewDecision?: string | null }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewDecision?: string | null }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
   const { data, body, status: writeStatus, updateBody, updateData, externalPrompt, resolveExternal, reconcile } = useFileDocument(selectedFile, isMainBranch)
+  // Only files with a known schema (e.g. playbooks) have editable properties.
+  const hasProperties = !!getSchema(selectedFile ? detectFileType(selectedFile, data) : null)
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, connected: true })
   const online = useOnline()
   const [treeRefresh, setTreeRefresh] = useState(0)
   type Pending =
     | { kind: 'scaffold'; type: ScaffoldType }
-    | { kind: 'file'; parentAbs: string }
-    | { kind: 'folder'; parentAbs: string }
+    | { kind: 'file'; parentAbs?: string }      // parentAbs omitted (toolbar) => user must pick a location
+    | { kind: 'folder'; parentAbs?: string }
     | { kind: 'rename'; absPath: string; isDir: boolean }
   const [pendingCreate, setPendingCreate] = useState<Pending | null>(null)
+  const [createFolders, setCreateFolders] = useState<string[]>([])
   const [moveSource, setMoveSource] = useState<string | null>(null)
   const [moveFolders, setMoveFolders] = useState<string[]>([])
   const canEdit = !isMainBranch && caps.isGitRepo
   const changeHandler = useRef<(paths: string[]) => void>(() => {})
+
+  // Snapshot the drafts known for this system BEFORE the git-status poll auto-registers
+  // the current branch. Lets the connect-check tell a fresh external branch (offer the
+  // Live Version) from a draft the user is intentionally reopening (leave them on it).
+  const connectRef = useRef<{ systemId?: string; known: Set<string>; checked: boolean }>({ known: new Set(), checked: false })
+  if (systemId && connectRef.current.systemId !== systemId) {
+    connectRef.current = { systemId, known: new Set(getDrafts(systemId).map(d => d.branch)), checked: false }
+  }
 
   useEffect(() => {
     if (!rootPath) return
@@ -138,6 +160,8 @@ export default function SystemOverview() {
       const saved = getStoredTabs(systemId)
       const valid: { path: string; name: string }[] = []
       for (const t of saved?.tabs ?? []) {
+        // Only restore tabs that belong to THIS system's folder (guards against stale cross-system tabs).
+        if (!t.path.startsWith(rootPath + '/')) continue
         const s = await window.api.fs.stat(t.path)
         if (s.ok) valid.push(t)
       }
@@ -171,7 +195,6 @@ export default function SystemOverview() {
   }, [rootPath])
 
   const [activeDrafts, setActiveDrafts] = useState<DraftEntry[]>([])
-  const [archivedDrafts, setArchivedDrafts] = useState<DraftEntry[]>([])
   const [lastSaved, setLastSaved] = useState<string>('')
   // pending action awaiting Save/Discard resolution when the tree is dirty
   const [pending, setPending] = useState<null | (() => Promise<void>)>(null)
@@ -179,7 +202,6 @@ export default function SystemOverview() {
   const refreshDrafts = useCallback(() => {
     if (!systemId) return
     setActiveDrafts(listActive(systemId))
-    setArchivedDrafts(listArchived(systemId))
   }, [systemId])
 
   useEffect(() => { refreshDrafts() }, [refreshDrafts, branch])
@@ -194,15 +216,22 @@ export default function SystemOverview() {
       setBranch(result.status.current || 'main')
       setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
       setIsDirty(!result.status.isClean)
-      setAhead(result.status.ahead)
 
       // Register the current draft so it appears in the app's draft list.
       const cur = result.status.current
-      if (systemId && cur && cur !== 'main' && cur !== 'master') {
+      const onMain = cur === 'main' || cur === 'master'
+      if (systemId && cur && !onMain) {
         registerDraft(systemId, cur, humanize(cur))
         touchDraft(systemId, cur)
         setActiveDrafts(listActive(systemId))
-        setArchivedDrafts(listArchived(systemId))
+      }
+
+      // Is there anything to publish? (uncommitted edits OR committed-but-unpublished work)
+      if (onMain) {
+        setHasUnpublished(false)
+      } else {
+        const w = await window.api.git.hasUnpublishedWork(rootPath)
+        setHasUnpublished(w.ok ? w.hasWork : true)
       }
     }
 
@@ -222,22 +251,23 @@ export default function SystemOverview() {
     return () => clearInterval(interval)
   }, [fetchGitStatus])
 
-  useEffect(() => {
-    if (!rootPath || !branch || isMainBranch) {
-      setPrStatus({ hasPR: false })
-      return
+  // Re-fetchable so we can refresh it right after submitting for review (not just on branch change / reload).
+  const fetchPrStatus = useCallback(async () => {
+    if (!rootPath || !branch || isMainBranch) { setPrStatus({ hasPR: false }); return }
+    const result = await window.api.git.prStatus(rootPath)
+    if (result.ok) {
+      setPrStatus({
+        hasPR: result.hasPR,
+        number: result.pr?.number,
+        title: result.pr?.title,
+        body: result.pr?.body,
+        state: result.pr?.state,
+        reviewDecision: result.pr?.reviewDecision
+      })
     }
-    // Check PR status when branch changes
-    window.api.git.prStatus(rootPath).then(result => {
-      if (result.ok) {
-        setPrStatus({
-          hasPR: result.hasPR,
-          state: result.pr?.state,
-          reviewDecision: result.pr?.reviewDecision
-        })
-      }
-    })
   }, [rootPath, branch, isMainBranch])
+
+  useEffect(() => { void fetchPrStatus() }, [fetchPrStatus])
 
   useEffect(() => {
     if (!rootPath || isMainBranch) return
@@ -267,16 +297,14 @@ export default function SystemOverview() {
     const message = `Updated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
     const result = await window.api.git.save(rootPath, message)
     if (result.ok) {
+      logCrumb(`saved changes on "${humanize(branch)}"`)
       await fetchGitStatus()
     }
   }
 
   // "Discard" = revert all uncommitted changes on disk
-  const handleDiscard = async () => {
+  const doDiscard = async () => {
     if (!rootPath) return
-    const confirmed = window.confirm('Discard all edits since your last save? This cannot be undone.')
-    if (!confirmed) return
-
     const result = await window.api.git.discard(rootPath)
     if (result.ok) {
       // Reload current file to show reverted content
@@ -290,10 +318,46 @@ export default function SystemOverview() {
     }
   }
 
+  const handleDiscard = () => {
+    if (!rootPath) return
+    setConfirm({
+      title: 'Discard all changes?',
+      message: 'This reverts every edit since your last save. This can’t be undone.',
+      confirmLabel: 'Discard changes',
+      danger: true,
+      onConfirm: doDiscard,
+    })
+  }
+
   // "Publish" = open modal to commit + push to GitHub + create PR
   const handlePublish = () => {
     setShowPublish(true)
   }
+
+  // Focus mode: dim the app chrome (nav rail) via a body class; Esc leaves.
+  useEffect(() => {
+    document.body.classList.toggle('focus-mode', focusMode)
+    return () => document.body.classList.remove('focus-mode')
+  }, [focusMode])
+
+  useEffect(() => {
+    if (!focusMode) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFocusMode(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [focusMode])
+
+  // ⌘K / ⌘P toggles the file search palette (works on Live Version and drafts).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && ['k', 'p'].includes(e.key.toLowerCase())) {
+        e.preventDefault()
+        if (rootPath) setShowPalette(v => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [rootPath])
 
   // Keyboard shortcuts on a draft: ⌘S save, ⌘↵ publish.
   useEffect(() => {
@@ -311,8 +375,10 @@ export default function SystemOverview() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isMainBranch, isDirty, caps.isGitRepo])
 
-  const handleDoPublish = async (title: string, description: string, reviewers: string[]) => {
-    if (!rootPath) return
+  // Returns true on success; false (with a toast) on failure, so the modal knows
+  // whether to show the success state or return to the form.
+  const handleDoPublish = async (title: string, description: string, reviewers: string[]): Promise<boolean> => {
+    if (!rootPath) return false
 
     // First commit any uncommitted changes
     const status = await window.api.git.status(rootPath)
@@ -324,32 +390,36 @@ export default function SystemOverview() {
     const update = await window.api.git.updateFromLive(rootPath)
     if (!update.ok) {
       setConflictFiles(update.files)   // real overlap — escalate calmly, do not push
-      return
+      return false
     }
 
     // Push to GitHub
     const pushResult = await window.api.git.publish(rootPath)
     if (!pushResult.ok) {
-      showToast("Couldn't publish — check your connection.", {
+      showToast("Couldn't submit — check your connection.", {
         label: 'Retry',
         onClick: () => { void handleDoPublish(title, description, reviewers) },
       })
-      return
+      return false
     }
 
-    // Create PR via gh CLI (TODO: replace with GitHub OAuth API before shipping)
+    // OPEN PR → update body + re-request reviewers ("Add to review"). A closed-not-merged
+    // PR is done, so a resubmit starts a fresh review (create a new PR).
     if (!isMainBranch) {
-      const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
-      if (prResult.ok && prResult.url) {
-        console.log('PR created:', prResult.url)
-      } else if (prResult.alreadyExists) {
-        console.log('PR already exists for this branch')
-      } else if (!prResult.ok) {
-        console.warn('PR creation failed:', prResult.error)
+      const open = prStatus.hasPR && prStatus.number && prStatus.state === 'OPEN'
+      logCrumb(open ? `added changes to review #${prStatus.number} ("${title}")` : `submitted "${title}" for review`)
+      if (prStatus.hasPR && prStatus.number && prStatus.state === 'OPEN') {
+        const upd = await window.api.git.updatePR(rootPath, prStatus.number, title, description, reviewers)
+        if (!upd.ok) { showToast("Couldn't update the review — try again."); return false }
+      } else {
+        const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
+        if (!prResult.ok && !prResult.alreadyExists) { showToast("Couldn't submit for review — try again."); return false }
       }
     }
 
     await fetchGitStatus()
+    await fetchPrStatus()   // reflect the new/updated PR (In Review tag) without a reload
+    return true
   }
 
   // Run `action`, but if there are unsaved edits in a draft, prompt Save/Discard first.
@@ -379,7 +449,9 @@ export default function SystemOverview() {
     setTabs([]); setSelectedFile(undefined); setIsDirty(false)
     const result = await window.api.git.switchBranch(rootPath, branchName)
     if (result.ok) {
-      if (systemId && branchName !== 'main' && branchName !== 'master') {
+      const onMain = branchName === 'main' || branchName === 'master'
+      logCrumb(onMain ? 'switched to Live Version' : `switched to draft "${humanize(branchName)}"`)
+      if (systemId && !onMain) {
         registerDraft(systemId, branchName, humanize(branchName)); touchDraft(systemId, branchName)
       }
       await new Promise(r => setTimeout(r, 500))
@@ -390,19 +462,42 @@ export default function SystemOverview() {
   }
   const handleSwitchBranch = (branchName: string) => guarded(() => doSwitch(branchName))
 
+  // On connecting a system whose folder is on a non-main branch (not an app-managed draft),
+  // start from the Live Version. Uses a fresh status (not the stale mount-time React state)
+  // and the existing Save/Discard prompt when there are unsaved edits.
+  useEffect(() => {
+    if (!rootPath || !systemId || connectRef.current.checked) return
+    connectRef.current.checked = true
+    ;(async () => {
+      const st = await window.api.git.status(rootPath)
+      const cur = st.ok && st.status ? st.status.current : ''
+      if (!cur || cur === 'main' || cur === 'master') return
+      if (connectRef.current.known.has(cur)) return   // reopening a known draft — stay on it
+      logCrumb(`connected folder on branch "${cur}" — starting on Live Version`)
+      const goMain = () => doSwitch('main')
+      if (st.status && !st.status.isClean) setPending(() => goMain)   // ask Save/Discard first
+      else void goMain()
+    })()
+  }, [rootPath, systemId])
+
   // Archive = mark archived in the registry (keep the branch); switch off it first if current.
-  const handleArchiveBranch = (branchName: string) => guarded(async () => {
+  const handleArchiveBranch = (branchName: string) => {
+    setConfirm({
+      title: 'Archive this draft?',
+      message: `“${humanize(branchName)}” will move out of your drafts and won’t be editable in Atlas anymore. Nothing is deleted — it stays on your computer, and you can add it back anytime from “Add existing work…”.`,
+      confirmLabel: 'Archive',
+      danger: true,
+      onConfirm: () => doArchiveBranch(branchName),
+    })
+  }
+
+  const doArchiveBranch = (branchName: string) => guarded(async () => {
     if (!systemId) return
     if (branch === branchName) await doSwitch('main')
     setDraftState(systemId, branchName, 'archived')
     refreshDrafts()
-    showToast(`Archived "${humanize(branchName)}". You can restore it anytime.`)
+    showToast(`Archived "${humanize(branchName)}".`)
   })
-
-  const handleUnarchive = (branchName: string) => {
-    if (!systemId) return
-    setDraftState(systemId, branchName, 'active'); refreshDrafts()
-  }
 
   const handleNewDraft = () => {
     setShowNewDraft(true)
@@ -412,8 +507,11 @@ export default function SystemOverview() {
     if (!rootPath) return
     const result = await window.api.git.createDraft(rootPath, name)
     if (result.ok && result.branch) {
-      if (systemId) registerDraft(systemId, result.branch, humanize(result.branch))
-      setTabs([]); setSelectedFile(undefined); setIsDirty(false); setTreeKey(k => k + 1)
+      logCrumb(`created draft "${name.trim()}"`)
+      // Store the user's original name (keeps capitalization); keep tabs open so they
+      // can continue right where they were on the Live Version.
+      if (systemId) registerDraft(systemId, result.branch, name.trim())
+      setIsDirty(false); setTreeKey(k => k + 1)
       await fetchGitStatus(); refreshDrafts()
       if (result.pulled === false) showToast("Draft created from your local Live Version (offline — couldn't pull latest).")
     } else {
@@ -438,11 +536,31 @@ export default function SystemOverview() {
 
   const refreshAfterFs = async () => { setTreeRefresh(t => t + 1); await fetchGitStatus() }
 
-  const doCreateConfirm = async (name: string) => {
+  // Keep open tabs (and the active file) pointed at a renamed/moved path — incl. descendants
+  // of a moved/renamed folder — so tabs update in place instead of going stale or duplicating.
+  const repointTabs = (from: string, to: string) => {
+    const remap = (path: string): string | null =>
+      path === from ? to : path.startsWith(from + '/') ? to + path.slice(from.length) : null
+    setTabs(prev => prev.map(t => {
+      const np = remap(t.path)
+      return np ? { ...t, path: np, name: np.split('/').pop() || t.name } : t
+    }))
+    setSelectedFile(cur => (cur ? remap(cur) ?? cur : cur))
+  }
+
+  // Load the destination-folder list whenever a file/folder create modal opens.
+  useEffect(() => {
+    if (!rootPath || (pendingCreate?.kind !== 'file' && pendingCreate?.kind !== 'folder')) return
+    window.api.fs.listFolders(rootPath).then(r => setCreateFolders(r.ok ? r.folders : []))
+  }, [pendingCreate, rootPath])
+
+  const doCreateConfirm = async (name: string, folderRel: string) => {
     const p = pendingCreate
     setPendingCreate(null)
     if (!p) return
     const date = new Date().toISOString().slice(0, 10)
+    // Destination folder chosen in the modal (empty => system root).
+    const destAbs = folderRel ? `${rootPath}/${folderRel}` : rootPath
     if (p.kind === 'scaffold') {
       const { files } = scaffoldFor(p.type, name, date)
       let firstAbs = ''
@@ -455,20 +573,25 @@ export default function SystemOverview() {
       await refreshAfterFs()
       if (firstAbs) handleFileSelect(firstAbs)
     } else if (p.kind === 'file') {
-      const trimmed = name.trim()
-      const abs = `${p.parentAbs}/${trimmed.endsWith('.md') ? trimmed : `${trimmed}.md`}`
+      // Exact name (spaces + capitalization preserved); .md is added on disk, hidden from the user.
+      const base = name.trim().replace(/\.md$/i, '')
+      const abs = `${destAbs}/${base}.md`
       const res = await window.api.fs.createFile(abs, '')
       if (!res.ok) { showToast(res.error || "Couldn't create"); return }
       await refreshAfterFs(); handleFileSelect(abs)
     } else if (p.kind === 'folder') {
-      const res = await window.api.fs.mkdir(`${p.parentAbs}/${name.trim()}`)
+      const res = await window.api.fs.mkdir(`${destAbs}/${name.trim()}`)
       if (!res.ok) { showToast(res.error || "Couldn't create"); return }
       await refreshAfterFs()
     } else { // rename
       const parent = p.absPath.replace(/\/[^/]+$/, '')
-      const res = await window.api.fs.move(p.absPath, `${parent}/${name.trim()}`)
+      const clean = name.trim()
+      const newBase = p.isDir ? clean : `${clean.replace(/\.md$/i, '')}.md`
+      const oldAbs = p.absPath
+      const newAbs = `${parent}/${newBase}`
+      const res = await window.api.fs.move(oldAbs, newAbs)
       if (!res.ok) { showToast(res.error || "Couldn't rename"); return }
-      if (selectedFile === p.absPath) setSelectedFile(undefined)
+      repointTabs(oldAbs, newAbs)
       await refreshAfterFs()
     }
   }
@@ -483,9 +606,10 @@ export default function SystemOverview() {
       return
     }
     const name = fromAbs.split('/').pop()
-    const res = await window.api.fs.move(fromAbs, `${toFolderAbs}/${name}`)
+    const to = `${toFolderAbs}/${name}`
+    const res = await window.api.fs.move(fromAbs, to)
     if (!res.ok) { showToast(res.error || "Couldn't move"); return }
-    if (selectedFile === fromAbs) setSelectedFile(undefined)
+    repointTabs(fromAbs, to)
     await refreshAfterFs()
   }
 
@@ -494,31 +618,88 @@ export default function SystemOverview() {
     setMoveSource(null)
     if (!from) return
     const name = from.split('/').pop()
-    const res = await window.api.fs.move(from, `${rootPath}/${folderRel}/${name}`)
+    const destDir = folderRel ? `${rootPath}/${folderRel}` : rootPath
+    const to = `${destDir}/${name}`
+    const res = await window.api.fs.move(from, to)
     if (!res.ok) { showToast(res.error || "Couldn't move"); return }
-    if (selectedFile === from) setSelectedFile(undefined)
+    repointTabs(from, to)
     await refreshAfterFs()
   }
 
-  const handleDelete = async (absPath: string) => {
-    const name = absPath.split('/').pop()
-    if (!window.confirm(`Delete "${name}"? This can't be undone (until you Discard the draft).`)) return
+  const doDelete = async (absPath: string) => {
     const res = await window.api.fs.delete(absPath)
     if (!res.ok) { showToast(res.error || "Couldn't delete"); return }
-    if (selectedFile === absPath) { setSelectedFile(undefined); setTabs(prev => prev.filter(t => t.path !== absPath)) }
+    logCrumb(`deleted "${absPath.split('/').pop()}"`)
+    // Close tabs for the deleted file — or any file inside a deleted folder.
+    const removed = (p: string) => p === absPath || p.startsWith(absPath + '/')
+    const remaining = tabs.filter(t => !removed(t.path))
+    if (remaining.length !== tabs.length) setTabs(remaining)
+    if (selectedFile && removed(selectedFile)) {
+      setSelectedFile(remaining.length ? remaining[remaining.length - 1].path : undefined)
+    }
     await refreshAfterFs()
   }
 
-  const modalConfig = (() => {
+  // Inline title rename (the editable title in the viewer) → rename the open file on disk.
+  const handleRenameTitle = async (newName: string) => {
+    if (!selectedFile) return
+    const clean = newName.trim().replace(/\.md$/i, '')
+    if (!clean) return
+    const parent = selectedFile.replace(/\/[^/]+$/, '')
+    const newAbs = `${parent}/${clean}.md`
+    if (newAbs === selectedFile) return
+    const res = await window.api.fs.move(selectedFile, newAbs)
+    if (!res.ok) { showToast(res.error || "Couldn't rename"); return }
+    repointTabs(selectedFile, newAbs)
+    await refreshAfterFs()
+  }
+
+  const handleDelete = (absPath: string) => {
+    const name = displayName(absPath.split('/').pop() || '')
+    setConfirm({
+      title: 'Delete this item?',
+      message: `“${name}” will be removed. You can still get it back by discarding the draft.`,
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: () => doDelete(absPath),
+    })
+  }
+
+  const modalConfig: null | {
+    title: string
+    previewFor: (name: string, folder: string) => string
+    initialName: string
+    confirmLabel?: string
+    location?: { folders: string[]; initial?: string }
+  } = (() => {
     const p = pendingCreate
     if (!p) return null
+    // Absolute parent → system-relative folder ('' = root). undefined => no default (force a pick).
+    const relOf = (abs?: string) => abs === undefined ? undefined : abs === rootPath ? '' : abs.replace(rootPath + '/', '')
     if (p.kind === 'scaffold') {
       const labels = { playbook: 'New Playbook', project: 'New Project', 'sub-system': 'New Sub-system' }
-      return { title: labels[p.type], previewFor: (slug: string) => `will create ${scaffoldFor(p.type, slug, '').folder}/`, initialName: '' }
+      return { title: labels[p.type], previewFor: (name: string) => `will create ${scaffoldFor(p.type, name, '').folder}/`, initialName: '' }
     }
-    if (p.kind === 'file') return { title: 'New File', previewFor: (slug: string) => `${p.parentAbs.replace(rootPath + '/', '')}/${slug}.md`, initialName: '' }
-    if (p.kind === 'folder') return { title: 'New Folder', previewFor: (slug: string) => `${p.parentAbs.replace(rootPath + '/', '')}/${slug}`, initialName: '' }
-    return { title: 'Rename', previewFor: (slug: string) => slug, initialName: p.absPath.split('/').pop() || '' }
+    if (p.kind === 'file') return {
+      title: 'New File',
+      previewFor: (name: string, folder: string) => `${folder ? folder + ' / ' : ''}${name}`,
+      initialName: '',
+      location: { folders: createFolders, initial: relOf(p.parentAbs) },
+    }
+    if (p.kind === 'folder') return {
+      title: 'New Folder',
+      previewFor: (name: string, folder: string) => `${folder ? folder + ' / ' : ''}${name}`,
+      initialName: '',
+      location: { folders: createFolders, initial: relOf(p.parentAbs) },
+    }
+    // Rename — show/edit the name without the .md extension (files); folders keep their exact name.
+    const base = p.absPath.split('/').pop() || ''
+    return {
+      title: 'Rename',
+      previewFor: (name: string) => name,
+      initialName: p.isDir ? base : displayName(base),
+      confirmLabel: 'Rename',
+    }
   })()
 
   // React to external file changes: refresh status + tree, reconcile the open file.
@@ -545,7 +726,7 @@ export default function SystemOverview() {
         minWidth: '250px',
         background: '#FEFCF9',
         borderRight: '1px solid #EDE8E2',
-        display: 'flex',
+        display: focusMode ? 'none' : 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
@@ -560,6 +741,7 @@ export default function SystemOverview() {
             gitDeleted={gitDeleted}
             refreshToken={treeRefresh}
             canEdit={canEdit}
+            onSearch={() => setShowPalette(true)}
             onNeedDraft={() => showToast('Create a draft to make changes.')}
             onNewScaffold={(type) => setPendingCreate({ kind: 'scaffold', type })}
             onNewFile={(parentAbs) => setPendingCreate({ kind: 'file', parentAbs })}
@@ -570,7 +752,7 @@ export default function SystemOverview() {
           />
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', marginBottom: '16px', opacity: 0.3 }}>📁</div>
+            <div style={{ marginBottom: '16px', color: '#C4BFB9' }}><FolderIcon size={40} /></div>
             <div style={{ fontSize: '14px', fontWeight: 500, color: '#1a1a2e', marginBottom: '6px' }}>No folder connected</div>
             <div style={{ fontSize: '12px', color: '#B5B1AC', marginBottom: '20px', lineHeight: 1.5 }}>Select a folder on your computer to connect this system.</div>
             <button
@@ -595,7 +777,25 @@ export default function SystemOverview() {
 
       {/* Main content: tabs + viewer */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F5F0EB', overflow: 'hidden', minWidth: 0 }}>
-        <TabBar tabs={tabs} activeTab={selectedFile} onTabClick={handleTabClick} onTabClose={handleTabClose} />
+        <TabBar
+          tabs={tabs.map(t => {
+            const rel = t.path.replace(rootPath + '/', '')
+            const status = gitModified.has(rel) ? 'modified' as const : gitNew.has(rel) ? 'new' as const : undefined
+            return { ...t, status }
+          })}
+          activeTab={selectedFile}
+          onTabClick={handleTabClick}
+          onTabClose={handleTabClose}
+          onReorder={(fromPath, toIndex) => setTabs(prev => {
+            const fromIdx = prev.findIndex(t => t.path === fromPath)
+            if (fromIdx < 0) return prev
+            const arr = [...prev]
+            const [moved] = arr.splice(fromIdx, 1)
+            const adj = fromIdx < toIndex ? toIndex - 1 : toIndex
+            arr.splice(Math.max(0, Math.min(adj, arr.length)), 0, moved)
+            return arr
+          })}
+        />
         {isMainBranch && isDirty && !moveBannerDismissed && (
           <div style={{ position: 'relative', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 40px 10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5 }}>
             You've edited the Live Version directly —{' '}
@@ -609,9 +809,9 @@ export default function SystemOverview() {
             <button
               onClick={() => setMoveBannerDismissed(true)}
               aria-label="Dismiss"
-              style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', color: '#b99b5f', cursor: 'pointer', fontSize: '14px', lineHeight: 1, fontFamily: 'inherit' }}
+              style={{ position: 'absolute', top: '50%', right: 8, transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, background: 'none', border: 'none', color: '#b99b5f', cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              ✕
+              <CloseIcon size={14} />
             </button>
           </div>
         )}
@@ -625,12 +825,16 @@ export default function SystemOverview() {
             writeStatus={writeStatus}
             onToggleProperties={() => setPropsOpen(!propsOpen)}
             propsOpen={propsOpen}
+            hasProperties={hasProperties}
+            focusMode={focusMode}
+            onToggleFocus={() => setFocusMode(v => !v)}
+            onRenameTitle={handleRenameTitle}
             externalPrompt={externalPrompt}
             onReloadExternal={() => resolveExternal('reload')}
             onKeepExternal={() => resolveExternal('keep')}
           />
           <PropertiesPanel
-            isOpen={propsOpen}
+            isOpen={propsOpen && !focusMode && hasProperties}
             onClose={() => setPropsOpen(false)}
             filePath={selectedFile}
             data={data}
@@ -643,10 +847,10 @@ export default function SystemOverview() {
           savedCount={0}
           newCount={gitNew.size}
           isDirty={isDirty}
+          hasUnpublishedWork={hasUnpublished}
           branchName={branch}
           isMain={isMainBranch}
           activeDrafts={activeDrafts}
-          archivedDrafts={archivedDrafts}
           lastSaved={lastSaved}
           lastRefreshedLabel={(() => { void refreshTick; const rel = rootPath ? relativeTime(getLastPull(rootPath), Date.now()) : ''; return rel ? `Updated ${rel}` : '' })()}
           onSave={handleSave}
@@ -656,7 +860,6 @@ export default function SystemOverview() {
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
-          onUnarchive={handleUnarchive}
           onAddExistingWork={handleAddExistingWork}
           repoPath={rootPath}
           prStatus={prStatus}
@@ -680,14 +883,21 @@ export default function SystemOverview() {
           title={modalConfig.title}
           previewFor={modalConfig.previewFor}
           initialName={modalConfig.initialName}
+          confirmLabel={modalConfig.confirmLabel}
+          location={modalConfig.location}
           onConfirm={doCreateConfirm}
           onCancel={() => setPendingCreate(null)}
         />
       )}
       <MoveToModal
         isOpen={!!moveSource}
-        itemName={moveSource ? (moveSource.split('/').pop() || '') : ''}
+        itemName={moveSource ? displayName(moveSource.split('/').pop() || '') : ''}
         folders={moveFolders}
+        currentFolder={(() => {
+          if (!moveSource) return ''
+          const parent = moveSource.replace(/\/[^/]+$/, '')
+          return parent === rootPath ? '' : parent.replace(rootPath + '/', '')
+        })()}
         onPick={handlePickMoveDest}
         onCancel={() => setMoveSource(null)}
       />
@@ -710,6 +920,9 @@ export default function SystemOverview() {
         modifiedCount={gitModified.size}
         newCount={gitNew.size}
         repoPath={rootPath}
+        hasPR={prStatus.hasPR}
+        existingTitle={prStatus.title}
+        existingBody={prStatus.body}
       />
       <ConflictModal
         isOpen={conflictFiles !== null}
@@ -720,6 +933,21 @@ export default function SystemOverview() {
         isOpen={showMoveChanges}
         onClose={() => setShowMoveChanges(false)}
         onMove={handleMoveChangesToDraft}
+      />
+      <CommandPalette
+        isOpen={showPalette}
+        rootPath={rootPath}
+        onClose={() => setShowPalette(false)}
+        onSelect={handleFileSelect}
+      />
+      <ConfirmModal
+        isOpen={!!confirm}
+        title={confirm?.title ?? ''}
+        message={confirm?.message ?? ''}
+        confirmLabel={confirm?.confirmLabel}
+        danger={confirm?.danger}
+        onConfirm={() => { const c = confirm; setConfirm(null); void c?.onConfirm() }}
+        onCancel={() => setConfirm(null)}
       />
     </div>
   )

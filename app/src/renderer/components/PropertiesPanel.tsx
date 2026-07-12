@@ -1,5 +1,6 @@
 import './PropertiesPanel.css'
 import { detectFileType, getSchema, FieldSchema } from '../utils/frontmatterSchemas'
+import { CloseIcon } from './SystemIcons'
 
 interface PropertiesPanelProps {
   isOpen: boolean
@@ -48,7 +49,7 @@ export default function PropertiesPanel({ isOpen, onClose, filePath, data, onCha
     <div className={`properties-panel ${isOpen ? 'open' : ''}`}>
       <div className="properties-header">
         <span className="properties-title">Properties</span>
-        <button className="properties-close" onClick={onClose}>&times;</button>
+        <button className="properties-close" onClick={onClose} aria-label="Close properties"><CloseIcon size={16} /></button>
       </div>
       <div className="properties-body">
         {schema ? (

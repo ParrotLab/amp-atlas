@@ -6,15 +6,36 @@
   flex-shrink: 0;
   border-right: 1px solid #EDE8E2;
   padding-top: 38px;
+  /* The nav rail is the window's drag handle (traffic lights live up here) */
+  -webkit-app-region: drag;
+}
+
+/* Interactive regions opt out of dragging so clicks register */
+.sidebar-nav,
+.sidebar-bottom {
+  -webkit-app-region: no-drag;
 }
 
 .sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 22px 20px 16px;
   border-bottom: 1px solid #EDE8E2;
 }
 
-.sidebar-logo img {
+.sidebar-logo-mark {
   height: 26px;
+  width: auto;
+  display: block;
+}
+
+.sidebar-logo-text {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.025em;
+  color: #1a1a2e;
 }
 
 .sidebar-nav {

@@ -114,6 +114,14 @@ export async function mergePR(repoPath: string, num: number) {
   try { await gh(`/repos/${owner}/${repo}/git/refs/heads/${pr.head.ref}`, { method: 'DELETE' }) } catch { /* ignore */ }
 }
 
+export async function latestReview(repoPath: string, num: number) {
+  const { owner, repo } = await ownerRepo(repoPath)
+  const reviews = await gh(`/repos/${owner}/${repo}/pulls/${num}/reviews`) as { state: string; body: string; user: { login: string } }[]
+  const decisive = [...reviews].reverse().find(r => r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED')
+  if (!decisive) return null
+  return { state: decisive.state, body: decisive.body || '', authorName: await resolveUserName(decisive.user.login) }
+}
+
 export async function collaborators(repoPath: string) {
   const { owner, repo } = await ownerRepo(repoPath)
   const cols = await gh(`/repos/${owner}/${repo}/collaborators?per_page=100`) as { login: string }[]

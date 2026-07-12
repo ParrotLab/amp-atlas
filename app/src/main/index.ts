@@ -260,6 +260,11 @@ ipcMain.handle('git:mergePR', async (_event, repoPath: string, num: number) => {
   catch (error) { logError('mergePR', error); return { ok: false, error: String(error) } }
 })
 
+ipcMain.handle('git:latestReview', async (_event, repoPath: string, num: number) => {
+  try { return { ok: true, review: await github.latestReview(repoPath, num) } }
+  catch (error) { logError('latestReview', error); return { ok: false, review: null, error: String(error) } }
+})
+
 ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, body: string, reviewers: string[]) => {
   try {
     return { ok: true, ...(await github.createPR(repoPath, title, body, reviewers)) }

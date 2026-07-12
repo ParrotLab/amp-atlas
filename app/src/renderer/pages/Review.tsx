@@ -58,6 +58,7 @@ export default function Review() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'done'>('idle')
   const [action, setAction] = useState<'approve' | 'request-changes' | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [descOpen, setDescOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const online = useOnline()
 
@@ -83,7 +84,7 @@ export default function Review() {
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
-      if (result.ok && result.files.length > 0) { setFiles(result.files); setExpandedFile(result.files[0]) }
+      if (result.ok && result.files.length > 0) setFiles(result.files)   // no auto-open; the user opens files themselves
     })
     window.api.git.latestReview(repoPath, prNum).then(result => {
       if (result.ok && result.review) setFeedback(result.review)
@@ -133,11 +134,7 @@ export default function Review() {
     setReviewedFiles(prev => {
       const next = new Set(prev)
       if (next.has(file)) next.delete(file)
-      else {
-        next.add(file)
-        const remaining = files.find(f => f !== file && !next.has(f))
-        setExpandedFile(remaining ?? null)
-      }
+      else next.add(file)
       return next
     })
   }
@@ -231,8 +228,11 @@ export default function Review() {
 
             {pr.body && (
               <div className="review-desc">
-                <div className="review-desc-label">Description</div>
-                <EditorContent editor={descEditor} className="review-tiptap-body review-desc-body" />
+                <button className="review-desc-head" onClick={() => setDescOpen(o => !o)}>
+                  <span className="review-desc-chev"><Chevron open={descOpen} /></span>
+                  <span className="review-desc-label">Description</span>
+                </button>
+                {descOpen && <EditorContent editor={descEditor} className="review-tiptap-body review-desc-body" />}
               </div>
             )}
 

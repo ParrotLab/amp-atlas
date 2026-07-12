@@ -60,7 +60,7 @@ export default function StatusBar({
   const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${currentDraftTitle ?? humanize(branchName)}` : ''
   const unsaved = editedCount + newCount
   const prOpen = prStatus?.hasPR && prStatus.state === 'OPEN'
-  const publishLabel = prOpen ? 'Update Review' : 'Publish'
+  const publishLabel = prOpen ? 'Add to review' : 'Submit for review'
 
   useEffect(() => {
     if (!showAdopt || !repoPath) return

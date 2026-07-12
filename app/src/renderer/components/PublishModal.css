@@ -104,6 +104,46 @@
   color: #B5B1AC;
 }
 
+/* Markdown description — editable TipTap editor */
+.publish-editor {
+  border: 1px solid #EDE8E2;
+  border-radius: 12px;
+  background: #FEFCF9;
+  transition: all 100ms ease;
+}
+.publish-editor:focus-within {
+  border-color: rgba(139, 43, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(139, 43, 255, 0.1);
+  background: white;
+}
+.publish-editor .tiptap {
+  outline: none;
+  padding: 10px 14px;
+  min-height: 90px;
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1a1a2e;
+}
+.publish-editor .tiptap > *:first-child { margin-top: 0; }
+.publish-editor .tiptap p { margin: 0 0 8px; }
+.publish-editor .tiptap h1 { font-size: 18px; font-weight: 700; margin: 12px 0 6px; }
+.publish-editor .tiptap h2 { font-size: 16px; font-weight: 700; margin: 12px 0 6px; }
+.publish-editor .tiptap h3 { font-size: 14px; font-weight: 600; margin: 10px 0 4px; }
+.publish-editor .tiptap ul, .publish-editor .tiptap ol { padding-left: 22px; margin: 0 0 8px; }
+.publish-editor .tiptap li { margin-bottom: 3px; }
+.publish-editor .tiptap strong { font-weight: 600; }
+.publish-editor .tiptap code { background: #F0EBE5; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+.publish-editor .tiptap blockquote { border-left: 3px solid #D4CFC8; padding-left: 10px; color: #6B6966; margin: 8px 0; }
+.publish-editor .tiptap p.is-editor-empty:first-child::before {
+  content: 'Add any context for your reviewers…';
+  color: #B5B1AC;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 .publish-reviewers {
   display: flex;
   flex-wrap: wrap;

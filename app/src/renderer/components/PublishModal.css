@@ -1,3 +1,30 @@
+/* Submitted-for-review PR reference (done state) */
+.publish-pr-ref {
+  margin: 18px auto 0;
+  max-width: 360px;
+  background: #FEFCF9;
+  border: 1px solid #EDE8E2;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.publish-pr-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.publish-pr-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8B2BFF;
+  cursor: pointer;
+}
+.publish-pr-link:hover { text-decoration: underline; }
+
 .publish-overlay {
   position: fixed;
   inset: 0;

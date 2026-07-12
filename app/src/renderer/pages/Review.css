@@ -42,8 +42,11 @@
 .review-feedback-text { font-size: var(--text-sm); color: #7A5A2E; line-height: 1.5; margin-top: 2px; white-space: pre-wrap; }
 
 /* Optional description */
-.review-desc { background: var(--amp-white); border: 1px solid var(--color-border-default); border-radius: 12px; padding: 14px 18px 4px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-.review-desc-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--amp-gray-400); margin-bottom: 6px; }
+.review-desc { background: var(--amp-white); border: 1px solid var(--color-border-default); border-radius: 12px; padding: 8px 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.review-desc-head { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; padding: 5px 0; cursor: pointer; font-family: inherit; }
+.review-desc-chev { color: var(--amp-gray-400); display: inline-flex; align-items: center; }
+.review-desc-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--amp-gray-400); }
+.review-desc-body { padding-bottom: 8px; }
 .review-desc-body .tiptap { font-size: var(--text-sm); }
 
 .review-files-label { font-size: var(--text-xs); font-weight: var(--font-weight-semibold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--amp-gray-400); margin-bottom: 10px; }
@@ -54,8 +57,8 @@
 .review-file-header:hover { background: var(--color-bg-tertiary); }
 .review-file-chevron { display: inline-flex; align-items: center; justify-content: center; color: var(--amp-gray-400); width: 22px; height: 22px; flex-shrink: 0; }
 .review-file-info { display: flex; gap: 8px; align-items: baseline; min-width: 0; flex: 1; }
-.review-file-name-label { font-size: var(--text-sm); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
-.review-file-path { font-size: var(--text-xs); color: var(--amp-gray-400); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.review-file-name-label { font-size: var(--text-sm); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); white-space: nowrap; flex: none; }
+.review-file-path { font-size: var(--text-xs); color: var(--amp-gray-400); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
 .review-file-readonly { font-size: var(--text-xs); color: var(--amp-gray-400); flex-shrink: 0; }
 .review-file-reviewed { padding: 5px 12px; font-size: var(--text-xs); font-weight: var(--font-weight-medium); border-radius: 999px; border: 1px solid var(--color-border-default); background: var(--amp-white); color: var(--color-text-secondary); cursor: pointer; font-family: inherit; flex-shrink: 0; }
 .review-file-reviewed:hover { background: var(--color-bg-tertiary); }

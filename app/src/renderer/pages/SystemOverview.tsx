@@ -25,7 +25,7 @@ import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
 import { setLastPull, getLastPull, relativeTime } from '../utils/pullStatus'
 import { getStoredTabs, setStoredTabs } from '../utils/tabStore'
-import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, DraftEntry } from '../utils/draftStore'
+import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, getDrafts, DraftEntry } from '../utils/draftStore'
 
 function humanize(branch: string): string {
   return branch
@@ -120,6 +120,14 @@ export default function SystemOverview() {
   const [moveFolders, setMoveFolders] = useState<string[]>([])
   const canEdit = !isMainBranch && caps.isGitRepo
   const changeHandler = useRef<(paths: string[]) => void>(() => {})
+
+  // Snapshot the drafts known for this system BEFORE the git-status poll auto-registers
+  // the current branch. Lets the connect-check tell a fresh external branch (offer the
+  // Live Version) from a draft the user is intentionally reopening (leave them on it).
+  const connectRef = useRef<{ systemId?: string; known: Set<string>; checked: boolean }>({ known: new Set(), checked: false })
+  if (systemId && connectRef.current.systemId !== systemId) {
+    connectRef.current = { systemId, known: new Set(getDrafts(systemId).map(d => d.branch)), checked: false }
+  }
 
   useEffect(() => {
     if (!rootPath) return
@@ -447,6 +455,23 @@ export default function SystemOverview() {
     }
   }
   const handleSwitchBranch = (branchName: string) => guarded(() => doSwitch(branchName))
+
+  // On connecting a system whose folder is on a non-main branch (not an app-managed draft),
+  // start from the Live Version. Uses a fresh status (not the stale mount-time React state)
+  // and the existing Save/Discard prompt when there are unsaved edits.
+  useEffect(() => {
+    if (!rootPath || !systemId || connectRef.current.checked) return
+    connectRef.current.checked = true
+    ;(async () => {
+      const st = await window.api.git.status(rootPath)
+      const cur = st.ok && st.status ? st.status.current : ''
+      if (!cur || cur === 'main' || cur === 'master') return
+      if (connectRef.current.known.has(cur)) return   // reopening a known draft — stay on it
+      const goMain = () => doSwitch('main')
+      if (st.status && !st.status.isClean) setPending(() => goMain)   // ask Save/Discard first
+      else void goMain()
+    })()
+  }, [rootPath, systemId])
 
   // Archive = mark archived in the registry (keep the branch); switch off it first if current.
   const handleArchiveBranch = (branchName: string) => {

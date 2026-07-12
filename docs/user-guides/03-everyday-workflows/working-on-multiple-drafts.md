@@ -43,26 +43,21 @@ the Draft you meant to be in.
 
 ---
 
-## Starting a Draft from another Draft
+## Where a new Draft starts from
 
-Usually a new Draft starts from the **Live Version** — a clean, official starting point.
-That's the right choice most of the time.
+Every new Draft starts from the **Live Version** — a clean, official starting point. This is
+deliberate: it keeps each Draft simple and predictable, always built on top of the latest
+approved work.
 
-But sometimes you want to build on work that **isn't published yet**. Maybe a teammate has a
-Draft in progress and you need to add to it, or you want to try an alternative approach on
-top of what you've already started. In that case, you can start a **new Draft from an
-existing Draft** instead of from the Live Version — so your new Draft begins with that
-in-progress work already included.
+If you have edits you started on the Live Version by accident and want to move them somewhere
+safe, AMP Atlas can **move those changes into a new Draft** for you. And if you already have a
+piece of work in progress that lives outside AMP Atlas, the status bar's **Add existing
+work** option lets you adopt it as a Draft.
 
-Two starting points, then, when you create a Draft:
-
-- **From the Live Version** *(the usual choice)* — start fresh from the latest official
-  version.
-- **From another Draft** — start with someone's (or your own) in-progress work already in
-  place, to build on it or branch off it.
-
-> Most of the time, start from the Live Version. Reach for "from another Draft" only when you
-> specifically need to build on work that hasn't been published yet.
+> **What you can't do (yet):** start a Draft *on top of another in-progress Draft*. The New
+> Draft window hints at this as an "Advanced" option, but it isn't available in this version —
+> Drafts always begin from the Live Version. If you need to build on work that isn't published
+> yet, the simplest path is to get that work reviewed and published first, then start fresh.
 
 ---
 
@@ -76,6 +71,6 @@ everything at once.
 ---
 
 **You should now be able to** run several pieces of work at once as separate Drafts, name
-and switch between them, choose the right starting point (usually the Live Version), and
-publish each independently. Next, something that comes up when lots of work is happening at
-once: [when the Live Version changes](./updates-and-conflicts.md).
+and switch between them (each one starting from the Live Version), and publish each
+independently. Next, something that comes up when lots of work is happening at once:
+[when the Live Version changes](./updates-and-conflicts.md).

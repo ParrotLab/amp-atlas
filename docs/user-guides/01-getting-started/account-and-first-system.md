@@ -5,15 +5,30 @@ takes about five minutes, and there's nothing technical to configure.
 
 ---
 
+## Before you start: your System folders are already set up
+
+One thing to know up front: in this version of AMP Atlas, your team's Systems **already
+exist** as folders on your computer, set up ahead of time. Your job is to **connect** AMP
+Atlas to those folders — not to build them.
+
+So "adding a System" here means *"point AMP Atlas at a System that's already on my
+computer,"* not *"create a brand-new System from scratch."* (Creating a fresh System from
+inside the app is planned for later — for now, your team lead sets new Systems up for you.)
+
+If you don't yet have a System folder on your computer, ask your team lead — they'll get it
+onto your machine first, and then you connect to it here.
+
+---
+
 ## 1. Install and open AMP Atlas
 
-Download AMP Atlas and open it like any other app on your computer.
+Download AMP Atlas and open it like any other app on your Mac.
 
-> _Note: if you don't have the download link yet, ask your team lead — AMP Atlas is an
-> internal app, so it isn't in a public app store._
+> _Notes: AMP Atlas is an internal app, so it isn't in a public app store — ask your team
+> lead for the download. It currently runs on macOS._
 
-The first time you open it, AMP Atlas will ask you to connect your account before you can
-do anything else. That's the next step.
+The first time you open it, AMP Atlas asks you to connect your account before you can do
+anything else. That's the next step.
 
 ---
 
@@ -24,13 +39,14 @@ you'll never have to *use* GitHub directly. You just need to connect your accoun
 AMP Atlas can act on your behalf.
 
 1. Click **Connect to GitHub**.
-2. Your web browser opens with a short code and a GitHub page.
-3. Approve the connection in the browser.
+2. AMP Atlas shows you a short code and opens your web browser to a GitHub page.
+3. Enter the code and approve the connection in the browser.
 4. Come back to AMP Atlas — you're connected.
 
-That's it. You won't have to do this again on this computer unless you sign out. (If your
-connection ever drops later, AMP Atlas will show a gentle **"reconnect"** prompt — your
-local work stays fine in the meantime.)
+That's it. You won't have to do this again on this computer. (If your connection ever drops
+later, AMP Atlas won't kick you out — your local work keeps running, and you just click
+**Connect to GitHub** again in **Settings** to reconnect. There's also a **Sign out** button
+in Settings if you ever need it.)
 
 > **Why GitHub?** It's the trusted engine that gives AMP Atlas its version history and
 > review powers. Connecting is a one-time click, and from then on it's invisible.
@@ -39,32 +55,34 @@ local work stays fine in the meantime.)
 
 ## 3. Add your first System
 
-Remember, a **System** is a home for one area of your team's knowledge. You can either
-open a System your team already has, or start a fresh one.
+Now connect AMP Atlas to a System that's already on your computer. You can start this from:
 
-Open **Add System** (from the sidebar) and you'll be asked for a few things:
+- the **Add system** tile on your dashboard, or
+- **Settings → + Add System**.
+
+You'll be asked for a few things:
 
 - **A name** — what this System is called, like "Delivery System."
 - **A color and icon** — so you can spot it at a glance on your dashboard.
-- **A folder** — where this System lives on your computer.
+- **A folder** — the folder on your computer where this System's files already live.
 
-### If your team already has this System
-Point AMP Atlas at the folder your team's System already lives in. Everything in it shows
-up right away, ready to work with.
+Pick the folder your System lives in, and AMP Atlas connects to it. Everything already in
+it shows up right away, ready to work with.
 
-### If you're starting a brand-new System
-Pick (or create) an empty folder for it, and AMP Atlas sets it up with the right
-structure — the shape described in [the AMP folder structure](../02-core-concepts/folder-structure.md).
+> **The folder needs to be a connected System already.** It must be a folder your team set
+> up and that's linked to GitHub. If you point AMP Atlas at a folder that isn't connected to
+> GitHub, it'll let you know with a clear message rather than adding it. When in doubt, ask
+> your team lead which folder to choose.
 
-> **Already use Obsidian?** A System folder works just like an Obsidian vault — in fact,
-> you can point AMP Atlas at the same folder and use both.
+> **Already use Obsidian?** A System folder works just like an Obsidian vault — in fact, you
+> can point AMP Atlas at the same folder and use both.
 
 ---
 
 ## 4. You're in
 
-Once you've added a System, it appears on your **dashboard** as a card. Click it to open
-it up and look around.
+Once you've added a System, it appears on your **dashboard** as a card, showing its status
+and how many playbooks it has. Click it to open it up and look around.
 
 From here, a good next move is the [tour of the app](./app-tour.md) so you know where
 everything is — or dive straight into [editing basics](../03-everyday-workflows/editing-basics.md)
@@ -79,9 +97,11 @@ System showing on your dashboard. If your System card is there, you're set.
 
 ### Trouble connecting?
 
-- **The browser didn't open, or the code expired.** Just click **Connect to GitHub**
-  again to get a fresh code.
+- **The browser didn't open, or the code expired.** Just click **Connect to GitHub** again
+  to get a fresh code.
 - **You approved in the browser but AMP Atlas still says "not connected."** Return to the
   AMP Atlas window and give it a moment; if it doesn't update, try connecting once more.
-- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or
-  ask your team lead.
+- **AMP Atlas won't add my folder.** That usually means the folder isn't a System connected
+  to GitHub yet. Check with your team lead that you picked the right folder.
+- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or ask
+  your team lead.

@@ -2,7 +2,7 @@
 
 When you create certain things in AMP Atlas, you don't start from a blank page — you start
 from a **template** that lays out the right structure with helpful prompts to fill in. This
-guide explains the templates you'll use most and when to reach for each.
+guide explains the three templates you'll use and when to reach for each.
 
 Templates exist because good structure makes work easier — for you *and* for anyone (or any
 Claude) who picks it up later. Each template has grey guidance notes inside it; fill in the
@@ -10,99 +10,85 @@ sections in plain language and delete the notes as you go.
 
 ---
 
-## Project templates
+## The three templates
 
-A **Project** is a scoped piece of work with a beginning and an end. Projects move from raw
-idea to finished result, and two templates help at the start of that journey.
+AMP Atlas has templates for the three kinds of things you'll add inside a System: a
+**Project**, a **Playbook**, and a **Sub-system**. (A plain new file, by contrast, starts
+blank.)
 
-### Braindump
-**Use it:** at the very beginning, when ideas are still messy.
+### Project — start with a braindump and a pitch
+**Use it:** when you're kicking off a scoped piece of work with a beginning and an end.
 
-The braindump is an unstructured scratchpad. Dump raw thoughts, links, notes, and
-half-formed ideas as they come — no need to organize. It's the safe place to get everything
-out of your head before you shape it. There's no wrong way to fill it in.
+Creating a Project starts you with two files:
 
-### Pitch
-**Use it:** once you're ready to make the case for the work.
+- **Braindump** — an unstructured scratchpad. Dump raw thoughts, links, notes, and half-formed
+  ideas as they come, with no need to organize. It's the safe place to get everything out of
+  your head before you shape it. There's no wrong way to fill it in.
+- **Pitch** — a short, plain-language case for *doing* this project, enough that someone new
+  could understand what you're proposing and why. It walks through: **the problem**, **the
+  proposed approach**, **why now**, **what success looks like**, **scope & boundaries**, and
+  **open questions**.
 
-A pitch is a short, plain-language argument for *doing* this project — enough that someone
-new could understand what you're proposing and why. It walks through:
+The pitch is the agreement *before* the work starts — it's what a reviewer or teammate checks
+the finished work against. As the project grows, you add your own working files and finished
+results alongside these two.
 
-- **The problem** — what's not working today, and who feels it.
-- **The proposed approach** — the shape of your solution, at a high level.
-- **Why now** — why this is worth doing now rather than later.
-- **What success looks like** — how you'll know it worked.
-- **Scope & boundaries** — what's included, and (just as important) what's not.
-- **Open questions** — anything you're still figuring out.
-
-The pitch is the agreement *before* the work starts — it's what a reviewer or teammate
-checks the finished work against.
-
-> Some projects also grow a **plan** (how the work breaks down into steps) as they get going.
-> The braindump and pitch are where nearly every project *starts*.
-
----
-
-## Playbook template
-
-A **Playbook** captures a repeatable process — "here's exactly how we do this" — so it can be
-run the same way every time, by a person or by Claude.
-
+### Playbook — a repeatable process
 **Use it:** when you find yourself doing the same kind of work more than once and want to
 capture *how* so it's reliable and shareable.
 
-The playbook template walks you through:
-
-- **Purpose** — the problem this playbook solves (the messy "before" and the clean "after").
-- **Trigger** — what starts it, specific enough that you'd know exactly when to run it.
-- **Inputs** — only the things that change each time you run it.
-- **Workflow** — the named steps, each one a single action that produces a single output.
-- **Outputs** — the final deliverables it produces.
-- **Behavior notes** — how it should be run, and any always/never rules.
+A **Playbook** captures a repeatable process so it can be run the same way every time, by a
+person or by Claude. The template walks you through: **Purpose** (the messy "before" and clean
+"after"), **Trigger** (what starts it), **Inputs** (what changes each run), **Workflow** (the
+named steps, each producing one output), **Outputs** (the deliverables), and **Behavior
+notes** (how it should run, any always/never rules).
 
 A good playbook is specific enough that someone who's never done the task could follow it and
 get a good result.
 
----
-
-## Sub-system template
-
-A **Sub-system** is a smaller area inside a System. When you're defining one, the sub-system
-template gives you a **README** — an overview that explains what this sub-system is, what it
-owns, and the processes that run inside it.
-
+### Sub-system — a new area within a System
 **Use it:** when a System is getting large and you're carving out a distinct area within it
 that deserves its own clear description.
 
-It covers things like the sub-system's mission and scope, how it connects to the broader
-System, what it owns, and the core processes that live inside it.
+Creating a Sub-system gives you a **README** — an overview explaining what this area is, what
+it owns, and the processes inside it. It covers the sub-system's **mission**, **where it fits**
+in the broader System, **what it owns**, its **roles**, and its **core processes**.
 
 ---
 
-## A note on status
+## A note on a playbook's status
 
-Many documents — especially templates like playbooks and reference material — carry a
-**status** that signals how finished and trusted they are. In plain terms:
+Playbooks carry a **Status** — a **quality grade** that signals how proven the playbook is. In
+plain terms:
 
-- **draft** *(or "not yet graded")* — still being shaped; don't rely on it yet.
-- **needs review** — it's been changed and is waiting for someone to check it.
-- **approved** *(or "tested")* — signed off and trusted; safe to rely on.
+- **Not Yet Graded** — hasn't been formally reviewed for quality yet.
+- **A** — great; trusted and proven.
+- **B** — useful.
+- **C** — not especially useful.
+- **F** — not usable as-is.
+- **Future** — a placeholder for something planned but not built yet.
 
-Keeping status accurate is a small habit with a big payoff: it's how everyone — and Claude —
-knows what to trust. When you finish shaping something and it's been reviewed, move its status
-up. When you change something that was approved, drop it back to _needs review_.
+Keeping this accurate is a small habit with a big payoff: it's how everyone — and Claude —
+knows how much to trust a given playbook. You'll find and set it in the **properties** panel
+when a playbook is open.
 
 ---
 
 ## Starting from a template in the app
 
-To use a template, create the new item in your file tree (for example, a new Project or
-Playbook), and AMP Atlas starts you from the matching template automatically — structure
-already in place, prompts ready to fill in. Replace the grey guidance notes with your own
-content, and you're off.
+You create these from the **file tree**, using the **+** button on the matching area of a
+System:
+
+- The **+** in the Playbooks area → **New playbook**.
+- The **+** in the Work area → **New project** (braindump + pitch).
+- The **+** in the Reference area → **New sub-system** (README).
+
+AMP Atlas drops in the right template automatically, prompts and all. Replace the grey
+guidance notes with your own content, and you're off. (Right-clicking to make a plain **New
+file** gives you a blank document instead.)
 
 ---
 
-**You should now know** which template to reach for — braindump and pitch for starting a
-Project, the playbook template for capturing a repeatable process, and the sub-system README
-for defining an area — plus what a document's **status** is telling you.
+**You should now know** which template to reach for — braindump + pitch for starting a
+Project, the playbook template for a repeatable process, and the sub-system README for
+defining an area — plus what a playbook's **status grade** is telling you.

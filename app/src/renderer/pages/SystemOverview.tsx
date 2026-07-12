@@ -151,6 +151,8 @@ export default function SystemOverview() {
       const saved = getStoredTabs(systemId)
       const valid: { path: string; name: string }[] = []
       for (const t of saved?.tabs ?? []) {
+        // Only restore tabs that belong to THIS system's folder (guards against stale cross-system tabs).
+        if (!t.path.startsWith(rootPath + '/')) continue
         const s = await window.api.fs.stat(t.path)
         if (s.ok) valid.push(t)
       }
@@ -240,25 +242,23 @@ export default function SystemOverview() {
     return () => clearInterval(interval)
   }, [fetchGitStatus])
 
-  useEffect(() => {
-    if (!rootPath || !branch || isMainBranch) {
-      setPrStatus({ hasPR: false })
-      return
+  // Re-fetchable so we can refresh it right after submitting for review (not just on branch change / reload).
+  const fetchPrStatus = useCallback(async () => {
+    if (!rootPath || !branch || isMainBranch) { setPrStatus({ hasPR: false }); return }
+    const result = await window.api.git.prStatus(rootPath)
+    if (result.ok) {
+      setPrStatus({
+        hasPR: result.hasPR,
+        number: result.pr?.number,
+        title: result.pr?.title,
+        body: result.pr?.body,
+        state: result.pr?.state,
+        reviewDecision: result.pr?.reviewDecision
+      })
     }
-    // Check PR status when branch changes
-    window.api.git.prStatus(rootPath).then(result => {
-      if (result.ok) {
-        setPrStatus({
-          hasPR: result.hasPR,
-          number: result.pr?.number,
-          title: result.pr?.title,
-          body: result.pr?.body,
-          state: result.pr?.state,
-          reviewDecision: result.pr?.reviewDecision
-        })
-      }
-    })
   }, [rootPath, branch, isMainBranch])
+
+  useEffect(() => { void fetchPrStatus() }, [fetchPrStatus])
 
   useEffect(() => {
     if (!rootPath || isMainBranch) return
@@ -404,6 +404,7 @@ export default function SystemOverview() {
     }
 
     await fetchGitStatus()
+    await fetchPrStatus()   // reflect the new/updated PR (In Review tag) without a reload
   }
 
   // Run `action`, but if there are unsaved edits in a draft, prompt Save/Discard first.

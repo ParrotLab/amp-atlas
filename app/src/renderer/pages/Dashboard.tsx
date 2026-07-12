@@ -112,7 +112,9 @@ export default function Dashboard() {
           if (d.branch === current) {
             try {
               const prResult = await window.api.git.prStatus(sys.folderPath)
-              if (prResult.ok && prResult.hasPR) {
+              // Only an OPEN PR is "in review". A closed-not-merged PR reverts the draft
+              // to a plain Draft (the review ended without publishing).
+              if (prResult.ok && prResult.hasPR && prResult.pr?.state === 'OPEN') {
                 variant = reviewVariant(prResult.pr?.reviewDecision)
                 label = reviewLabel(prResult.pr?.reviewDecision)
               }

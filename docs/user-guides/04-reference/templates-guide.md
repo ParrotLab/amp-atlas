@@ -87,6 +87,9 @@ AMP Atlas drops in the right template automatically, prompts and all. Replace th
 guidance notes with your own content, and you're off. (Right-clicking to make a plain **New
 file** gives you a blank document instead.)
 
+![A freshly created pitch showing its section headings and grey guidance prompts](../images/template-pitch-example.png)
+*A new template comes pre-filled with prompts to replace. (Optional screenshot.)*
+
 ---
 
 **You should now know** which template to reach for — braindump + pitch for starting a

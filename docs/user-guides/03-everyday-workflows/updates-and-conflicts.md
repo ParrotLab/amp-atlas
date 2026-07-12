@@ -52,6 +52,9 @@ That's the current design on purpose: rather than drop you into a confusing tech
 merge screen, AMP Atlas keeps it simple and points you to a person. Your team lead can help
 combine the two sets of changes safely.
 
+![The calm notice that the Live Version changed, listing the affected files](../images/conflict-notice.png)
+*When there's a clash, AMP Atlas pauses and points you to your team lead.*
+
 > **A richer "resolve it yourself" screen may come later.** For now, a clash is rare, and the
 > friendly "check with your team lead" path is the intended way through it.
 

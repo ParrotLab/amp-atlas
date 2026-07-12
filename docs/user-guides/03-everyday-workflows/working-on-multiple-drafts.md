@@ -41,6 +41,9 @@ in**, so you know which workstream you're touching before you make a change.
 A good habit: glance at the status bar before you start editing, just to confirm you're in
 the Draft you meant to be in.
 
+![The version switcher dropdown listing several Drafts to switch between](../images/draft-switcher-dropdown.png)
+*Switch between your Drafts from the status bar's version switcher.*
+
 ---
 
 ## Where a new Draft starts from

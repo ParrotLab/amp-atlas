@@ -69,6 +69,9 @@ Each comes pre-filled with helpful prompts to replace. See the
 [Templates guide](../04-reference/templates-guide.md) for what each one gives you and when
 to use it.
 
+![The "+" on a folder offering New playbook, New project, and New sub-system](../images/template-plus-menu.png)
+*The "+" on a System folder starts the right template.*
+
 ---
 
 ## Properties (mostly on playbooks)
@@ -80,6 +83,9 @@ The key one is a playbook's **Status**, which is a **quality grade** showing how
 playbook is: _Not Yet Graded_, _A_, _B_, _C_, _F_, or _Future_. It tells your team (and
 Claude) how much to trust that playbook. Most other documents simply show "No properties for
 this file," and that's fine.
+
+![The properties panel showing a playbook's Status grade dropdown](../images/properties-status.png)
+*A playbook's Status grade lives in the properties panel.*
 
 ---
 

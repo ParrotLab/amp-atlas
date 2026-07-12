@@ -29,6 +29,9 @@ As you finish each file, mark it **✓ Reviewed**. You'll need to mark **every**
 before you can approve — that's AMP Atlas making sure nothing goes out unlooked-at. Take your
 time; a good review means actually reading the work, not just glancing at it.
 
+![The Review page: expandable files with the "Updated version / What changed" toggle and "✓ Reviewed"](../images/review-page-diff-toggle.png)
+*Review each file, toggling between the finished result and just what changed.*
+
 ---
 
 ## The rule: don't edit someone else's Draft
@@ -92,6 +95,9 @@ When you've read everything and written your note, make the call:
 
 Approve when it's genuinely ready. Request changes when it's not. Either way, you've kept the
 Live Version trustworthy.
+
+![The review action bar: a note field with Approve and Request changes buttons](../images/review-action-bar.png)
+*Your feedback goes in one note, alongside Approve / Request changes.*
 
 ---
 

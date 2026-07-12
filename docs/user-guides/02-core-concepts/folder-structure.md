@@ -85,6 +85,9 @@ Delivery System
             └── (your working files and results)
 ```
 
+![A real System's file tree in AMP Atlas, matching the shape above](../images/file-tree.png)
+*The same shape as it appears in AMP Atlas's file tree. (Optional screenshot.)*
+
 Notice how a **Project** starts you off with a **Braindump** (raw thinking) and a
 **Pitch** (the case for the work), and then you add your working files and finished
 results alongside them as the project grows. That progression is covered in the

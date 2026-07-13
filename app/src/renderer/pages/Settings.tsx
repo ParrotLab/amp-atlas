@@ -17,12 +17,14 @@ export default function Settings() {
   const [identity, setIdentity] = useState<{ login: string } | null>(null)
   const [resyncFor, setResyncFor] = useState<SystemConfig | null>(null)
   const [showAddSystem, setShowAddSystem] = useState(false)
+  const [appVersion, setAppVersion] = useState('')
   const profile = useProfile()
   const { showToast } = useToast()
 
   useEffect(() => {
     setSystems(getSystems())
     window.api.auth.identity().then(r => setIdentity(r.identity))
+    window.api.app.version().then(setAppVersion)
   }, [])
 
   // Sign out clears the token, wipes the local name, and announces the auth change — which drops
@@ -146,7 +148,7 @@ export default function Settings() {
           <div className="settings-section-title" style={{ marginBottom: '14px' }}>About</div>
           <div className="settings-info-card">
             <div className="settings-info-label">Version</div>
-            <div className="settings-info-value">AI Momentum Protocols v0.1.0</div>
+            <div className="settings-info-value">AMP Atlas{appVersion ? ` v${appVersion}` : ''}</div>
           </div>
         </div>
 

@@ -14,7 +14,8 @@ Signed, notarized `.dmg` + auto-update, built locally on a Mac.
 ## To cut a release
 1. Bump `version` in `app/package.json` (e.g. `1.0.0` → `1.0.1`). The updater compares versions.
 2. From `app/`: `npm run release`
-   - Loads `app/.env`, builds, signs with your Developer ID cert, **notarizes** with Apple, and **publishes** a GitHub Release (`.dmg` + `.zip` + `latest-mac.yml`) to `amp-atlas-releases`.
+   - Loads `app/.env`, builds, signs with your Developer ID cert, **notarizes** with Apple, **pre-creates the GitHub release** for the tag (`release:tag`), then **publishes** the artifacts (`.dmg` + `.zip` + `latest-mac.yml`) to `amp-atlas-releases`.
+   - _Why the pre-create step:_ electron-builder v26 spins up one publisher per target (`dmg` + `zip`) and they race to **create** the release, which GitHub rejects with `422 "Published releases must have a valid tag."` Pre-creating the release (idempotent — `|| true` if it already exists) means both publishers just find it and upload. Requires the `gh` CLI to be installed and authed.
 3. **First install:** hand each user the `.dmg` directly (Slack/Drive). They drag it to Applications.
 4. **After that:** users auto-update — on launch the app checks the releases repo, downloads a newer version, and prompts to restart.
 

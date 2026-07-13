@@ -497,7 +497,7 @@ ipcMain.handle('fs:listFiles', async (_event, root: string) => {
 
 app.whenReady().then(() => {
   logInfo('app', `session started · v${app.getVersion()}`)
-  electronApp.setAppUserModelId('com.parrotlabs.amp-up')
+  electronApp.setAppUserModelId('com.parrotlabs.amp-atlas')
   // Packaged builds get the icon from electron-builder; in dev, brand the dock icon too.
   if (is.dev && process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(join(__dirname, '../../build/icon.png'))

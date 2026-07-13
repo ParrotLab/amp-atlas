@@ -1,4 +1,4 @@
-# AMP UP — First Experience Journey Map
+# AMP Atlas — First Experience Journey Map
 
 ## Focus: Rose's First 30 Minutes
 
@@ -9,7 +9,7 @@ Rose is the hardest persona to win. If the first experience works for her, it wo
 ## Pre-conditions
 
 - Kristi has already set up Rose's local machine: the workspace repos are cloned to a folder on her computer
-- AMP UP is installed (Kristi sent her a download link)
+- AMP Atlas is installed (Kristi sent her a download link)
 - Rose has a GitHub account (Kristi helped her create one during onboarding)
 - Rose needs to update a playbook she's been working on in Claude Desktop
 
@@ -20,7 +20,7 @@ Rose is the hardest persona to win. If the first experience works for her, it wo
 ### Stage 1: First Launch (Minutes 0-3)
 
 **What happens:**
-Rose double-clicks AMP UP for the first time.
+Rose double-clicks AMP Atlas for the first time.
 
 **What she sees:**
 ```
@@ -28,7 +28,7 @@ Rose double-clicks AMP UP for the first time.
 │                                                │
 │         [AMP Logo]                             │
 │                                                │
-│    Welcome to AMP UP                           │
+│    Welcome to AMP Atlas                           │
 │                                                │
 │    Your workspace for creating,                │
 │    editing, and sharing content                 │
@@ -49,7 +49,7 @@ Rose double-clicks AMP UP for the first time.
 **Step 2: Choose your Systems folder**
 - "Where do your Systems live on this computer?"
 - [Browse...] → she selects the folder Kristi told her to use
-- AMP UP scans for git repos in that folder
+- AMP Atlas scans for git repos in that folder
 - "Found 3 systems:" → shows Learning System, Marketing System, AI Operations
 
 **Step 3: Done**
@@ -69,7 +69,7 @@ The dashboard with her System cards. Each card shows the system name, file count
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  AMP UP                                    ⚙️   │
+│  AMP Atlas                                    ⚙️   │
 │                                                 │
 │  My Systems                                     │
 │                                                 │
@@ -308,7 +308,7 @@ She reviews, everything looks good. Clicks **Approve**.
 
 ### Stage 8: End of First Session (Minutes 28-30)
 
-Rose closes AMP UP. She'll open it again tomorrow because she has another playbook to update.
+Rose closes AMP Atlas. She'll open it again tomorrow because she has another playbook to update.
 
 **What she's thinking:**
 - "That was actually nice to use"

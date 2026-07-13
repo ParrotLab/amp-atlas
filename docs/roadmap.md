@@ -1,6 +1,6 @@
 # AMP Atlas — Feature Roadmap
 
-> **Naming:** The product is being renamed **AMP UP → AMP Atlas**. This is a *documentation-only* rename for now — the repo, app identifiers, and code stay as-is until a later dedicated rename pass.
+> **Naming:** The product is being renamed **AMP Atlas → AMP Atlas**. This is a *documentation-only* rename for now — the repo, app identifiers, and code stay as-is until a later dedicated rename pass.
 
 **Date:** 2026-07-07
 **Companion doc:** [`mvp-planning.md`](./mvp-planning.md) — the decision worksheet this roadmap is derived from.

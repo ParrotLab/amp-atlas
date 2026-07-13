@@ -68,7 +68,8 @@ export default function Sidebar() {
           )
         })}
 
-        <div className="nav-divider" />
+        {/* Second divider only when there are systems, so the empty state shows a single divider. */}
+        {systems.length > 0 && <div className="nav-divider" />}
 
         <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <GearIcon size={18} /> Settings

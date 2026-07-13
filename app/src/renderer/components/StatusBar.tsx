@@ -30,7 +30,7 @@ interface StatusBarProps {
   onArchiveBranch?: (branch: string) => void
   onAddExistingWork?: (branch: string) => void
   repoPath?: string
-  prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null }
+  prStatus?: { hasPR: boolean; state?: string; reviewDecision?: string | null; requestedReviewers?: string[] }
   canUseGit?: boolean
   canUseGitHub?: boolean
   onNeedGit?: () => void
@@ -72,8 +72,13 @@ export default function StatusBar({
     })
   }, [showAdopt, repoPath, activeDrafts])
 
+  // A pending re-review request (author re-submitted after changes) is back "in review",
+  // which supersedes the stale prior decision. Mirrors inboxClassify / the Review page.
+  const pendingReReview = (prStatus?.requestedReviewers?.length ?? 0) > 0
   const prBadge = prOpen && (
-    <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
+    pendingReReview
+      ? <Badge variant="neutral">In Review</Badge>
+      : <Badge variant={reviewVariant(prStatus?.reviewDecision)}>{reviewLabel(prStatus?.reviewDecision)}</Badge>
   )
 
   const doPublish = () => { canUseGitHub ? onPublish() : onNeedGitHub?.() }

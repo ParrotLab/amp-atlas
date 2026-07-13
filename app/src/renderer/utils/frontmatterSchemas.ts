@@ -1,4 +1,4 @@
-export type Widget = 'text' | 'select' | 'tags'
+export type Widget = 'text' | 'textarea' | 'select' | 'tags'
 
 export interface FieldSchema {
   key: string
@@ -13,7 +13,7 @@ export const STATUS_OPTIONS = ['Not Yet Graded', 'A (Great)', 'B (Useful)', 'C (
 const SCHEMAS: Record<string, FieldSchema[]> = {
   playbook: [
     { key: 'name', label: 'Name', widget: 'text' },
-    { key: 'description', label: 'Description', widget: 'text' },
+    { key: 'description', label: 'Description', widget: 'textarea' },
     { key: 'system', label: 'System', widget: 'text' },
     { key: 'sub-system', label: 'Sub-system', widget: 'text' },
     { key: 'status', label: 'Status', widget: 'select', options: STATUS_OPTIONS },

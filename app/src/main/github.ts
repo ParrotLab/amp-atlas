@@ -32,6 +32,45 @@ async function reviewDecision(owner: string, repo: string, num: number): Promise
   return decisive ? decisive.state : null
 }
 
+type RawPr = { number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null; requested_reviewers?: { login: string }[] | null }
+
+/**
+ * Pure: pick the *active* PR for a branch from a `state=all` list.
+ * Prefers an open PR (GitHub allows only one open PR per head/base). A closed-but-not-merged
+ * PR is finished, so we return null — the branch should be treated as having no active PR, so a
+ * re-submit starts a fresh review instead of trying to reopen a dead one.
+ */
+export function pickActivePr(list: RawPr[]): { number: number; title: string; url: string; state: string; body: string; requestedReviewers: string[] } | null {
+  const p = list.find(x => x.state === 'open') ?? list[0]
+  if (!p) return null
+  if (p.state !== 'open' && !p.merged_at) return null   // closed, not merged → no active PR
+  return {
+    number: p.number, title: p.title, url: p.html_url,
+    state: p.merged_at ? 'MERGED' : p.state.toUpperCase(), body: p.body || '',
+    requestedReviewers: (p.requested_reviewers ?? []).map(u => u.login),
+  }
+}
+
+/**
+ * Pure: summarize a PR's reviews into the overall decision plus who currently requests changes.
+ * `changesRequestedBy` = logins whose *latest* decisive review is CHANGES_REQUESTED (a later
+ * APPROVED or DISMISSED clears them). Used to auto-re-request those reviewers on re-submit.
+ */
+export function summarizeReviews(reviews: { state: string; user: { login: string } }[]): { decision: string | null; changesRequestedBy: string[] } {
+  const latestByUser = new Map<string, string>()
+  let decision: string | null = null
+  for (const r of reviews) {
+    if (r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED') {
+      latestByUser.set(r.user.login, r.state)
+      decision = r.state
+    } else if (r.state === 'DISMISSED') {
+      latestByUser.set(r.user.login, 'DISMISSED')
+    }
+  }
+  const changesRequestedBy = [...latestByUser].filter(([, s]) => s === 'CHANGES_REQUESTED').map(([login]) => login)
+  return { decision, changesRequestedBy }
+}
+
 export async function createPR(repoPath: string, title: string, body: string, reviewers: string[]) {
   const { owner, repo } = await ownerRepo(repoPath)
   const branch = (await simpleGit(repoPath).status()).current
@@ -62,11 +101,12 @@ export async function prStatus(repoPath: string) {
   const branch = (await simpleGit(repoPath).status()).current
   if (!branch || branch === 'main' || branch === 'master') return { hasPR: false }
   const { owner, repo } = await ownerRepo(repoPath)
-  const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as Array<{ number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null }>
-  const p = list[0]
-  if (!p) return { hasPR: false }
-  const state = p.merged_at ? 'MERGED' : p.state.toUpperCase()
-  return { hasPR: true, pr: { number: p.number, title: p.title, url: p.html_url, state, reviewDecision: await reviewDecision(owner, repo, p.number), body: p.body || '' } }
+  const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as RawPr[]
+  const active = pickActivePr(list)
+  if (!active) return { hasPR: false }
+  const reviews = await gh(`/repos/${owner}/${repo}/pulls/${active.number}/reviews`) as { state: string; user: { login: string } }[]
+  const { decision, changesRequestedBy } = summarizeReviews(reviews)
+  return { hasPR: true, pr: { ...active, reviewDecision: decision, changesRequestedBy } }
 }
 
 export async function checkMerged(repoPath: string) {

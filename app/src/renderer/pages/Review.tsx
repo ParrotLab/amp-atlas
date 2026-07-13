@@ -18,6 +18,7 @@ interface PRInfo {
   author: { login: string; name: string }
   createdAt: string
   reviewDecision: string | null
+  requestedReviewers: string[]
   url: string
   body: string
   headRefName: string
@@ -81,7 +82,7 @@ export default function Review() {
     window.api.git.listPRs(repoPath).then(result => {
       if (result.ok) {
         const found = result.prs.find(p => p.number === prNum)
-        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewDecision: found.reviewDecision, url: found.url, body: found.body, headRefName: found.headRefName })
+        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewDecision: found.reviewDecision, requestedReviewers: found.requestedReviewers, url: found.url, body: found.body, headRefName: found.headRefName })
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
@@ -173,8 +174,13 @@ export default function Review() {
   const fileNameOf = (path: string) => path.split('/').pop() || path
   const filePathOf = (path: string) => { const p = path.split('/'); return p.length > 1 ? p.slice(0, -1).join('/') + '/' : '' }
 
+  // A pending re-review request means the author re-submitted after changes — it's back in
+  // review, which takes precedence over the (now stale) prior decision. Mirrors inboxClassify.
+  const pendingReReview = (pr?.requestedReviewers?.length ?? 0) > 0
+
   const badge: { variant: BadgeVariant; label: string } =
     !isAuthor ? { variant: 'brand', label: 'Needs your review' }
+    : pendingReReview ? { variant: 'neutral', label: 'In review' }
     : pr?.reviewDecision === 'APPROVED' ? { variant: 'success', label: 'Approved' }
     : pr?.reviewDecision === 'CHANGES_REQUESTED' ? { variant: 'warning', label: 'Changes requested' }
     : { variant: 'neutral', label: 'In review' }
@@ -220,7 +226,7 @@ export default function Review() {
               </div>
             </div>
 
-            {isAuthor && feedback && feedback.state === 'CHANGES_REQUESTED' && feedback.body && (
+            {isAuthor && !pendingReReview && feedback && feedback.state === 'CHANGES_REQUESTED' && feedback.body && (
               <div className="review-feedback">
                 <div className="review-feedback-avatar">{feedback.authorName.charAt(0).toUpperCase()}</div>
                 <div>

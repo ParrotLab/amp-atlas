@@ -8,3 +8,12 @@ node_modules
 
 # Superpowers brainstorm mockups (local only)
 .superpowers/
+
+# WIP process docs — kept locally, out of the tracked repo (recoverable from git history)
+docs/superpowers/
+docs/mvp-planning.md
+docs/mvp-testing-checklist.md
+
+# Claude agent skills + tooling (local only)
+.agents/
+skills-lock.json

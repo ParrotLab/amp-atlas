@@ -105,7 +105,7 @@ interface ElectronAPI {
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     deleteBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
-    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null; body: string } }>
+    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewDecision: string | null; changesRequestedBy: string[]; requestedReviewers: string[]; body: string } }>
     checkMerged: (repoPath: string) => Promise<{ ok: boolean; merged: boolean; branch?: string }>
     listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewDecision: string | null; url: string; additions: number; deletions: number; changedFiles: number; body: string; requestedReviewers: string[] }> }>
     prDiff: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; files: string[]; error?: string }>

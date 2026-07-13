@@ -17,6 +17,8 @@ interface PublishModalProps {
   hasPR?: boolean
   existingTitle?: string
   existingBody?: string
+  /** Reviewers who requested changes: pre-selected, not de-selectable, and re-requested on submit. */
+  lockedReviewers?: string[]
 }
 
 const AVATAR_COLORS = ['#8B2BFF', '#FF7B00', '#7A3D8F', '#16A34A', '#2563EB', '#E11D48']
@@ -26,7 +28,7 @@ function avatarColor(login: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody, lockedReviewers = [] }: PublishModalProps) {
   const [title, setTitle] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
   const descEditor = useEditor({ extensions: editorExtensions(), editable: true, content: '' })
@@ -70,16 +72,20 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
 
   const toggleReviewer = (name: string) => {
+    if (lockedReviewers.includes(name)) return   // locked reviewers can't be de-selected
     setSelectedReviewers(prev =>
       prev.includes(name) ? prev.filter(r => r !== name) : [...prev, name]
     )
   }
 
+  // Locked reviewers (who requested changes) are always included, plus anyone the user adds.
+  const finalReviewers = Array.from(new Set([...lockedReviewers, ...selectedReviewers]))
+
   const handlePublish = async () => {
     if (!title.trim() || status !== 'idle') return
     setStatus('publishing')
     const description = (descEditor?.getMarkdown() || '').trim()
-    const ok = await onPublish(title.trim(), description, selectedReviewers)
+    const ok = await onPublish(title.trim(), description, finalReviewers)
     if (!ok) { setStatus('idle'); return }   // failure → stay on the form (error toast shown upstream)
     // Surface the resulting PR so the user knows what to reference later.
     try {
@@ -96,7 +102,7 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>&#10003;</div>
           <div className="publish-title">{hasPR ? 'Added to review' : 'Submitted for review'}</div>
           <div className="publish-subtitle">
-            {selectedReviewers.length > 0 ? `${selectedReviewers.join(' and ')} will be notified.` : 'Your work is ready for a reviewer.'}
+            {finalReviewers.length > 0 ? `${finalReviewers.join(' and ')} will be notified.` : 'Your work is ready for a reviewer.'}
           </div>
           {submittedPR && (
             <div className="publish-pr-ref">
@@ -190,20 +196,32 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
             <div className="publish-field">
               <div className="publish-label">{hasPR ? 'Request additional reviewers' : 'Request review from'}</div>
+              {lockedReviewers.length > 0 && (
+                <div className="publish-reviewers-hint">
+                  Reviewer{lockedReviewers.length !== 1 ? 's' : ''} who requested changes {lockedReviewers.length !== 1 ? 'are' : 'is'} included automatically — add more if you like.
+                </div>
+              )}
               <div className="publish-reviewers">
                 {members.length === 0 && <div style={{ fontSize: '12px', color: '#B5B1AC' }}>No collaborators found for this system.</div>}
-                {members.map(member => (
-                  <button
-                    key={member.login}
-                    className={`publish-reviewer ${selectedReviewers.includes(member.login) ? 'selected' : ''}`}
-                    onClick={() => toggleReviewer(member.login)}
-                  >
-                    <div className="publish-reviewer-avatar" style={{ background: avatarColor(member.login) }}>
-                      {member.login.charAt(0).toUpperCase()}
-                    </div>
-                    @{member.login}
-                  </button>
-                ))}
+                {members.map(member => {
+                  const isLocked = lockedReviewers.includes(member.login)
+                  const isSelected = isLocked || selectedReviewers.includes(member.login)
+                  return (
+                    <button
+                      key={member.login}
+                      className={`publish-reviewer ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
+                      onClick={() => toggleReviewer(member.login)}
+                      aria-disabled={isLocked}
+                      title={isLocked ? 'They requested changes, so they’ll automatically be asked to re-review.' : undefined}
+                    >
+                      <div className="publish-reviewer-avatar" style={{ background: avatarColor(member.login) }}>
+                        {member.login.charAt(0).toUpperCase()}
+                      </div>
+                      @{member.login}
+                      {isLocked && <span className="publish-reviewer-tag">Re-review</span>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 

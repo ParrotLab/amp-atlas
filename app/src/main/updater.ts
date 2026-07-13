@@ -7,10 +7,7 @@ import { logError } from './logger'
 export function setupAutoUpdate(win: BrowserWindow | null): void {
   if (!app.isPackaged) return // never in dev
 
-  // Authenticate to the private releases repo with the embedded read-only token.
-  const token = process.env.AMP_UPDATER_TOKEN
-  if (token) autoUpdater.requestHeaders = { authorization: `token ${token}` }
-
+  // The releases repo is public, so no auth/token is needed to check for or download updates.
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
 

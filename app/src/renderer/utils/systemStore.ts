@@ -6,14 +6,24 @@ interface SystemConfig {
   gradient: string
 }
 
-const STORAGE_KEY = 'amp-up-systems-v2'
+const STORAGE_KEY = 'amp-atlas-systems-v2'
+const LEGACY_STORAGE_KEY = 'amp-up-systems-v2'   // pre-rename key; migrated once on first read
 
 // No seeded systems — every user (including dev) starts blank and adds their own.
 const defaultSystems: SystemConfig[] = []
 
 export function getSystems(): SystemConfig[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    let stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) {
+      // One-time migration from the old "amp-up" key so existing setups survive the rename.
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
+      if (legacy) {
+        localStorage.setItem(STORAGE_KEY, legacy)
+        localStorage.removeItem(LEGACY_STORAGE_KEY)
+        stored = legacy
+      }
+    }
     if (stored) return JSON.parse(stored)
   } catch {
     // ignore parse errors

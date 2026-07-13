@@ -18,7 +18,8 @@ function SystemRoute() {
 export default function App() {
   const { status, refresh } = useAuth()
   if (!status) return null // brief: loading auth status
-  if (!status.connected && !status.everConnected) return <Connect onConnected={refresh} />
+  // Require a GitHub connection to use the app. Not connected (first run OR after sign-out) → Connect.
+  if (!status.connected) return <Connect onConnected={refresh} />
   return (
     <HashRouter>
       <Routes>

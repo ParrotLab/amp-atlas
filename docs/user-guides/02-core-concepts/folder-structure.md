@@ -82,14 +82,16 @@ Delivery System
         └── Onboarding email refresh
             ├── Braindump          ← raw early thinking
             ├── Pitch              ← the case for the work
-            ├── Plan               ← how it'll get done
-            ├── Working            ← files in progress
-            └── Deliverables       ← the finished result
+            └── (your working files and results)
 ```
 
-Notice how a **Project** has its own little structure inside — from raw thinking
-(*Braindump*) all the way to the finished output (*Deliverables*). That progression is
-covered in the [Templates guide](../04-reference/templates-guide.md).
+![A real System's file tree in AMP Atlas, matching the shape above](../images/file-tree.png)
+*The same shape as it appears in AMP Atlas's file tree. (Optional screenshot.)*
+
+Notice how a **Project** starts you off with a **Braindump** (raw thinking) and a
+**Pitch** (the case for the work), and then you add your working files and finished
+results alongside them as the project grows. That progression is covered in the
+[Templates guide](../04-reference/templates-guide.md).
 
 ---
 
@@ -99,9 +101,11 @@ A few reassurances:
 
 - **You won't break anything by looking around.** Opening and reading files is always
   safe.
-- **You don't create the structure yourself.** New Systems come set up with the right
-  shape, and when you start a new Project or Playbook, AMP Atlas lays out the right pieces
-  for you from a template.
+- **The overall System shape is already set up for you.** Systems come pre-built with the
+  right top-level shape (Reference, Work, Playbooks, and so on) — you connect to them, you
+  don't have to build them. And when you add a new **Playbook**, **Project**, or
+  **Sub-system** *inside* a System, AMP Atlas lays out the right starter pieces for you from
+  a template (see the [Templates guide](../04-reference/templates-guide.md)).
 - **Not every System looks identical inside Reference.** The outer shape is always the
   same, but what's *inside* Reference is tailored to what each System actually does — a
   Delivery System and a Marketing System will naturally hold different material.

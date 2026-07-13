@@ -1,4 +1,4 @@
-# AMP UP
+# AMP Atlas
 
 Internal desktop app for the AMP (AI Momentum Protocols) team — an Obsidian-like markdown editor that sits on top of GitHub, designed for non-technical users.
 
@@ -75,7 +75,7 @@ Production packaging (electron-builder, code signing, auto-update via GitHub Rel
 ## Repo layout
 
 ```
-amp-up-app/
+amp-atlas/
 ├── app/                      # The Electron app
 │   ├── src/
 │   │   ├── main/index.ts     # Main process — IPC handlers, git/gh ops

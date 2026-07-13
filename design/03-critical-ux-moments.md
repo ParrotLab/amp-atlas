@@ -1,4 +1,4 @@
-# AMP UP — Critical UX Moments
+# AMP Atlas — Critical UX Moments
 
 ## What This Document Is
 
@@ -17,7 +17,7 @@ Each moment is written as a scenario from a specific persona's perspective.
 
 **What Rose should experience:**
 
-When Rose next syncs (or when AMP UP detects the change via file watching):
+When Rose next syncs (or when AMP Atlas detects the change via file watching):
 
 ```
 ┌────────────────────────────────────────────────┐
@@ -139,7 +139,7 @@ She sees her current draft ("Skills refactor") has an orange "editing" indicator
 She clicks "Workspace restructure."
 
 **What happens:**
-1. AMP UP silently stashes her unsaved CLAUDE.md changes
+1. AMP Atlas silently stashes her unsaved CLAUDE.md changes
 2. Switches to the "workspace-restructure" branch
 3. File tree updates to show that branch's state
 4. If "workspace-restructure" had stashed changes from before, they're restored
@@ -172,7 +172,7 @@ Her unsaved CLAUDE.md edits are exactly where she left them. Cursor position res
 ## Moment 4: "My Team Has Been Active and I Need to Catch Up"
 
 **Persona:** Rachel
-**Scenario:** Rachel was heads-down in her own system yesterday. She opens AMP UP this morning to check on the Learning System. Kristi published a workspace restructure, Rose submitted her first review request for a playbook draft, and Hannah created a new project folder.
+**Scenario:** Rachel was heads-down in her own system yesterday. She opens AMP Atlas this morning to check on the Learning System. Kristi published a workspace restructure, Rose submitted her first review request for a playbook draft, and Hannah created a new project folder.
 
 **What Rachel should see on launch:**
 
@@ -219,7 +219,7 @@ She clicks in. The Activity tab shows:
 ```
 
 **Critical design decisions:**
-- **Morning briefing feel.** Rachel should open AMP UP and immediately know what happened. This is her "inbox" — what needs her attention, what's been done, what's in progress.
+- **Morning briefing feel.** Rachel should open AMP Atlas and immediately know what happened. This is her "inbox" — what needs her attention, what's been done, what's in progress.
 - **People-first, not files-first.** Show WHO did WHAT, not just a list of changed files. "Rose submitted her first review request" is meaningful; "1 pending PR" is not.
 - **One-click to start reviewing.** "Review →" takes her directly to the diff view for Rose's playbook.
 - **Celebrate activity.** Showing "Recently Published" signals that the system is working — people are using it, content is being created and shared. This builds Rachel's confidence that adoption is happening.
@@ -287,12 +287,12 @@ She goes to the Activity tab → "Recently Published" → clicks her merge:
 - **Fix forward, always.** This is the opinionated stance. Reverting is a git-expert operation that creates confusing history. Creating a new draft to fix the issue is clearer and auditable.
 - **Make investigation easy.** She should be able to see exactly what her publish changed so she knows what to fix.
 - **"Create Fix Draft" is a convenience.** Pre-names the draft, links it to the original publish — reduces friction for the correction workflow.
-- **Future: deep link validation.** AMP UP could eventually warn about broken internal links BEFORE publishing. But that's Phase 4+.
+- **Future: deep link validation.** AMP Atlas could eventually warn about broken internal links BEFORE publishing. But that's Phase 4+.
 
 **What could go wrong:**
 - If Kristi can't see what her publish changed, she can't figure out what to fix
 - If the only way to undo is to contact someone with GitHub admin access, trust in the tool breaks
-- If "fixing forward" requires 10 steps, she'll just fix it in terminal (which is fine — AMP UP will detect the changes)
+- If "fixing forward" requires 10 steps, she'll just fix it in terminal (which is fine — AMP Atlas will detect the changes)
 
 ---
 

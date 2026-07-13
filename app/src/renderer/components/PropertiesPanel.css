@@ -90,6 +90,12 @@
   background: white;
 }
 
+.prop-textarea {
+  min-height: 76px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
 .prop-select {
   width: 100%;
   padding: 7px 32px 7px 10px;

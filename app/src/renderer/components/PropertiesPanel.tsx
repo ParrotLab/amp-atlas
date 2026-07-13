@@ -1,6 +1,7 @@
 import './PropertiesPanel.css'
 import { detectFileType, getSchema, FieldSchema } from '../utils/frontmatterSchemas'
 import { CloseIcon } from './SystemIcons'
+import Select from './Select'
 
 interface PropertiesPanelProps {
   isOpen: boolean
@@ -23,11 +24,14 @@ export default function PropertiesPanel({ isOpen, onClose, filePath, data, onCha
     const value = data[f.key]
     if (f.widget === 'select') {
       return (
-        <select className="prop-select" value={String(value ?? '')} disabled={readOnly}
-          onChange={e => setField(f.key, e.target.value)}>
-          <option value="">None</option>
-          {f.options?.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
+        <Select value={String(value ?? '')} options={f.options ?? []} disabled={readOnly}
+          onChange={v => setField(f.key, v)} />
+      )
+    }
+    if (f.widget === 'textarea') {
+      return (
+        <textarea className="prop-input prop-textarea" value={String(value ?? '')} disabled={readOnly} rows={4}
+          onChange={e => setField(f.key, e.target.value)} />
       )
     }
     if (f.widget === 'tags') {

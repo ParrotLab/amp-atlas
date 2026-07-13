@@ -4,10 +4,9 @@ Signed, notarized `.dmg` + auto-update, built locally on a Mac.
 
 ## One-time setup (already done)
 - Developer ID Application certificate in the login keychain (Team `5QCNM58567`).
-- Private repo `ParrotLab/amp-atlas-releases` (holds built binaries only).
+- **Public** repo `ParrotLab/amp-atlas-releases` (holds built binaries only — no source). Public so auto-update needs no embedded token: electron-updater reads the public `releases.atom` feed and downloads assets over plain HTTPS. (A private repo forces a token into the app, and electron-updater's `releases.atom` check only works with classic tokens — a fine-grained PAT 404s — so public is simpler and avoids the whole class of problem.)
 - `app/.env` (gitignored) with:
-  - `AMP_UPDATER_TOKEN` — fine-grained **read-only** PAT on `amp-atlas-releases` (Contents: read). Embedded in the app for auto-update.
-  - `GH_TOKEN` — fine-grained **write** PAT on `amp-atlas-releases` (Contents: read/write). Publishes the release. Never embedded.
+  - `GH_TOKEN` — PAT with write access to `amp-atlas-releases`, used by electron-builder to publish the release. Never embedded in the app. (No `AMP_UPDATER_TOKEN` is needed anymore — the releases repo is public.)
   - `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` — for notarization.
 - `app/build/icon.png` (1024×1024).
 

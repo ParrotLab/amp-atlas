@@ -11,4 +11,10 @@ export function setStoredName(name: string): void {
   window.dispatchEvent(new Event(CHANGED))
 }
 
+/** Clear the locally-stored display name (e.g. on sign out), so the next account starts clean. */
+export function clearStoredName(): void {
+  localStorage.removeItem(KEY)
+  window.dispatchEvent(new Event(CHANGED))
+}
+
 export const PROFILE_CHANGED_EVENT = CHANGED

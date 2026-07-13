@@ -1,4 +1,4 @@
-appId: com.parrotlabs.amp-up
+appId: com.parrotlabs.amp-atlas
 productName: AMP Atlas
 directories:
   output: dist

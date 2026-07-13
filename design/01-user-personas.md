@@ -1,8 +1,8 @@
-# AMP UP — User Personas
+# AMP Atlas — User Personas
 
 ## Why These Personas Exist
 
-These are based on the real humans who will use AMP UP. Every design decision should be tested against: "Would Rose understand this? Would Kristi feel slowed down by this? Would Rachel trust this enough to use it daily?"
+These are based on the real humans who will use AMP Atlas. Every design decision should be tested against: "Would Rose understand this? Would Kristi feel slowed down by this? Would Rachel trust this enough to use it daily?"
 
 ---
 
@@ -32,7 +32,7 @@ about AI   →→→→     organizing everything" →→  install plugins and  
                                                learn GitHub?"          and skip this"
 ```
 
-### What would make her love AMP UP
+### What would make her love AMP Atlas
 - Opens it, sees her Systems, clicks one, sees files she recognizes
 - Clicks a file, it looks like a Google Doc
 - Edits, clicks Save, done
@@ -49,7 +49,7 @@ about AI   →→→→     organizing everything" →→  install plugins and  
 - **Visible value.** She needs to SEE why this is better than just using Claude Desktop + Finder. The organization, the version history, the review flow — these are the selling points.
 
 ### Her risk to the product
-If Rose opens AMP UP and it feels like "another developer tool," she will close it and never come back. She's already been burned by Obsidian and GitHub Desktop. We get one shot.
+If Rose opens AMP Atlas and it feels like "another developer tool," she will close it and never come back. She's already been burned by Obsidian and GitHub Desktop. We get one shot.
 
 ---
 
@@ -67,7 +67,7 @@ If Rose opens AMP UP and it feels like "another developer tool," she will close 
 - Sets up new workspaces, configures CLAUDE.md files, creates skills
 
 ### What she needs
-- To keep using her terminal for git when she wants to (AMP UP must detect and reflect external changes)
+- To keep using her terminal for git when she wants to (AMP Atlas must detect and reflect external changes)
 - A faster way to browse and edit workspace content than switching between Obsidian + terminal + GitHub
 - To see the IDE-style file change indicators she's used to (modified/new/deleted coloring)
 - To review AI employee output efficiently — see what changed, approve or request fixes
@@ -81,11 +81,11 @@ with terminal →→   I need" →→→→→→→→→→→→     3 apps i
                                                                       work too"
 ```
 
-### What would make her love AMP UP
+### What would make her love AMP Atlas
 - All-in-one: file browsing + markdown editing + git status + review — in a single window
-- Doesn't fight her terminal workflow. She can `git commit` in terminal and see it reflected in AMP UP instantly
+- Doesn't fight her terminal workflow. She can `git commit` in terminal and see it reflected in AMP Atlas instantly
 - The editor is as good as Obsidian's for markdown preview
-- She can hand AMP UP to Rose and say "use this" and Rose can actually do it
+- She can hand AMP Atlas to Rose and say "use this" and Rose can actually do it
 - Admin features let her see what's happening across systems without checking GitHub manually
 
 ### Design principles for Kristi
@@ -126,7 +126,7 @@ out anything" →→    figure out everything" →→  of git without the →→
                                                ceremony of git"       system is working"
 ```
 
-### What would make her love AMP UP
+### What would make her love AMP Atlas
 - Opens her system, picks up where she left off
 - Editing feels like writing in a premium app — clean typography, generous whitespace, no visual noise
 - Save and Publish are one or two clicks
@@ -156,4 +156,4 @@ If it doesn't feel polished, she won't advocate for it. Rachel is the CEO — if
 | **"I love this" moment** | "It's like Notion but for our systems" | "Rose can finally do this herself" | "The team is actually using this and I can see it" |
 | **Biggest risk** | Bounces on first bad experience | Rejects if editor/git is worse than current tools | Won't champion it if it feels unpolished |
 | **Power features** | Templates, WYSIWYG editing | Keyboard shortcuts, command palette, admin tools | Activity overview, leadership dashboard |
-| **Success metric** | Uses AMP UP instead of Claude Desktop for content work | Stops doing Rose's git work for her | Opens AMP UP daily without being asked |
+| **Success metric** | Uses AMP Atlas instead of Claude Desktop for content work | Stops doing Rose's git work for her | Opens AMP Atlas daily without being asked |

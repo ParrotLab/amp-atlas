@@ -1,6 +1,6 @@
 # AMP Atlas — MVP Planning Worksheet
 
-> **Naming:** The product is being renamed **AMP UP → AMP Atlas**. This is a *documentation-only* rename for now — the repo, app identifiers, and code are unchanged until a later dedicated pass.
+> **Naming:** The product is being renamed **AMP Atlas → AMP Atlas**. This is a *documentation-only* rename for now — the repo, app identifiers, and code are unchanged until a later dedicated pass.
 
 **Date:** 2026-07-03 (answers captured through 2026-07-07)
 **Status:** Worked through — decisions locked; see the derived MVP scope + build sequence at the bottom
@@ -130,7 +130,7 @@
   - **Backend implication:** the OAuth user token also lets us migrate PR ops off the `gh` CLI to the GitHub REST API later (drops the `gh` dependency entirely). Not required for MVP, but (b) is the on-ramp.
 - **Org & SSO:** Repos under the **Parrot Labs org**; **SSO is NOT enabled** (confirmed 2026-07-06 — SAML SSO shows as a GitHub Enterprise upsell; org-wide 2FA not required). So no SSO authorization step. **One-time check:** Org Settings → *Third-party access* → "OAuth app access restrictions" — if ON, an owner approves the app once (not per-user).
 - **First launch:** **GitHub connection required on first run** for MVP. Local-only mode deferred to **v2**.
-- **Initial repo:** **"already cloned" is the MVP assumption** — coherent with the stack, since Rose/Hannah already use **GitHub Desktop** (onboarding = "clone in GitHub Desktop → connect that folder in AMP UP"). **Clone-from-GitHub-link is a v2 requirement.**
+- **Initial repo:** **"already cloned" is the MVP assumption** — coherent with the stack, since Rose/Hannah already use **GitHub Desktop** (onboarding = "clone in GitHub Desktop → connect that folder in AMP Atlas"). **Clone-from-GitHub-link is a v2 requirement.**
 
 ---
 
@@ -268,7 +268,7 @@
 - **Target window:** ~**1 week** (aspirational / not-worried — soft deadline).
 - **Success metric:** the whole **leadership team is onboarded** and, from the trainings Kristi provides, can do:
   - Set up your account / first system / **new system** *(= connect another existing repo as a vault — NOT scaffolding a new repo, which is §2 out-of-scope)*.
-  - Use **Claude cowork** to work on a new project & view/edit it in AMP UP.
+  - Use **Claude cowork** to work on a new project & view/edit it in AMP Atlas.
   - **Submit** your work for review.
   - **Review** someone else's work — **cannot edit their branch**; **request changes via comments** and **comment on the whole PR** *(review = approve / request-changes / PR-level comment; line-level editing of others' work is out for MVP)*.
   - **Work on multiple projects at once in the same system** (versions).

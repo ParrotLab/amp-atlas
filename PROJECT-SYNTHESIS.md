@@ -1,4 +1,4 @@
-# AMP UP — Project Synthesis
+# AMP Atlas — Project Synthesis
 
 ## What This Document Is
 
@@ -26,13 +26,13 @@ The AI-First Operating Framework defines a powerful system: humans plan work in 
 
 **The gap:** There is no tool that gives non-technical business users the ability to browse, edit, and manage markdown files in a local git-connected workspace with the simplicity of Google Docs or Notion.
 
-**AMP UP fills that gap.**
+**AMP Atlas fills that gap.**
 
 ---
 
-## 2. What AMP UP Is
+## 2. What AMP Atlas Is
 
-**AMP UP** is a locally-run desktop application that provides an Obsidian-like interface for managing markdown files within GitHub-connected workspaces — designed so that any non-technical team member can create, edit, organize, and collaborate on structured content.
+**AMP Atlas** is a locally-run desktop application that provides an Obsidian-like interface for managing markdown files within GitHub-connected workspaces — designed so that any non-technical team member can create, edit, organize, and collaborate on structured content.
 
 ### Core Concept in One Sentence
 
@@ -74,7 +74,7 @@ These are the people operating within the AI-First Operating Framework:
 
 The AMP brand identity establishes a personality: _"The friend who shows up Tuesday with highlighters and a plan."_
 
-For AMP UP, this translates to:
+For AMP Atlas, this translates to:
 
 - **Approachable, not intimidating** — git complexity hidden behind familiar patterns
 - **Structured, not rigid** — clear organization that doesn't feel bureaucratic
@@ -105,7 +105,7 @@ For AMP UP, this translates to:
 Users think in terms of **Systems** (which map to GitHub repos/workspaces):
 
 ```
-AMP UP
+AMP Atlas
 ├── My Systems (dashboard)
 │   ├── Learning System
 │   ├── Marketing System
@@ -123,7 +123,7 @@ AMP UP
 
 We abstract git/GitHub concepts into friendlier language:
 
-| Technical Term | AMP UP Term                      | Why                                                    |
+| Technical Term | AMP Atlas Term                      | Why                                                    |
 | -------------- | -------------------------------- | ------------------------------------------------------ |
 | Repository     | **System**                       | Users think of domain workspaces, not repos            |
 | `main` branch  | **Current Version**              | The single source of truth everyone works from         |
@@ -144,7 +144,7 @@ We abstract git/GitHub concepts into friendlier language:
 
 ## 6. Version & Draft Workflow Model
 
-This is the opinionated workflow that governs how users interact with git through AMP UP. The goal: give users the power of git branching and version control while making the experience feel like working in Google Docs with a "draft → review → publish" cycle.
+This is the opinionated workflow that governs how users interact with git through AMP Atlas. The goal: give users the power of git branching and version control while making the experience feel like working in Google Docs with a "draft → review → publish" cycle.
 
 ### 6.1 Core Concepts
 
@@ -182,13 +182,13 @@ Current Version (main)
 
 **What the user experiences:**
 
-1. User clicks **"New Draft"** — enters a short name (e.g. "Q2 content strategy"). AMP UP creates a git branch with a slugified name (`draft/q2-content-strategy`).
+1. User clicks **"New Draft"** — enters a short name (e.g. "Q2 content strategy"). AMP Atlas creates a git branch with a slugified name (`draft/q2-content-strategy`).
 2. Toolbar shows: `Draft: Q2 Content Strategy` with a status indicator.
 3. User edits files normally. Changes auto-save to disk.
 4. When the user wants to checkpoint, they click **Save** — a small modal asks for an optional note (auto-generated if skipped). This creates a git commit.
 5. When the user wants others to see their work, they click **Publish**. This pushes to GitHub.
 6. When the draft is ready for review, user clicks **"Submit for Review"** — this creates a GitHub PR with a clean summary.
-7. Review happens (in AMP UP or on GitHub). Once approved, user (or reviewer) clicks **"Publish Draft"** which merges to main.
+7. Review happens (in AMP Atlas or on GitHub). Once approved, user (or reviewer) clicks **"Publish Draft"** which merges to main.
 8. Draft disappears. Current Version is updated.
 
 ### 6.3 Draft Status States
@@ -355,7 +355,7 @@ Users may have multiple drafts in progress. Switching between them:
 1. User clicks the Draft selector in the toolbar.
 2. Dropdown shows: Current Version + all user's drafts with status.
 3. User picks a different draft.
-4. AMP UP silently stashes any unsaved edits, checks out the new draft, and restores any stashed edits on that draft.
+4. AMP Atlas silently stashes any unsaved edits, checks out the new draft, and restores any stashed edits on that draft.
 5. File tree, editor, and status bar all update.
 
 ```
@@ -641,9 +641,9 @@ The following files are in `design-system/`:
 ### Open Questions for Discussion
 
 1. **AI integration in the editor?** — Given this is an "AI-native operating system," should the editor have inline AI assistance (like Notion AI or Cursor)? Or is that a later phase?
-2. **Template system** — The framework defines project structure (brain dump → pitch → plan → tasks). Should AMP UP enforce this with templates, or keep it flexible?
+2. **Template system** — The framework defines project structure (brain dump → pitch → plan → tasks). Should AMP Atlas enforce this with templates, or keep it flexible?
 3. **Direct edits to Current Version?** — Should we ever allow users to edit/save directly on the Current Version (main) without creating a Draft? Or should Drafts be mandatory? (Possible: allow for AI Operations/admin role only.)
-4. **Review in-app vs GitHub?** — Should the full PR review experience (approve, request changes, comment) live inside AMP UP, or do reviewers go to GitHub? Hybrid?
+4. **Review in-app vs GitHub?** — Should the full PR review experience (approve, request changes, comment) live inside AMP Atlas, or do reviewers go to GitHub? Hybrid?
 
 ## Other Requirements/Ideas
 

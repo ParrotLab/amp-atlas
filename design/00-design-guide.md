@@ -1,6 +1,6 @@
-# AMP UP — Design Guide
+# AMP Atlas — Design Guide
 
-This is the finalized visual direction for all AMP UP screens. Any new page or experience should follow these patterns.
+This is the finalized visual direction for all AMP Atlas screens. Any new page or experience should follow these patterns.
 
 ## Final Mockups
 

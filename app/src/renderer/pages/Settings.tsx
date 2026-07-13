@@ -77,7 +77,7 @@ export default function Settings() {
   const handleAddSystem = () => setShowAddSystem(true)
 
   const handleRemoveSystem = (systemId: string, systemName: string) => {
-    const confirmed = window.confirm(`Remove "${systemName}"?\n\nThis only removes it from AMP UP — your files won't be deleted.`)
+    const confirmed = window.confirm(`Remove "${systemName}"?\n\nThis only removes it from AMP Atlas — your files won't be deleted.`)
     if (!confirmed) return
     const updated = removeSystem(systemId)
     setSystems(updated)

@@ -140,6 +140,9 @@ interface ElectronAPI {
   github: {
     collaborators: (repoPath: string) => Promise<{ ok: boolean; error?: string; collaborators: { login: string; name: string }[] }>
   }
+  app: {
+    version: () => Promise<string>
+  }
 }
 
 interface Window {

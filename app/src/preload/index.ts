@@ -71,6 +71,9 @@ const api = {
   },
   github: {
     collaborators: (repoPath: string) => ipcRenderer.invoke('github:collaborators', repoPath),
+  },
+  app: {
+    version: () => ipcRenderer.invoke('app:version'),
   }
 }
 

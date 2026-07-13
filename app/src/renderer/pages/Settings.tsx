@@ -7,6 +7,8 @@ import { SUPPORT_FORM_URL, shouldOpenForm } from '../utils/support'
 import ResyncModal from '../components/ResyncModal'
 import NewSystemModal from '../components/NewSystemModal'
 import { useProfile } from '../hooks/useProfile'
+import { AUTH_CHANGED_EVENT } from '../hooks/useAuth'
+import { clearStoredName } from '../utils/userProfile'
 import './Settings.css'
 
 export default function Settings() {
@@ -15,26 +17,24 @@ export default function Settings() {
   const [identity, setIdentity] = useState<{ login: string } | null>(null)
   const [resyncFor, setResyncFor] = useState<SystemConfig | null>(null)
   const [showAddSystem, setShowAddSystem] = useState(false)
+  const [appVersion, setAppVersion] = useState('')
   const profile = useProfile()
   const { showToast } = useToast()
 
   useEffect(() => {
     setSystems(getSystems())
     window.api.auth.identity().then(r => setIdentity(r.identity))
+    window.api.app.version().then(setAppVersion)
   }, [])
 
-  const handleConnectGitHub = async () => {
-    const d = await window.api.auth.startDeviceFlow()
-    if (!d.ok || !d.deviceCode) { showToast(d.error || "Couldn't start GitHub connection"); return }
-    navigator.clipboard.writeText(d.userCode!)
-    window.open(d.verificationUri!)
-    showToast(`Enter code ${d.userCode} on GitHub (copied). Waiting…`)
-    const r = await window.api.auth.pollToken(d.deviceCode, d.interval || 5)
-    if (r.connected) { const id = await window.api.auth.identity(); setIdentity(id.identity); showToast('Connected to GitHub.') }
-    else showToast('GitHub connection did not complete.')
+  // Sign out clears the token, wipes the local name, and announces the auth change — which drops
+  // the app back to the same Connect screen used on first launch (see App.tsx / useAuth).
+  const handleSignOut = async () => {
+    await window.api.auth.signOut()
+    clearStoredName()
+    setIdentity(null)
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT))
   }
-
-  const handleSignOut = async () => { await window.api.auth.signOut(); setIdentity(null); showToast('Signed out of GitHub.') }
 
   const handleCopyLogs = async () => {
     const r = await window.api.diagnostics.recent()
@@ -138,11 +138,9 @@ export default function Settings() {
           <div className="settings-info-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div className="settings-info-label">Publishing &amp; review</div>
-              <div className="settings-info-value">{identity ? `Connected as ${profile.name ? `${profile.name} · ` : ''}@${identity.login}` : 'Connect GitHub to publish drafts and review changes.'}</div>
+              <div className="settings-info-value">{identity ? `Connected as ${profile.name ? `${profile.name} · ` : ''}@${identity.login}` : 'Connected to GitHub.'}</div>
             </div>
-            {identity
-              ? <button className="settings-btn danger" onClick={handleSignOut}>Sign out</button>
-              : <button className="settings-btn primary" onClick={handleConnectGitHub}>Connect to GitHub</button>}
+            <button className="settings-btn danger" onClick={handleSignOut}>Sign out</button>
           </div>
         </div>
 
@@ -150,7 +148,7 @@ export default function Settings() {
           <div className="settings-section-title" style={{ marginBottom: '14px' }}>About</div>
           <div className="settings-info-card">
             <div className="settings-info-label">Version</div>
-            <div className="settings-info-value">AI Momentum Protocols v0.1.0</div>
+            <div className="settings-info-value">AMP Atlas{appVersion ? ` v${appVersion}` : ''}</div>
           </div>
         </div>
 

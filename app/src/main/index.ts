@@ -447,6 +447,7 @@ ipcMain.handle('auth:identity', async () => {
 })
 ipcMain.handle('auth:status', async () => ({ connected: tokenStore().getToken() !== null, everConnected: tokenStore().hasEverConnected() }))
 ipcMain.handle('auth:signOut', async () => { tokenStore().clearToken(); return { ok: true } })
+ipcMain.handle('app:version', () => app.getVersion())
 
 ipcMain.handle('github:collaborators', async (_e, repoPath: string) => {
   try { return { ok: true, collaborators: await github.collaborators(repoPath) } } catch (e) { return { ok: false, error: String(e), collaborators: [] } }

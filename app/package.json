@@ -1,6 +1,6 @@
 {
   "name": "app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AMP Atlas — a markdown editor over GitHub for the AMP team.",
   "main": "./out/main/index.js",
   "scripts": {
@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "release": "dotenv -e .env -- npm run release:build",
-    "release:build": "electron-vite build && electron-builder --mac --publish always"
+    "release:build": "electron-vite build && npm run release:tag && electron-builder --mac --publish always",
+    "release:tag": "gh release create v$npm_package_version --repo ParrotLab/amp-atlas-releases --title $npm_package_version --notes \"AMP Atlas $npm_package_version\" --target main || true"
   },
   "keywords": [],
   "author": "",

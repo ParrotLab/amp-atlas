@@ -1,0 +1,115 @@
+.amp-select {
+  position: relative;
+  width: 100%;
+}
+
+.amp-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #EDE8E2;
+  border-radius: 8px;
+  background: #FEFCF9;
+  color: #4A4743;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 100ms ease, box-shadow 100ms ease, background 100ms ease;
+}
+
+.amp-select-trigger:hover:not(:disabled) {
+  border-color: #D4D0CC;
+}
+
+.amp-select-trigger.open,
+.amp-select-trigger:focus-visible {
+  outline: none;
+  border-color: rgba(139, 43, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(139, 43, 255, 0.08);
+  background: white;
+}
+
+.amp-select-trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.amp-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amp-select-value.placeholder {
+  color: #B5B1AC;
+}
+
+.amp-select-chevron {
+  display: flex;
+  color: #A9A49D;
+  flex-shrink: 0;
+}
+
+.amp-select-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.amp-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 41;
+  background: white;
+  border: 1px solid #EDE8E2;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(60, 50, 40, 0.12);
+  padding: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.amp-select-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #4A4743;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 80ms ease;
+}
+
+.amp-select-item:hover {
+  background: #F5F0EB;
+}
+
+.amp-select-item.active {
+  color: #8B2BFF;
+  background: rgba(139, 43, 255, 0.06);
+}
+
+.amp-select-item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amp-select-check {
+  color: #8B2BFF;
+  font-size: 12px;
+  flex-shrink: 0;
+}

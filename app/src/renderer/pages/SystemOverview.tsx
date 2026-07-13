@@ -99,7 +99,7 @@ export default function SystemOverview() {
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewDecision?: string | null }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewDecision?: string | null; changesRequestedBy?: string[]; requestedReviewers?: string[] }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -152,36 +152,47 @@ export default function SystemOverview() {
     if (r.ok) { setLastPull(rootPath, Date.now()); setRefreshTick(t => t + 1); void fetchGitStatus() }
   }
 
-  // Opening a system: restore its previously-open tabs; if none, auto-open README.md if present.
+  // Restore the tabs saved for a given branch (System + branch), skipping files that no longer
+  // exist on that branch; falls back to README.md, else leaves the editor empty. Shared by the
+  // system-open effect and the branch switcher so both behave identically.
+  const restoreTabsForBranch = useCallback(async (branchName: string): Promise<void> => {
+    if (!systemId || !rootPath) return
+    const saved = getStoredTabs(systemId, branchName)
+    const valid: { path: string; name: string }[] = []
+    for (const t of saved?.tabs ?? []) {
+      // Only restore tabs under THIS system's folder (guards against stale cross-system tabs).
+      if (!t.path.startsWith(rootPath + '/')) continue
+      const s = await window.api.fs.stat(t.path)   // file may not exist on this branch — skip if so
+      if (s.ok) valid.push(t)
+    }
+    if (valid.length > 0) {
+      setTabs(valid)
+      setSelectedFile(saved?.active && valid.some(t => t.path === saved.active) ? saved.active : valid[0].path)
+    } else {
+      const readme = `${rootPath}/README.md`
+      const s = await window.api.fs.stat(readme)
+      if (s.ok) { setTabs([{ path: readme, name: 'README.md' }]); setSelectedFile(readme) }
+      else { setTabs([]); setSelectedFile(undefined) }
+    }
+  }, [systemId, rootPath])
+
+  // Opening a system: restore the current branch's previously-open tabs.
   useEffect(() => {
     if (!systemId || !rootPath) return
     let cancelled = false
     ;(async () => {
-      const saved = getStoredTabs(systemId)
-      const valid: { path: string; name: string }[] = []
-      for (const t of saved?.tabs ?? []) {
-        // Only restore tabs that belong to THIS system's folder (guards against stale cross-system tabs).
-        if (!t.path.startsWith(rootPath + '/')) continue
-        const s = await window.api.fs.stat(t.path)
-        if (s.ok) valid.push(t)
-      }
-      if (cancelled) return
-      if (valid.length > 0) {
-        setTabs(valid)
-        setSelectedFile(saved?.active && valid.some(t => t.path === saved.active) ? saved.active : valid[0].path)
-      } else {
-        const readme = `${rootPath}/README.md`
-        const s = await window.api.fs.stat(readme)
-        if (!cancelled && s.ok) { setTabs([{ path: readme, name: 'README.md' }]); setSelectedFile(readme) }
-      }
+      const st = await window.api.git.status(rootPath)
+      const cur = (st.ok && st.status ? st.status.current : '') || 'main'
+      if (!cancelled) await restoreTabsForBranch(cur)
     })()
     return () => { cancelled = true }
-  }, [systemId, rootPath])
+  }, [systemId, rootPath, restoreTabsForBranch])
 
-  // Persist open tabs per system (only when non-empty, so transient clears don't wipe saved state).
+  // Persist open tabs per (system + branch), only when non-empty so transient clears (e.g. during
+  // a branch switch) don't wipe saved state.
   useEffect(() => {
-    if (systemId && tabs.length > 0) setStoredTabs(systemId, { tabs, active: selectedFile })
-  }, [systemId, tabs, selectedFile])
+    if (systemId && branch && tabs.length > 0) setStoredTabs(systemId, branch, { tabs, active: selectedFile })
+  }, [systemId, branch, tabs, selectedFile])
 
   // Re-show the move-changes banner if the user edits Live again after dismissing.
   useEffect(() => { if (!isDirty) setMoveBannerDismissed(false) }, [isDirty])
@@ -262,7 +273,9 @@ export default function SystemOverview() {
         title: result.pr?.title,
         body: result.pr?.body,
         state: result.pr?.state,
-        reviewDecision: result.pr?.reviewDecision
+        reviewDecision: result.pr?.reviewDecision,
+        changesRequestedBy: result.pr?.changesRequestedBy,
+        requestedReviewers: result.pr?.requestedReviewers
       })
     }
   }, [rootPath, branch, isMainBranch])
@@ -445,6 +458,8 @@ export default function SystemOverview() {
 
   const doSwitch = async (branchName: string) => {
     if (!rootPath) return
+    // Remember the tabs open on the branch we're leaving, so they come back when we return to it.
+    if (systemId && branch && tabs.length > 0) setStoredTabs(systemId, branch, { tabs, active: selectedFile })
     setGitModified(new Set()); setGitNew(new Set()); setGitDeleted(new Set())
     setTabs([]); setSelectedFile(undefined); setIsDirty(false)
     const result = await window.api.git.switchBranch(rootPath, branchName)
@@ -456,6 +471,7 @@ export default function SystemOverview() {
       }
       await new Promise(r => setTimeout(r, 500))
       await fetchGitStatus(); setTreeKey(k => k + 1); refreshDrafts()
+      await restoreTabsForBranch(branchName)   // reopen the tabs last used on the branch we switched to
     } else {
       showToast(`Couldn't switch: ${result.error}`); await fetchGitStatus()
     }
@@ -923,6 +939,7 @@ export default function SystemOverview() {
         hasPR={prStatus.hasPR}
         existingTitle={prStatus.title}
         existingBody={prStatus.body}
+        lockedReviewers={prStatus.state === 'OPEN' ? (prStatus.changesRequestedBy ?? []) : []}
       />
       <ConflictModal
         isOpen={conflictFiles !== null}

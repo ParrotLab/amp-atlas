@@ -1,12 +1,16 @@
 # Templates guide
 
-When you create certain things in AMP Atlas, you don't start from a blank page — you start
-from a **template** that lays out the right structure with helpful prompts to fill in. This
-guide explains the three templates you'll use and when to reach for each.
+When you create certain things in AMP Atlas, you don't have to start from a blank page — you
+can start from a **template** that lays out the right structure with helpful prompts to fill
+in. This guide explains the three templates you'll use and when to reach for each.
+
+> **Templates are optional.** They're a convenience, not a requirement — a way to work in the
+> AMP methodology without having to remember all the pieces yourself. If you'd rather build
+> something your own way, you can; the templates are just there to make the common cases easy.
 
 Templates exist because good structure makes work easier — for you *and* for anyone (or any
-Claude) who picks it up later. Each template has grey guidance notes inside it; fill in the
-sections in plain language and delete the notes as you go.
+Claude) who picks it up later. Each template has **purple guidance notes** inside it; fill in
+the sections in plain language and delete the notes as you go.
 
 ---
 
@@ -83,11 +87,11 @@ System:
 - The **+** in the Work area → **New project** (braindump + pitch).
 - The **+** in the Reference area → **New sub-system** (README).
 
-AMP Atlas drops in the right template automatically, prompts and all. Replace the grey
+AMP Atlas drops in the right template automatically, prompts and all. Replace the purple
 guidance notes with your own content, and you're off. (Right-clicking to make a plain **New
 file** gives you a blank document instead.)
 
-![A freshly created pitch showing its section headings and grey guidance prompts](../images/template-pitch-example.png)
+![A freshly created pitch showing its section headings and purple guidance prompts](../images/template-pitch-example.png)
 *A new template comes pre-filled with prompts to replace. (Optional screenshot.)*
 
 ---

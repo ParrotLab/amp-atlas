@@ -39,8 +39,11 @@ you'll never have to *use* GitHub directly. You just need to connect your accoun
 AMP Atlas can act on your behalf.
 
 1. Click **Connect to GitHub**.
-2. AMP Atlas shows you a short code and opens your web browser to a GitHub page.
-3. Enter the code and approve the connection in the browser.
+2. AMP Atlas shows you a short code (it's **copied to your clipboard automatically**) and
+   opens your web browser to a GitHub page.
+3. Paste the code and approve the connection in the browser. **If you're part of a team, be
+   sure to select the organization your Systems live in** when GitHub asks — that's what lets
+   AMP Atlas reach your team's repositories.
 4. Come back to AMP Atlas — you're connected.
 
 ![Connect screen: the device code and the "Connect to GitHub" button](../images/connect-screen.png)
@@ -76,9 +79,10 @@ Pick the folder your System lives in, and AMP Atlas connects to it. Everything a
 it shows up right away, ready to work with.
 
 > **The folder needs to be a connected System already.** It must be a folder your team set
-> up and that's linked to GitHub. If you point AMP Atlas at a folder that isn't connected to
-> GitHub, it'll let you know with a clear message rather than adding it. When in doubt, ask
-> your team lead which folder to choose.
+> up and that's linked to GitHub. Also make sure you pick the **top folder of the System**,
+> not a folder *inside* it — pointing AMP Atlas at a sub-folder won't work either. If the
+> folder isn't a connected System, AMP Atlas will let you know with a clear message rather
+> than adding it. When in doubt, ask your team lead which folder to choose.
 
 > **Already use Obsidian?** A System folder works just like an Obsidian vault — in fact, you
 > can point AMP Atlas at the same folder and use both.

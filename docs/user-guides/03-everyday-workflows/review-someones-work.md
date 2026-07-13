@@ -16,6 +16,17 @@ one to see the review.
 
 ---
 
+## Start with the description
+
+Before diving into the files, read the author's **description** at the top of the review.
+A good one tells you two things: a **summary of what changed**, and **what kind of feedback
+they're looking for** from you. That's your map — it tells you where to spend your attention.
+
+The description is **expandable and collapsible**, so once you've read it you can tuck it
+away to focus on the files, and pop it back open any time you need to re-anchor yourself.
+
+---
+
 ## Reading the changes
 
 Inside a review, the changed files are laid out as a list you can expand. For each file, you
@@ -98,6 +109,16 @@ Live Version trustworthy.
 
 ![The review action bar: a note field with Approve and Request changes buttons](../images/review-action-bar.png)
 *Your feedback goes in one note, alongside Approve / Request changes.*
+
+### How many approvals it takes
+
+An author can ask **more than one person** to review. As far as AMP Atlas is concerned, once
+**one** reviewer approves, the Draft can be published.
+
+> **Your team may have extra rules.** Some teams require more than one approval, or that
+> someone other than the author signs off. Those rules aren't shown inside AMP Atlas, so a
+> **Publish** can occasionally be blocked even though the app looks ready. If that happens,
+> it's not a bug — check with your team lead about your team's publishing rules.
 
 ---
 

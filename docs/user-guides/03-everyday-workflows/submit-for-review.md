@@ -30,7 +30,10 @@ in the status bar. A window opens where you:
 - See a **summary of what you're publishing** — how many saves and files changed, plus a list
   of your recent change notes, so you and your reviewer can see the shape of the work. (This
   is a summary of your changes, not a line-by-line diff.)
-- Give it a **title** and, optionally, a short **description** of what changed and why.
+- Give it a **title**, and add a **description**. The description is technically optional,
+  but you really should write one — a short summary of **what changed** and **what you want
+  your reviewer to focus on**. It's the first thing they'll read, and it makes their review
+  faster and more useful (more on that just below).
 - **Pick your reviewer(s)** — the teammate(s) you want to look it over.
 
 ![The Submit-for-review window: change summary, title/description, and reviewer picker](../images/submit-review-modal.png)

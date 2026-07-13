@@ -97,7 +97,7 @@ in [Submitting your work for review](../03-everyday-workflows/submit-for-review.
 
 ## The status bar — where you are right now
 
-At the top of a System's editor, a **status bar** keeps you oriented while you work. It
+At the bottom of a System's editor, a **status bar** keeps you oriented while you work. It
 shows:
 
 - **Which version you're in** — a switcher reading either **Live Version** (with a green dot

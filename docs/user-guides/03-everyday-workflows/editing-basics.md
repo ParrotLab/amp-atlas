@@ -40,20 +40,32 @@ your curiosity. You can't break anything by looking.
 
 ## Writing and formatting
 
-The editor is a clean, friendly writing space. You type normally, and formatting works the
-way you'd expect — headings, **bold**, _italics_, lists, links, quotes, and so on.
+The editor is a clean, friendly writing space. There are **three ways to format** — use
+whichever feels natural, or mix them:
 
-The quickest way to add structured blocks is the **"/" menu**: on a new line, type **`/`**
-and pick what you want — Heading, Bullet list, Numbered list, Checklist, Quote, Code block,
-Table, or Divider. No special syntax to memorize.
+- **Type shortcuts as you go.** If you're comfortable with Markdown, just type it: `#` for a
+  big heading, `##` for a smaller one, `-` for a bullet, `>` for a quote, `**bold**`, and so
+  on. The editor turns it into formatting automatically.
+- **Highlight and pick.** Select some text and a little **bubble menu** pops up with bold,
+  italics, links, and more — great when you don't want to remember any shortcuts.
+- **Use the "/" menu.** On a new line, type **`/`** and choose what to insert — Heading,
+  Bullet list, Numbered list, Checklist, Quote, Code block, Table, or Divider.
+
+None of these require any technical know-how — pick the one that fits how you like to work.
 
 ---
 
 ## Creating new documents and folders
 
-To add something new, **right-click** in the file tree where you want it, and choose
-**New file** or **New folder**. You'll name it, and it appears right where you put it. A
-plain new file starts blank.
+There are two ways to add something new:
+
+- **Right-click in the file tree** where you want it, and choose **New file** or **New
+  folder**. It appears right where you clicked.
+- **Use the New file / New folder buttons** at the top of the file tree, by the search bar.
+  These open a small window where you name the item and then choose where it goes — you can
+  drill down into any folder to drop it exactly where you want.
+
+Either way, you name it and it's created. A plain new file starts blank.
 
 ### Starting from a template
 
@@ -77,12 +89,21 @@ to use it.
 ## Properties (mostly on playbooks)
 
 Some documents carry a small set of **properties** — labeled details shown in the
-**properties** panel when the document is open. Today these mainly appear on **playbooks**.
+**properties** panel when the document is open. Today these appear on **playbooks** (the
+`SKILL.md` file for a playbook), and there are five of them:
 
-The key one is a playbook's **Status**, which is a **quality grade** showing how proven the
-playbook is: _Not Yet Graded_, _A_, _B_, _C_, _F_, or _Future_. It tells your team (and
-Claude) how much to trust that playbook. Most other documents simply show "No properties for
-this file," and that's fine.
+- **Name** — what the playbook is called.
+- **Description** — a short summary of what it does and when to run it. This is important:
+  it's how Claude knows when a playbook is the right one to use, so keep it clear and specific.
+- **System** — which System this playbook belongs to.
+- **Sub-system** — which area within the System it belongs to, if any.
+- **Status** — a **quality grade** showing how proven the playbook is: _Not Yet Graded_,
+  _A (Great)_, _B (Useful)_, _C (Not Useful)_, _F (Not Usable)_, or _Future_. It tells your
+  team (and Claude) how much to trust that playbook.
+
+Fill these in from the properties panel when a playbook is open. Keeping the **Description**
+and **Status** accurate matters most — they're what help both people and Claude use the
+playbook well. Most other documents simply show "No properties for this file," and that's fine.
 
 ![The properties panel showing a playbook's Status grade dropdown](../images/properties-status.png)
 *A playbook's Status grade lives in the properties panel.*

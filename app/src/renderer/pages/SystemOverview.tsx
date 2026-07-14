@@ -99,7 +99,7 @@ export default function SystemOverview() {
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewDecision?: string | null; changesRequestedBy?: string[]; requestedReviewers?: string[] }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[] }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -264,7 +264,9 @@ export default function SystemOverview() {
 
   // Re-fetchable so we can refresh it right after submitting for review (not just on branch change / reload).
   const fetchPrStatus = useCallback(async () => {
-    if (!rootPath || !branch || isMainBranch) { setPrStatus({ hasPR: false }); return }
+    // Skip GitHub entirely unless this is a connected git repo on a draft — no needless calls
+    // (or errors) for systems with no remote / not connected.
+    if (!rootPath || !branch || isMainBranch || !caps.isGitRepo || !caps.connected) { setPrStatus({ hasPR: false }); return }
     const result = await window.api.git.prStatus(rootPath)
     if (result.ok) {
       setPrStatus({
@@ -273,17 +275,17 @@ export default function SystemOverview() {
         title: result.pr?.title,
         body: result.pr?.body,
         state: result.pr?.state,
-        reviewDecision: result.pr?.reviewDecision,
+        reviewState: result.pr?.reviewState,
         changesRequestedBy: result.pr?.changesRequestedBy,
-        requestedReviewers: result.pr?.requestedReviewers
+        reviewers: result.pr?.reviewers
       })
     }
-  }, [rootPath, branch, isMainBranch])
+  }, [rootPath, branch, isMainBranch, caps.isGitRepo, caps.connected])
 
   useEffect(() => { void fetchPrStatus() }, [fetchPrStatus])
 
   useEffect(() => {
-    if (!rootPath || isMainBranch) return
+    if (!rootPath || isMainBranch || !caps.isGitRepo || !caps.connected) return
     const checkMerged = async () => {
       const result = await window.api.git.checkMerged(rootPath)
       if (result.ok && result.merged && result.branch) {
@@ -302,7 +304,7 @@ export default function SystemOverview() {
     // Check every 30 seconds
     const interval = setInterval(checkMerged, 30000)
     return () => clearInterval(interval)
-  }, [rootPath, isMainBranch, branch, fetchGitStatus])
+  }, [rootPath, isMainBranch, branch, caps.isGitRepo, caps.connected, fetchGitStatus])
 
   // "Save" = git add + commit. File edits are already written to disk by the editor's autosave.
   const handleSave = async () => {
@@ -478,23 +480,22 @@ export default function SystemOverview() {
   }
   const handleSwitchBranch = (branchName: string) => guarded(() => doSwitch(branchName))
 
-  // On connecting a system whose folder is on a non-main branch (not an app-managed draft),
-  // start from the Live Version. Uses a fresh status (not the stale mount-time React state)
-  // and the existing Save/Discard prompt when there are unsaved edits.
+  // Opening a system whose folder is checked out on a non-main branch Atlas didn't create: instead
+  // of force-switching to the Live Version (a checkout that fails on a dirty tree and surfaces scary
+  // git errors), just adopt that branch as a draft and stay on it. Any non-main branch is a draft in
+  // Atlas's model, so this is the clean happy path — no switch, no error, and it shows up as a draft.
   useEffect(() => {
     if (!rootPath || !systemId || connectRef.current.checked) return
     connectRef.current.checked = true
     ;(async () => {
       const st = await window.api.git.status(rootPath)
       const cur = st.ok && st.status ? st.status.current : ''
-      if (!cur || cur === 'main' || cur === 'master') return
-      if (connectRef.current.known.has(cur)) return   // reopening a known draft — stay on it
-      logCrumb(`connected folder on branch "${cur}" — starting on Live Version`)
-      const goMain = () => doSwitch('main')
-      if (st.status && !st.status.isClean) setPending(() => goMain)   // ask Save/Discard first
-      else void goMain()
+      if (!cur || cur === 'main' || cur === 'master') return   // on the Live Version — nothing to do
+      if (connectRef.current.known.has(cur)) return             // reopening a known draft — stay on it
+      logCrumb(`connected folder on branch "${cur}" — adopting it as a draft`)
+      registerDraft(systemId, cur, humanize(cur)); touchDraft(systemId, cur); refreshDrafts()
     })()
-  }, [rootPath, systemId])
+  }, [rootPath, systemId, refreshDrafts])
 
   // Archive = mark archived in the registry (keep the branch); switch off it first if current.
   const handleArchiveBranch = (branchName: string) => {
@@ -939,6 +940,8 @@ export default function SystemOverview() {
         hasPR={prStatus.hasPR}
         existingTitle={prStatus.title}
         existingBody={prStatus.body}
+        // On re-submit: pre-select everyone already on the review, and lock those who requested changes.
+        preselectedReviewers={prStatus.state === 'OPEN' ? (prStatus.reviewers ?? []) : []}
         lockedReviewers={prStatus.state === 'OPEN' ? (prStatus.changesRequestedBy ?? []) : []}
       />
       <ConflictModal

@@ -26,12 +26,6 @@ async function ownerRepo(repoPath: string): Promise<{ owner: string; repo: strin
   return or
 }
 
-async function reviewDecision(owner: string, repo: string, num: number): Promise<string | null> {
-  const reviews = await gh(`/repos/${owner}/${repo}/pulls/${num}/reviews`) as { state: string }[]
-  const decisive = [...reviews].reverse().find(r => r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED')
-  return decisive ? decisive.state : null
-}
-
 type RawPr = { number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null; requested_reviewers?: { login: string }[] | null }
 
 /**
@@ -51,24 +45,51 @@ export function pickActivePr(list: RawPr[]): { number: number; title: string; ur
   }
 }
 
+export type ReviewState = 'in_review' | 'changes_requested' | 'approved'
+
+export interface ReviewSummary {
+  state: ReviewState
+  approvedBy: string[]
+  changesRequestedBy: string[]
+  pending: string[]      // currently-requested reviewers (may include re-requested)
+  reviewers: string[]    // everyone involved (union), for pre-selecting on re-submit
+}
+
 /**
- * Pure: summarize a PR's reviews into the overall decision plus who currently requests changes.
- * `changesRequestedBy` = logins whose *latest* decisive review is CHANGES_REQUESTED (a later
- * APPROVED or DISMISSED clears them). Used to auto-re-request those reviewers on re-submit.
+ * Pure: reduce a PR's reviews + currently-requested reviewers into one review state.
+ *
+ * Each reviewer's *latest* decisive review counts (a DISMISSED review clears them). A reviewer who
+ * is currently re-requested is treated as **pending** — their earlier verdict is superseded (this
+ * is what happens after the author re-submits following a change request).
+ *
+ * Precedence, so status never depends on who reviewed last:
+ *   1. any outstanding "changes requested"  → `changes_requested` (blocks publish, beats approvals)
+ *   2. else at least one approval            → `approved` (one approval is enough)
+ *   3. else                                  → `in_review`
  */
-export function summarizeReviews(reviews: { state: string; user: { login: string } }[]): { decision: string | null; changesRequestedBy: string[] } {
+export function reviewSummary(
+  reviews: { state: string; user: { login: string } }[],
+  requestedReviewers: string[],
+): ReviewSummary {
   const latestByUser = new Map<string, string>()
-  let decision: string | null = null
   for (const r of reviews) {
-    if (r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED') {
-      latestByUser.set(r.user.login, r.state)
-      decision = r.state
-    } else if (r.state === 'DISMISSED') {
-      latestByUser.set(r.user.login, 'DISMISSED')
-    }
+    if (r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED') latestByUser.set(r.user.login, r.state)
+    else if (r.state === 'DISMISSED') latestByUser.set(r.user.login, 'DISMISSED')
   }
-  const changesRequestedBy = [...latestByUser].filter(([, s]) => s === 'CHANGES_REQUESTED').map(([login]) => login)
-  return { decision, changesRequestedBy }
+  const pendingSet = new Set(requestedReviewers)
+  const approvedBy: string[] = []
+  const changesRequestedBy: string[] = []
+  for (const [login, s] of latestByUser) {
+    if (pendingSet.has(login)) continue   // re-requested → pending; old verdict no longer counts
+    if (s === 'APPROVED') approvedBy.push(login)
+    else if (s === 'CHANGES_REQUESTED') changesRequestedBy.push(login)
+  }
+  const state: ReviewState =
+    changesRequestedBy.length > 0 ? 'changes_requested'
+      : approvedBy.length > 0 ? 'approved'
+        : 'in_review'
+  const reviewers = [...new Set([...approvedBy, ...changesRequestedBy, ...requestedReviewers])]
+  return { state, approvedBy, changesRequestedBy, pending: requestedReviewers, reviewers }
 }
 
 export async function createPR(repoPath: string, title: string, body: string, reviewers: string[]) {
@@ -86,13 +107,18 @@ export async function listPRs(repoPath: string) {
   const { owner, repo } = await ownerRepo(repoPath)
   const prs = await gh(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`) as Array<{ number: number; title: string; state: string; user: { login: string }; created_at: string; head: { ref: string }; html_url: string; body: string | null; requested_reviewers: { login: string }[] | null }>
   return Promise.all(prs.map(async p => {
-    const detail = await gh(`/repos/${owner}/${repo}/pulls/${p.number}`) as { additions: number; deletions: number; changed_files: number }
+    const [detail, reviews] = await Promise.all([
+      gh(`/repos/${owner}/${repo}/pulls/${p.number}`) as Promise<{ additions: number; deletions: number; changed_files: number }>,
+      gh(`/repos/${owner}/${repo}/pulls/${p.number}/reviews`) as Promise<{ state: string; user: { login: string } }[]>,
+    ])
+    const review = reviewSummary(reviews, (p.requested_reviewers ?? []).map(u => u.login))
     return {
       number: p.number, title: p.title, state: p.state.toUpperCase(),
       author: { login: p.user.login, name: p.user.login }, createdAt: p.created_at,
-      headRefName: p.head.ref, reviewDecision: await reviewDecision(owner, repo, p.number),
+      headRefName: p.head.ref,
+      reviewState: review.state, approvedBy: review.approvedBy, changesRequestedBy: review.changesRequestedBy,
       url: p.html_url, additions: detail.additions, deletions: detail.deletions, changedFiles: detail.changed_files,
-      body: p.body || '', requestedReviewers: (p.requested_reviewers ?? []).map(u => u.login),
+      body: p.body || '', requestedReviewers: review.pending, reviewers: review.reviewers,
     }
   }))
 }
@@ -105,8 +131,8 @@ export async function prStatus(repoPath: string) {
   const active = pickActivePr(list)
   if (!active) return { hasPR: false }
   const reviews = await gh(`/repos/${owner}/${repo}/pulls/${active.number}/reviews`) as { state: string; user: { login: string } }[]
-  const { decision, changesRequestedBy } = summarizeReviews(reviews)
-  return { hasPR: true, pr: { ...active, reviewDecision: decision, changesRequestedBy } }
+  const review = reviewSummary(reviews, active.requestedReviewers)
+  return { hasPR: true, pr: { ...active, reviewState: review.state, approvedBy: review.approvedBy, changesRequestedBy: review.changesRequestedBy, reviewers: review.reviewers } }
 }
 
 export async function checkMerged(repoPath: string) {

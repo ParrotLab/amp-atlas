@@ -19,6 +19,8 @@ interface PublishModalProps {
   existingBody?: string
   /** Reviewers who requested changes: pre-selected, not de-selectable, and re-requested on submit. */
   lockedReviewers?: string[]
+  /** Reviewers already on the review: pre-selected on open (but can be de-selected, unlike locked). */
+  preselectedReviewers?: string[]
 }
 
 const AVATAR_COLORS = ['#8B2BFF', '#FF7B00', '#7A3D8F', '#16A34A', '#2563EB', '#E11D48']
@@ -28,7 +30,7 @@ function avatarColor(login: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody, lockedReviewers = [] }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody, lockedReviewers = [], preselectedReviewers = [] }: PublishModalProps) {
   const [title, setTitle] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
   const descEditor = useEditor({ extensions: editorExtensions(), editable: true, content: '' })
@@ -51,7 +53,9 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
 
     setTitle(hasPR ? (existingTitle || draftName || '') : (draftName || ''))
     descEditor?.commands.setContent(hasPR ? (existingBody || '') : '', { contentType: 'markdown' })
-    setSelectedReviewers([])
+    // Pre-select everyone already on the review (locked ones are always included); keep them so a
+    // re-submit doesn't silently drop reviewers. The author can still de-select the non-locked ones.
+    setSelectedReviewers(preselectedReviewers.filter(r => !lockedReviewers.includes(r)))
     setStatus('idle')
     setSubmittedPR(null)
     setDraftCommits([])

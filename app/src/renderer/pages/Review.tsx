@@ -17,7 +17,9 @@ interface PRInfo {
   title: string
   author: { login: string; name: string }
   createdAt: string
-  reviewDecision: string | null
+  reviewState: 'in_review' | 'changes_requested' | 'approved'
+  approvedBy: string[]
+  changesRequestedBy: string[]
   requestedReviewers: string[]
   url: string
   body: string
@@ -82,7 +84,7 @@ export default function Review() {
     window.api.git.listPRs(repoPath).then(result => {
       if (result.ok) {
         const found = result.prs.find(p => p.number === prNum)
-        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewDecision: found.reviewDecision, requestedReviewers: found.requestedReviewers, url: found.url, body: found.body, headRefName: found.headRefName })
+        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewState: found.reviewState, approvedBy: found.approvedBy, changesRequestedBy: found.changesRequestedBy, requestedReviewers: found.requestedReviewers, url: found.url, body: found.body, headRefName: found.headRefName })
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
@@ -174,16 +176,22 @@ export default function Review() {
   const fileNameOf = (path: string) => path.split('/').pop() || path
   const filePathOf = (path: string) => { const p = path.split('/'); return p.length > 1 ? p.slice(0, -1).join('/') + '/' : '' }
 
-  // A pending re-review request means the author re-submitted after changes — it's back in
-  // review, which takes precedence over the (now stale) prior decision. Mirrors inboxClassify.
-  const pendingReReview = (pr?.requestedReviewers?.length ?? 0) > 0
-
   const badge: { variant: BadgeVariant; label: string } =
     !isAuthor ? { variant: 'brand', label: 'Needs your review' }
-    : pendingReReview ? { variant: 'neutral', label: 'In review' }
-    : pr?.reviewDecision === 'APPROVED' ? { variant: 'success', label: 'Approved' }
-    : pr?.reviewDecision === 'CHANGES_REQUESTED' ? { variant: 'warning', label: 'Changes requested' }
+    : pr?.reviewState === 'approved' ? { variant: 'success', label: 'Approved' }
+    : pr?.reviewState === 'changes_requested' ? { variant: 'warning', label: 'Changes requested' }
     : { variant: 'neutral', label: 'In review' }
+
+  // Plain-language "who did what" so the author (and reviewer) can see the full picture at a glance.
+  const nmeList = (logins: string[]) => logins.map(u => `@${u}`).join(', ')
+  const reviewBreakdown = (() => {
+    if (!pr) return ''
+    const parts: string[] = []
+    if (pr.approvedBy.length) parts.push(`Approved by ${nmeList(pr.approvedBy)}`)
+    if (pr.changesRequestedBy.length) parts.push(`Changes requested by ${nmeList(pr.changesRequestedBy)}`)
+    if (pr.requestedReviewers.length) parts.push(`Waiting on ${nmeList(pr.requestedReviewers)}`)
+    return parts.join(' · ')
+  })()
 
   const Icon = system ? (iconMap[system.icon] || BookIcon) : BookIcon
   const chipTint = system ? softTint(primaryColor(system.gradient)) : undefined
@@ -211,6 +219,9 @@ export default function Review() {
                 <div className="review-meta">
                   {pr.author.name || pr.author.login} · {system?.name} · {files.length} file{files.length !== 1 ? 's' : ''} · {timeAgo(pr.createdAt)}
                 </div>
+                {reviewBreakdown && (
+                  <div className="review-meta" style={{ marginTop: '3px', color: 'var(--color-text-tertiary)' }}>{reviewBreakdown}</div>
+                )}
               </div>
               <Badge variant={badge.variant}>{badge.label}</Badge>
               <div className="review-menu-wrap">
@@ -226,11 +237,13 @@ export default function Review() {
               </div>
             </div>
 
-            {isAuthor && !pendingReReview && feedback && feedback.state === 'CHANGES_REQUESTED' && feedback.body && (
+            {isAuthor && pr.reviewState !== 'in_review' && feedback && feedback.body && (
               <div className="review-feedback">
                 <div className="review-feedback-avatar">{feedback.authorName.charAt(0).toUpperCase()}</div>
                 <div>
-                  <div className="review-feedback-name">{feedback.authorName} asked for changes</div>
+                  <div className="review-feedback-name">
+                    {feedback.authorName} {feedback.state === 'CHANGES_REQUESTED' ? 'asked for changes' : feedback.state === 'APPROVED' ? 'approved' : 'commented'}
+                  </div>
                   <div className="review-feedback-text">{feedback.body}</div>
                 </div>
               </div>
@@ -296,13 +309,13 @@ export default function Review() {
             {isAuthor ? (
               <div className="review-actionbar">
                 <span className="review-actionbar-note">
-                  {pr.reviewDecision === 'CHANGES_REQUESTED' ? 'Make your changes, then it goes back for another look.'
-                    : pr.reviewDecision === 'APPROVED' ? 'Approved — ready to publish.'
+                  {pr.reviewState === 'changes_requested' ? 'Make your changes, then it goes back for another look.'
+                    : pr.reviewState === 'approved' ? 'Approved — publish when you’re ready, or make more edits first.'
                     : 'Waiting on your reviewer.'}
                 </span>
                 <div className="review-actionbar-btns">
                   <button className="review-btn ghost" onClick={makeEdits}>Make edits</button>
-                  {pr.reviewDecision === 'APPROVED' && (
+                  {pr.reviewState === 'approved' && (
                     <button className="review-btn publish" onClick={publish} disabled={publishing || !online}>{publishing ? 'Publishing…' : 'Publish'}</button>
                   )}
                 </div>

@@ -55,9 +55,13 @@ export default function NewDraftModal({ isOpen, onClose, onCreate }: NewDraftMod
         type="text"
         placeholder="e.g. Q2 content updates"
         value={name}
+        maxLength={48}
         onChange={e => setName(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter' && name.trim()) handleCreate() }}
       />
+      <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', marginTop: 6 }}>
+        Keep it short and specific — a few words, like a title (not a long file name). It becomes the draft’s label.
+      </div>
 
       <div className="modal-field-label" style={{ marginTop: 16 }}>Start from</div>
       <div className="new-draft-options">

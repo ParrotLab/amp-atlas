@@ -3,15 +3,15 @@ import { classifyInboxPR } from '../inboxClassify'
 
 const me = 'kristi'
 const pr = (over: Partial<Parameters<typeof classifyInboxPR>[0]>) =>
-  ({ author: { login: 'other' }, requestedReviewers: [], reviewDecision: null, ...over })
+  ({ author: { login: 'other' }, requestedReviewers: [], reviewState: 'in_review' as const, ...over })
 
 describe('classifyInboxPR', () => {
   it('my approved PR is Ready to publish', () => {
-    expect(classifyInboxPR(pr({ author: { login: me }, reviewDecision: 'APPROVED' }), me))
+    expect(classifyInboxPR(pr({ author: { login: me }, reviewState: 'approved' }), me))
       .toEqual({ tab: 'publish', action: 'publish', badge: 'approved' })
   })
   it('my changes-requested PR is a draft with Make Edits', () => {
-    expect(classifyInboxPR(pr({ author: { login: me }, reviewDecision: 'CHANGES_REQUESTED' }), me))
+    expect(classifyInboxPR(pr({ author: { login: me }, reviewState: 'changes_requested' }), me))
       .toEqual({ tab: 'drafts', action: 'make-edits', badge: 'changes' })
   })
   it('my in-review PR is a draft with View', () => {
@@ -26,13 +26,15 @@ describe('classifyInboxPR', () => {
     expect(classifyInboxPR(pr({ requestedReviewers: ['other2'] }), me).tab).toBeNull()
   })
   it('tolerates a PR missing requestedReviewers without throwing', () => {
-    const partial = { author: { login: 'other' }, reviewDecision: null } as unknown as Parameters<typeof classifyInboxPR>[0]
+    const partial = { author: { login: 'other' }, reviewState: 'in_review' } as unknown as Parameters<typeof classifyInboxPR>[0]
     expect(() => classifyInboxPR(partial, me)).not.toThrow()
     expect(classifyInboxPR(partial, me).tab).toBeNull()
   })
-  it('my PR with a pending requested reviewer is In review even if changes were requested', () => {
-    expect(classifyInboxPR(pr({ author: { login: me }, reviewDecision: 'CHANGES_REQUESTED', requestedReviewers: ['rachel'] }), me))
-      .toEqual({ tab: 'drafts', action: 'view', badge: 'inreview' })
+  it('changes-requested wins even with a pending reviewer (state already resolved upstream)', () => {
+    // reviewSummary already treats a re-requested reviewer as pending; a 'changes_requested' state
+    // here means a genuine open change request → Make Edits.
+    expect(classifyInboxPR(pr({ author: { login: me }, reviewState: 'changes_requested', requestedReviewers: ['rachel'] }), me))
+      .toEqual({ tab: 'drafts', action: 'make-edits', badge: 'changes' })
   })
   it('my fresh PR out for review is In review', () => {
     expect(classifyInboxPR(pr({ author: { login: me }, requestedReviewers: ['rachel'] }), me))

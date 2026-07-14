@@ -14,16 +14,18 @@ export default function Badge({ children, variant = 'neutral', className = '' }:
   return <span className={`badge badge-${variant} ${className}`.trim()}>{children}</span>
 }
 
-/** Map a GitHub review decision to the badge variant used across the app. */
-export function reviewVariant(reviewDecision: string | null | undefined): BadgeVariant {
-  if (reviewDecision === 'APPROVED') return 'success'
-  if (reviewDecision === 'CHANGES_REQUESTED') return 'warning'
+export type ReviewState = 'in_review' | 'changes_requested' | 'approved'
+
+/** Map a review state to the badge variant used across the app. */
+export function reviewVariant(state: ReviewState | null | undefined): BadgeVariant {
+  if (state === 'approved') return 'success'
+  if (state === 'changes_requested') return 'warning'
   return 'brand'
 }
 
-/** Human label for a review decision (In Review / Approved / Changes Requested). */
-export function reviewLabel(reviewDecision: string | null | undefined): string {
-  if (reviewDecision === 'APPROVED') return 'Approved'
-  if (reviewDecision === 'CHANGES_REQUESTED') return 'Changes Requested'
+/** Human label for a review state (In Review / Approved / Changes Requested). */
+export function reviewLabel(state: ReviewState | null | undefined): string {
+  if (state === 'approved') return 'Approved'
+  if (state === 'changes_requested') return 'Changes Requested'
   return 'In Review'
 }

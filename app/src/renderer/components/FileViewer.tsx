@@ -39,9 +39,11 @@ export default function FileViewer({
   // Keep the editable title in sync with the open file.
   useEffect(() => { setTitleDraft(displayName(filePath?.split('/').pop() || '')) }, [filePath])
 
-  const watchers = useFileWatchers(filePath, rootPath ?? '')
+  // Only meaningful while editing a Draft — never on the read-only Live Version (nothing to
+  // coordinate there, and it can't publish). Passing !readOnly also skips the GitHub call on Live.
+  const watchers = useFileWatchers(filePath, rootPath ?? '', !readOnly)
   const [dismissedFile, setDismissedFile] = useState<string>('')
-  const showWatchers = watchers.length > 0 && dismissedFile !== filePath
+  const showWatchers = !readOnly && watchers.length > 0 && dismissedFile !== filePath
 
   const editor = useEditor({
     extensions: [...editorExtensions(), SlashCommand],
@@ -141,15 +143,16 @@ export default function FileViewer({
             <span>
               {watchers.length === 1 ? (
                 <>
-                  <strong>{watchers[0].author}</strong> also has edits to this file in review
-                  {watchers[0].title ? <> (“{watchers[0].title}”)</> : null}. Coordinate before
-                  publishing so your changes don’t clash.
+                  Heads up — <strong>{watchers[0].author}</strong> is also editing this file in a draft
+                  that’s in review{watchers[0].title ? <> (“{watchers[0].title}”)</> : null}. Check with
+                  them before you publish so your versions don’t overwrite each other.
                 </>
               ) : (
                 <>
-                  <strong>{watchers[0].author}</strong> and{' '}
+                  Heads up — <strong>{watchers[0].author}</strong> and{' '}
                   <strong>{watchers.length - 1} {watchers.length - 1 === 1 ? 'other' : 'others'}</strong>{' '}
-                  also have edits to this file in review. Coordinate before publishing.
+                  are also editing this file in drafts that are in review. Check with them before you
+                  publish so your versions don’t overwrite each other.
                 </>
               )}
             </span>

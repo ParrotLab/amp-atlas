@@ -5,6 +5,7 @@ import { iconMap, BookIcon } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
 import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
+import { listActive } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import InboxRow from '../components/InboxRow'
 import './Inbox.css'
@@ -15,13 +16,13 @@ interface Item {
   systemColor: string
   systemIcon: string
   repoPath: string
-  number: number
+  number?: number          // absent for a local draft not yet submitted for review
   title: string
   authorName: string
   headRefName: string
   createdAt: string
-  changedFiles: number
-  url: string
+  changedFiles?: number
+  url?: string
   tab: InboxTab
   action: ReturnType<typeof classifyInboxPR>['action']
   badge: ReturnType<typeof classifyInboxPR>['badge']
@@ -71,10 +72,12 @@ export default function Inbox() {
     const all: Item[] = []
     for (const sys of getSystems()) {
       if (!sys.folderPath) continue
+      const prBranches = new Set<string>()   // branches that already have a PR, so we don't double-list them
       try {
         const result = await window.api.git.listPRs(sys.folderPath)
         if (result.ok && result.prs) {
           for (const pr of result.prs) {
+            prBranches.add(pr.headRefName)
             const c = classifyInboxPR(pr, profile.login)
             if (!c.tab) continue
             all.push({
@@ -87,6 +90,16 @@ export default function Inbox() {
           }
         }
       } catch { /* a single system's PR fetch failing shouldn't drop the rest */ }
+      // Local drafts not yet submitted for review (no open PR) — shown in "Your drafts" with a Draft status.
+      for (const d of listActive(sys.id)) {
+        if (prBranches.has(d.branch)) continue
+        all.push({
+          systemId: sys.id, systemName: sys.name, systemColor: sys.gradient, systemIcon: sys.icon,
+          repoPath: sys.folderPath, title: d.title, authorName: profile.name || profile.login,
+          headRefName: d.branch, createdAt: d.lastOpenedAt || d.createdAt,
+          tab: 'drafts', action: 'make-edits', badge: 'draft',
+        })
+      }
     }
     all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     itemsCache = all
@@ -99,10 +112,13 @@ export default function Inbox() {
   const count = (t: InboxTab) => items.filter(i => i.tab === t).length
   const shown = items.filter(i => i.tab === tab)
 
-  const metaFor = (i: Item) =>
-    i.tab === 'review'
-      ? `${i.authorName} · ${i.systemName} · ${i.changedFiles} file${i.changedFiles === 1 ? '' : 's'} · ${timeAgo(i.createdAt)}`
-      : `${i.systemName} · ${i.changedFiles} file${i.changedFiles === 1 ? '' : 's'} · ${timeAgo(i.createdAt)}`
+  const metaFor = (i: Item) => {
+    if (i.number === undefined) return `${i.systemName} · not submitted yet · ${timeAgo(i.createdAt)}`
+    const files = `${i.changedFiles} file${i.changedFiles === 1 ? '' : 's'}`
+    return i.tab === 'review'
+      ? `${i.authorName} · ${i.systemName} · ${files} · ${timeAgo(i.createdAt)}`
+      : `${i.systemName} · ${files} · ${timeAgo(i.createdAt)}`
+  }
 
   const publish = async (i: Item) => {
     setPublishing(i.number)
@@ -141,15 +157,15 @@ export default function Inbox() {
           {online && !loading && shown.length === 0 && <div className="inbox-empty">{EMPTY[tab]}</div>}
           {online && !loading && shown.map(i => (
             <InboxRow
-              key={`${i.systemId}-${i.number}`}
-              to={`/review/${i.systemId}/${i.number}`}
+              key={`${i.systemId}-${i.number ?? i.headRefName}`}
+              to={i.number !== undefined ? `/review/${i.systemId}/${i.number}` : `/system/${i.systemId}`}
               title={i.title}
               meta={metaFor(i)}
               color={i.systemColor}
               icon={(() => { const Icon = iconMap[i.systemIcon] || BookIcon; return <Icon size={17} /> })()}
               action={i.action}
               badge={i.badge}
-              url={i.url}
+              url={i.url ?? ''}
               publishing={publishing === i.number}
               onPublish={() => publish(i)}
               onMakeEdits={() => makeEdits(i)}

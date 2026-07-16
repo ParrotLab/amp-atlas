@@ -10,6 +10,7 @@
   font-weight: var(--font-weight-medium);
   border-radius: var(--radius-full);
   line-height: 1;
+  white-space: nowrap;   /* a status pill should never wrap to two lines */
 }
 
 .badge-brand {

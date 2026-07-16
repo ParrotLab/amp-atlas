@@ -24,6 +24,7 @@ const BADGE = {
   approved: { variant: 'success' as const, label: 'Approved' },
   changes: { variant: 'warning' as const, label: 'Changes Requested' },
   inreview: { variant: 'brand' as const, label: 'In Review' },
+  draft: { variant: 'neutral' as const, label: 'Draft' },
 }
 
 export default function InboxRow({ to, title, meta, color, icon, action, badge, url, publishing, onPublish, onMakeEdits }: InboxRowProps) {
@@ -53,7 +54,7 @@ export default function InboxRow({ to, title, meta, color, icon, action, badge, 
               <div className="inboxrow-menu-scrim" onClick={() => setMenuOpen(false)} />
               <div className="inboxrow-menu">
                 {action === 'view' && <button className="inboxrow-menu-item" onClick={() => { setMenuOpen(false); onMakeEdits() }}>Make edits</button>}
-                <button className="inboxrow-menu-item" onClick={() => { setMenuOpen(false); window.open(url) }}>View on GitHub</button>
+                {url && <button className="inboxrow-menu-item" onClick={() => { setMenuOpen(false); window.open(url) }}>View on GitHub</button>}
               </div>
             </>
           )}

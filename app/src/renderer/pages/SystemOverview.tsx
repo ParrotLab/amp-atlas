@@ -99,7 +99,7 @@ export default function SystemOverview() {
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewDecision?: string | null; changesRequestedBy?: string[]; requestedReviewers?: string[] }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[] }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -108,6 +108,7 @@ export default function SystemOverview() {
   const hasProperties = !!getSchema(selectedFile ? detectFileType(selectedFile, data) : null)
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, connected: true })
+  const [publishedBranch, setPublishedBranch] = useState<string | null>(null)   // draft merged/published → show banner
   const online = useOnline()
   const [treeRefresh, setTreeRefresh] = useState(0)
   type Pending =
@@ -264,7 +265,9 @@ export default function SystemOverview() {
 
   // Re-fetchable so we can refresh it right after submitting for review (not just on branch change / reload).
   const fetchPrStatus = useCallback(async () => {
-    if (!rootPath || !branch || isMainBranch) { setPrStatus({ hasPR: false }); return }
+    // Skip GitHub entirely unless this is a connected git repo on a draft — no needless calls
+    // (or errors) for systems with no remote / not connected.
+    if (!rootPath || !branch || isMainBranch || !caps.isGitRepo || !caps.connected) { setPrStatus({ hasPR: false }); return }
     const result = await window.api.git.prStatus(rootPath)
     if (result.ok) {
       setPrStatus({
@@ -273,36 +276,48 @@ export default function SystemOverview() {
         title: result.pr?.title,
         body: result.pr?.body,
         state: result.pr?.state,
-        reviewDecision: result.pr?.reviewDecision,
+        reviewState: result.pr?.reviewState,
         changesRequestedBy: result.pr?.changesRequestedBy,
-        requestedReviewers: result.pr?.requestedReviewers
+        reviewers: result.pr?.reviewers
       })
     }
-  }, [rootPath, branch, isMainBranch])
+  }, [rootPath, branch, isMainBranch, caps.isGitRepo, caps.connected])
 
   useEffect(() => { void fetchPrStatus() }, [fetchPrStatus])
 
+  // If the current draft has been published (merged) — even from outside Atlas — flag it so we can
+  // show a clear "this is live now, go back to the Live Version" banner. We DON'T silently switch or
+  // delete the branch; the user clicks through (see handleGoLiveAfterPublish). Checked immediately on
+  // open (so it's obvious right away) and then every 30s.
   useEffect(() => {
-    if (!rootPath || isMainBranch) return
-    const checkMerged = async () => {
+    setPublishedBranch(null)
+    if (!rootPath || isMainBranch || !caps.isGitRepo || !caps.connected) return
+    let cancelled = false
+    const check = async () => {
       const result = await window.api.git.checkMerged(rootPath)
-      if (result.ok && result.merged && result.branch) {
-        // Published & merged — retire the draft (this is the ONLY place a branch is deleted).
-        showToast(`"${humanize(result.branch)}" has been published and archived. You're now on the Live Version.`)
-        await window.api.git.switchBranch(rootPath, 'main')
-        await window.api.git.deleteBranch(rootPath, result.branch)
-        if (systemId) removeDraft(systemId, result.branch)
-        setTabs([])
-        setSelectedFile(undefined)
-        setTreeKey(k => k + 1)
-        await fetchGitStatus()
-        refreshDrafts()
-      }
+      if (!cancelled && result.ok && result.merged && result.branch) setPublishedBranch(result.branch)
     }
-    // Check every 30 seconds
-    const interval = setInterval(checkMerged, 30000)
-    return () => clearInterval(interval)
-  }, [rootPath, isMainBranch, branch, fetchGitStatus])
+    void check()
+    const interval = setInterval(check, 30000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [rootPath, isMainBranch, branch, caps.isGitRepo, caps.connected])
+
+  // User clicked "Go to the Live Version" on the published-draft banner: switch to main, then retire
+  // the merged branch (the ONLY place a branch is deleted) and restore Live's tabs.
+  const handleGoLiveAfterPublish = async () => {
+    if (!rootPath) return
+    const merged = publishedBranch
+    setPublishedBranch(null)
+    logCrumb(`published draft "${humanize(merged || '')}" → returned to the Live Version`)
+    await window.api.git.switchBranch(rootPath, 'main')
+    if (merged) {
+      await window.api.git.deleteBranch(rootPath, merged)
+      if (systemId) removeDraft(systemId, merged)
+    }
+    await fetchGitStatus()
+    await restoreTabsForBranch('main')
+    refreshDrafts()
+  }
 
   // "Save" = git add + commit. File edits are already written to disk by the editor's autosave.
   const handleSave = async () => {
@@ -478,23 +493,22 @@ export default function SystemOverview() {
   }
   const handleSwitchBranch = (branchName: string) => guarded(() => doSwitch(branchName))
 
-  // On connecting a system whose folder is on a non-main branch (not an app-managed draft),
-  // start from the Live Version. Uses a fresh status (not the stale mount-time React state)
-  // and the existing Save/Discard prompt when there are unsaved edits.
+  // Opening a system whose folder is checked out on a non-main branch Atlas didn't create: instead
+  // of force-switching to the Live Version (a checkout that fails on a dirty tree and surfaces scary
+  // git errors), just adopt that branch as a draft and stay on it. Any non-main branch is a draft in
+  // Atlas's model, so this is the clean happy path — no switch, no error, and it shows up as a draft.
   useEffect(() => {
     if (!rootPath || !systemId || connectRef.current.checked) return
     connectRef.current.checked = true
     ;(async () => {
       const st = await window.api.git.status(rootPath)
       const cur = st.ok && st.status ? st.status.current : ''
-      if (!cur || cur === 'main' || cur === 'master') return
-      if (connectRef.current.known.has(cur)) return   // reopening a known draft — stay on it
-      logCrumb(`connected folder on branch "${cur}" — starting on Live Version`)
-      const goMain = () => doSwitch('main')
-      if (st.status && !st.status.isClean) setPending(() => goMain)   // ask Save/Discard first
-      else void goMain()
+      if (!cur || cur === 'main' || cur === 'master') return   // on the Live Version — nothing to do
+      if (connectRef.current.known.has(cur)) return             // reopening a known draft — stay on it
+      logCrumb(`connected folder on branch "${cur}" — adopting it as a draft`)
+      registerDraft(systemId, cur, humanize(cur)); touchDraft(systemId, cur); refreshDrafts()
     })()
-  }, [rootPath, systemId])
+  }, [rootPath, systemId, refreshDrafts])
 
   // Archive = mark archived in the registry (keep the branch); switch off it first if current.
   const handleArchiveBranch = (branchName: string) => {
@@ -812,6 +826,19 @@ export default function SystemOverview() {
             return arr
           })}
         />
+        {publishedBranch && (
+          <div style={{ background: '#e9f7ef', border: '1px solid #b7e0c7', color: '#1c6b3f', padding: '10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ flex: 1 }}>
+              ✓ This draft has been <strong>published</strong> — it’s now part of the Live Version.
+            </span>
+            <button
+              onClick={handleGoLiveAfterPublish}
+              style={{ background: '#16A34A', border: 'none', color: 'white', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: '13px', padding: '7px 13px', borderRadius: 6, whiteSpace: 'nowrap' }}
+            >
+              Go to the Live Version →
+            </button>
+          </div>
+        )}
         {isMainBranch && isDirty && !moveBannerDismissed && (
           <div style={{ position: 'relative', background: '#fdf3e0', border: '1px solid #f2d9a8', color: '#7a5a1e', padding: '10px 40px 10px 16px', margin: '10px 16px 0', borderRadius: '8px', fontSize: '13.5px', lineHeight: 1.5 }}>
             You've edited the Live Version directly —{' '}
@@ -939,6 +966,8 @@ export default function SystemOverview() {
         hasPR={prStatus.hasPR}
         existingTitle={prStatus.title}
         existingBody={prStatus.body}
+        // On re-submit: pre-select everyone already on the review, and lock those who requested changes.
+        preselectedReviewers={prStatus.state === 'OPEN' ? (prStatus.reviewers ?? []) : []}
         lockedReviewers={prStatus.state === 'OPEN' ? (prStatus.changesRequestedBy ?? []) : []}
       />
       <ConflictModal

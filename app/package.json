@@ -1,6 +1,6 @@
 {
   "name": "app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AMP Atlas — a markdown editor over GitHub for the AMP team.",
   "main": "./out/main/index.js",
   "scripts": {

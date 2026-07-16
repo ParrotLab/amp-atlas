@@ -83,6 +83,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;        /* let the label actually shrink so its ellipsis engages */
+  flex: 0 1 auto;
+}
+
+/* Everything else (dot, read-only pill, review badge, chevron) stays full size on one line —
+   only the draft name truncates, so the badge is always visible and never wraps. */
+.status-branch-btn > *:not(.branch-label) {
+  flex-shrink: 0;
 }
 
 /* Read-only state, shown as a muted pill inside the selector itself */

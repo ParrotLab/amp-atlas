@@ -4,10 +4,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
-    define: {
-      'process.env.AMP_UPDATER_TOKEN': JSON.stringify(process.env.AMP_UPDATER_TOKEN || '')
-    }
+    plugins: [externalizeDepsPlugin()]
   },
   preload: {
     plugins: [externalizeDepsPlugin()]

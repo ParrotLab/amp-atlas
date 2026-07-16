@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pickActivePr, summarizeReviews } from '../github'
+import { pickActivePr, reviewSummary } from '../github'
 
 const pr = (over: Partial<{ number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null }> = {}) => ({
   number: 1, title: 'PR', state: 'open', merged_at: null, html_url: 'https://gh/1', body: 'b', ...over,
@@ -35,37 +35,55 @@ describe('pickActivePr', () => {
   })
 })
 
-describe('summarizeReviews', () => {
+describe('reviewSummary', () => {
   const rev = (login: string, state: string) => ({ state, user: { login } })
 
-  it('handles no reviews', () => {
-    expect(summarizeReviews([])).toEqual({ decision: null, changesRequestedBy: [] })
+  it('no reviews, none requested → in_review', () => {
+    expect(reviewSummary([], [])).toMatchObject({ state: 'in_review', approvedBy: [], changesRequestedBy: [] })
   })
 
-  it('lists a reviewer who requested changes', () => {
-    expect(summarizeReviews([rev('alice', 'CHANGES_REQUESTED')])).toEqual({
-      decision: 'CHANGES_REQUESTED',
-      changesRequestedBy: ['alice'],
+  it('requested but not yet reviewed → in_review, pending listed', () => {
+    expect(reviewSummary([], ['alice'])).toMatchObject({ state: 'in_review', pending: ['alice'] })
+  })
+
+  it('one approval, no open change-requests → approved', () => {
+    expect(reviewSummary([rev('alice', 'APPROVED')], [])).toMatchObject({ state: 'approved', approvedBy: ['alice'] })
+  })
+
+  it('a change request → changes_requested', () => {
+    expect(reviewSummary([rev('alice', 'CHANGES_REQUESTED')], [])).toMatchObject({
+      state: 'changes_requested', changesRequestedBy: ['alice'],
     })
   })
 
-  it('clears a reviewer once they later approve', () => {
-    const r = summarizeReviews([rev('alice', 'CHANGES_REQUESTED'), rev('alice', 'APPROVED')])
-    expect(r.changesRequestedBy).toEqual([])
-    expect(r.decision).toBe('APPROVED')
+  it('change-request BEATS an approval regardless of order (fix)', () => {
+    // bob requests changes, then alice approves LAST — must still be blocked.
+    const r = reviewSummary([rev('bob', 'CHANGES_REQUESTED'), rev('alice', 'APPROVED')], [])
+    expect(r.state).toBe('changes_requested')
+    expect(r.approvedBy).toEqual(['alice'])
+    expect(r.changesRequestedBy).toEqual(['bob'])
   })
 
-  it('clears a reviewer whose changes-requested review was dismissed', () => {
-    const r = summarizeReviews([rev('alice', 'CHANGES_REQUESTED'), rev('alice', 'DISMISSED')])
+  it('per-user latest: a reviewer who approves after their own change-request no longer blocks', () => {
+    const r = reviewSummary([rev('alice', 'CHANGES_REQUESTED'), rev('alice', 'APPROVED')], [])
+    expect(r.state).toBe('approved')
     expect(r.changesRequestedBy).toEqual([])
   })
 
-  it('ignores COMMENTED reviews and tracks per-user latest across reviewers', () => {
-    const r = summarizeReviews([
-      rev('alice', 'CHANGES_REQUESTED'),
-      rev('bob', 'COMMENTED'),
-      rev('bob', 'APPROVED'),
-    ])
-    expect(r.changesRequestedBy).toEqual(['alice'])
+  it('a re-requested reviewer is pending — their prior change-request no longer blocks', () => {
+    const r = reviewSummary([rev('alice', 'CHANGES_REQUESTED')], ['alice'])
+    expect(r.state).toBe('in_review')
+    expect(r.changesRequestedBy).toEqual([])
+    expect(r.pending).toEqual(['alice'])
+  })
+
+  it('DISMISSED clears a reviewer; COMMENTED is ignored', () => {
+    expect(reviewSummary([rev('alice', 'CHANGES_REQUESTED'), rev('alice', 'DISMISSED')], []).changesRequestedBy).toEqual([])
+    expect(reviewSummary([rev('bob', 'COMMENTED'), rev('bob', 'APPROVED')], []).state).toBe('approved')
+  })
+
+  it('reviewers union includes approved, changes-requested, and pending', () => {
+    const r = reviewSummary([rev('alice', 'APPROVED'), rev('bob', 'CHANGES_REQUESTED')], ['carol'])
+    expect(r.reviewers.sort()).toEqual(['alice', 'bob', 'carol'])
   })
 })

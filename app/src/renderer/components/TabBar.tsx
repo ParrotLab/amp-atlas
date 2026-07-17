@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { displayName } from '../utils/naming'
 import './TabBar.css'
 
@@ -19,6 +19,13 @@ interface TabBarProps {
 export default function TabBar({ tabs, activeTab, onTabClick, onTabClose, onReorder }: TabBarProps) {
   const [dragPath, setDragPath] = useState<string | null>(null)
   const [dropAt, setDropAt] = useState<{ index: number; after: boolean } | null>(null)
+  const activeTabRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll the active tab into view when it changes (opening a file, restoring a tab).
+  // Fires only on activeTab change, so scrolling the strip yourself isn't fought.
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [activeTab])
 
   const finishDrop = () => {
     if (dragPath && dropAt) onReorder(dragPath, dropAt.after ? dropAt.index + 1 : dropAt.index)
@@ -38,6 +45,7 @@ export default function TabBar({ tabs, activeTab, onTabClick, onTabClose, onReor
           return (
             <div
               key={tab.path}
+              ref={activeTab === tab.path ? activeTabRef : undefined}
               className={`tab ${activeTab === tab.path ? 'active' : ''}${dragPath === tab.path ? ' dragging' : ''}${indicator}`.trim()}
               draggable
               onClick={() => onTabClick(tab.path)}

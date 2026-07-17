@@ -1,7 +1,7 @@
 import { useState, ReactNode } from 'react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { Editor } from '@tiptap/core'
-import { CodeIcon, LinkIcon, ListBulletIcon, ListOrderedIcon, QuoteIcon, TextIcon } from './SystemIcons'
+import { CodeIcon, IndentIcon, LinkIcon, ListBulletIcon, ListOrderedIcon, OutdentIcon, QuoteIcon, TextIcon } from './SystemIcons'
 import './EditorBubbleMenu.css'
 
 /** Floating format toolbar shown on text selection (Medium/Notion-style). */
@@ -21,6 +21,13 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
     setLinkMode(false)
   }
   const removeLink = () => { editor.chain().focus().extendMarkRange('link').unsetLink().run(); setLinkMode(false) }
+
+  // Indent / un-indent for list items — works for bullet, numbered, and checklists.
+  // sink/liftListItem take the item node's name, which differs for task lists.
+  const inList = editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')
+  const listItemType = editor.isActive('taskItem') ? 'taskItem' : 'listItem'
+  const indent = () => editor.chain().focus().sinkListItem(listItemType).run()
+  const outdent = () => editor.chain().focus().liftListItem(listItemType).run()
 
   // onMouseDown + preventDefault keeps the text selection alive when clicking a button.
   const btn = (active: boolean, onClick: () => void, title: string, content: ReactNode) => (
@@ -74,6 +81,13 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor }) {
           {btn(editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run(), 'Bullet list', <ListBulletIcon size={15} />)}
           {btn(editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run(), 'Numbered list', <ListOrderedIcon size={15} />)}
           {btn(editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run(), 'Quote', <QuoteIcon size={15} />)}
+          {inList && (
+            <>
+              <span className="bm-sep" />
+              {btn(false, outdent, 'Un-indent  (Shift+Tab)', <OutdentIcon size={15} />)}
+              {btn(false, indent, 'Indent  (Tab)', <IndentIcon size={15} />)}
+            </>
+          )}
         </>
       )}
     </BubbleMenu>

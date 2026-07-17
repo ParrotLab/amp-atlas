@@ -47,6 +47,8 @@ export default function FileTree({
   // Drag-to-reorganize: the item being dragged + the folder currently highlighted as the drop target.
   const [draggingPath, setDraggingPath] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const activeItemRef = useRef<HTMLDivElement>(null)
+  const lastRevealed = useRef<string>('')
 
   const loadDirectory = useCallback(async (dirPath: string): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
@@ -122,6 +124,41 @@ export default function FileTree({
     if (node.isDirectory) toggleExpand(node)
     else onFileSelect?.(node.path)
   }, [toggleExpand, onFileSelect])
+
+  // Auto-reveal the file being viewed: expand the folders that lead to it so it shows
+  // in the tree. Only runs when the selected file itself changes (opening a file, a tab
+  // click, or restoring tabs on system/branch switch) — never on a manual collapse, so
+  // if you close a folder yourself it stays closed.
+  const revealFile = useCallback(async (absPath: string) => {
+    if (!absPath.startsWith(rootPath + '/')) return
+    const segs = absPath.slice(rootPath.length + 1).split('/')
+    segs.pop()                       // drop the filename → its ancestor folders
+    if (segs.length === 0) return    // top-level file: already visible, nothing to expand
+    const dirs: string[] = []
+    let cur = rootPath
+    for (const s of segs) { cur = `${cur}/${s}`; dirs.push(cur) }
+    const loaded = await Promise.all(dirs.map(async d => [d, await loadDirectory(d)] as const))
+    setExpandedNodes(prev => {
+      const next = new Map(prev)
+      for (const [d, children] of loaded) next.set(d, children)
+      return next
+    })
+  }, [rootPath, loadDirectory])
+
+  useEffect(() => {
+    if (selectedFile && selectedFile !== lastRevealed.current) {
+      lastRevealed.current = selectedFile
+      void revealFile(selectedFile)
+    }
+  }, [selectedFile, revealFile])
+
+  // Once the path is expanded, scroll the active file into view (block:'nearest' won't
+  // move it if it's already visible, so it never yanks the tree around needlessly).
+  useEffect(() => {
+    if (!selectedFile) return
+    const t = setTimeout(() => activeItemRef.current?.scrollIntoView({ block: 'nearest' }), 80)
+    return () => clearTimeout(t)
+  }, [selectedFile, expandedNodes])
 
   const getChangeCount = useCallback((dirRelPath: string): number => {
     let count = 0
@@ -203,6 +240,7 @@ export default function FileTree({
     return (
       <div key={node.path} className={`tree-node${node.isDirectory && dropTarget === node.path ? ' drop-region' : ''}`}>
         <div
+          ref={selectedFile === node.path ? activeItemRef : undefined}
           className={`${classes}${draggingPath === node.path ? ' dragging' : ''}`}
           style={{ paddingLeft: `${14 + depth * 16}px` }}
           onClick={() => handleClick(node)}

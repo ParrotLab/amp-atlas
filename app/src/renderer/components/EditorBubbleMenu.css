@@ -1,4 +1,7 @@
-/* Selection bubble menu — a translucent floating material (apple-design) */
+/* Selection bubble menu — a translucent floating material (apple-design).
+   The backdrop-filter is safe again: text selection is now drawn as a decoration (.pm-selected),
+   not native ::selection paint, so this compositing layer has no native selection paint to leave
+   ghosted. (See SelectionHighlight in editorKeymap.ts.) */
 .bubble-menu {
   display: flex;
   align-items: center;

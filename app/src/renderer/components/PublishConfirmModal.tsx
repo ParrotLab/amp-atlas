@@ -51,9 +51,15 @@ export default function PublishConfirmModal({
 }: PublishConfirmModalProps) {
   const [phase, setPhase] = useState<Phase>('confirm')
   const [errorMsg, setErrorMsg] = useState('')
+  // Snapshot the name when the modal opens: some call sites (the editor) switch branch during the
+  // publish cleanup, which would otherwise change itemName to "Main" by the time success renders.
+  const [name, setName] = useState(itemName)
 
-  // Always start from the confirmation each time the modal is opened.
-  useEffect(() => { if (isOpen) { setPhase('confirm'); setErrorMsg('') } }, [isOpen])
+  // Always start from the confirmation each time the modal is opened, snapshotting the name at that
+  // moment. Intentionally keyed on isOpen only — re-snapshotting when itemName later changes (the
+  // editor switches to "Main" during cleanup) would defeat the purpose.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (isOpen) { setPhase('confirm'); setErrorMsg(''); setName(itemName) } }, [isOpen])
 
   const runPublish = async () => {
     setPhase('publishing')
@@ -73,7 +79,7 @@ export default function PublishConfirmModal({
 
   const subtitle =
     phase === 'confirm'
-      ? <>This makes <strong>{itemName}</strong> the live version everyone sees.</>
+      ? <>This makes <strong>{name}</strong> the live version everyone sees.</>
       : undefined
 
   const body =
@@ -96,7 +102,7 @@ export default function PublishConfirmModal({
       <div className="pcm-success">
         <div className="pcm-success-emoji">🎉</div>
         <h2 className="pcm-success-title">Your version is now live!</h2>
-        <p className="pcm-success-sub"><strong>{itemName}</strong> is published — everyone sees it now.</p>
+        <p className="pcm-success-sub"><strong>{name}</strong> is published — everyone sees it now.</p>
       </div>
     ) : phase === 'error' ? (
       <div className="pcm-error">{errorMsg}</div>

@@ -7,6 +7,7 @@ interface TreeContextMenuProps {
   x: number
   y: number
   target: ContextTarget
+  canEdit?: boolean   // read-only (Live Version) → only Copy path is offered
   onNewFile: (t: ContextTarget) => void
   onNewFolder: (t: ContextTarget) => void
   onRename: (t: ContextTarget) => void
@@ -43,14 +44,15 @@ export default function TreeContextMenu(p: TreeContextMenuProps) {
     <button className={`tcm-item ${danger ? 'danger' : ''}`} onClick={(e) => { e.stopPropagation(); fn(); p.onClose() }}>{label}</button>
   )
 
+  const canEdit = p.canEdit ?? true
   return (
     <div ref={ref} className="tcm" style={{ left: pos.left, top: pos.top }} onClick={e => e.stopPropagation()}>
-      {p.target.isDirectory && item('New file here', () => p.onNewFile(p.target))}
-      {p.target.isDirectory && item('New folder here', () => p.onNewFolder(p.target))}
-      {item('Rename', () => p.onRename(p.target))}
-      {item('Move to…', () => p.onMove(p.target))}
+      {canEdit && p.target.isDirectory && item('New file here', () => p.onNewFile(p.target))}
+      {canEdit && p.target.isDirectory && item('New folder here', () => p.onNewFolder(p.target))}
+      {canEdit && item('Rename', () => p.onRename(p.target))}
+      {canEdit && item('Move to…', () => p.onMove(p.target))}
       {item('Copy path', () => p.onCopyPath(p.target))}
-      {item('Delete', () => p.onDelete(p.target), true)}
+      {canEdit && item('Delete', () => p.onDelete(p.target), true)}
     </div>
   )
 }

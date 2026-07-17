@@ -217,7 +217,8 @@ export default function FileTree({
 
   const openMenu = (e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault(); e.stopPropagation()
-    if (!canEdit) { onNeedDraft?.(); return }
+    // On the read-only Live Version the menu still opens — it just offers Copy path only
+    // (so you can point Claude at a file), with the editing actions hidden.
     setMenu({ x: e.clientX, y: e.clientY, target: { path: node.path, isDirectory: node.isDirectory, relPath: relOf(node.path) } })
   }
 
@@ -380,6 +381,7 @@ export default function FileTree({
       {menu && (
         <TreeContextMenu
           x={menu.x} y={menu.y} target={menu.target}
+          canEdit={canEdit}
           onNewFile={(t) => onNewFile?.(parentOf(t))}
           onNewFolder={(t) => onNewFolder?.(parentOf(t))}
           onRename={(t) => onRename?.(t.path, t.isDirectory)}

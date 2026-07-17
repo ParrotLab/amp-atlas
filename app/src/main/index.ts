@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu, MenuItem } from 'electron'
 import { join } from 'path'
 import { readdir, readFile, writeFile, stat } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -32,13 +32,55 @@ function createWindow(): void {
     backgroundColor: '#F5F0EB',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      spellcheck: true
     }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  // Native right-click menu: spell-check suggestions in editable fields plus the standard
+  // cut/copy/paste/select-all. Electron ships no default editing context menu, so without this
+  // handler right-clicking anywhere in the app (including the editor) does nothing.
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    const menu = new Menu()
+
+    // Spelling: suggestions for the misspelled word under the cursor, then "Add to Dictionary".
+    for (const suggestion of params.dictionarySuggestions) {
+      menu.append(new MenuItem({
+        label: suggestion,
+        click: () => mainWindow?.webContents.replaceMisspelling(suggestion),
+      }))
+    }
+    if (params.misspelledWord) {
+      if (params.dictionarySuggestions.length === 0) {
+        menu.append(new MenuItem({ label: 'No spelling suggestions', enabled: false }))
+      }
+      menu.append(new MenuItem({
+        label: 'Add to Dictionary',
+        click: () => mainWindow?.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
+      }))
+      menu.append(new MenuItem({ type: 'separator' }))
+    }
+
+    // Standard editing actions. Cut/Paste only make sense in editable fields; Copy also works
+    // on a plain text selection (e.g. the read-only Live Version).
+    const { editFlags } = params
+    if (params.isEditable) {
+      menu.append(new MenuItem({ role: 'cut', enabled: editFlags.canCut }))
+      menu.append(new MenuItem({ role: 'copy', enabled: editFlags.canCopy }))
+      menu.append(new MenuItem({ role: 'paste', enabled: editFlags.canPaste }))
+      menu.append(new MenuItem({ type: 'separator' }))
+      menu.append(new MenuItem({ role: 'selectAll' }))
+    } else if (params.selectionText) {
+      menu.append(new MenuItem({ role: 'copy', enabled: editFlags.canCopy }))
+      menu.append(new MenuItem({ role: 'selectAll' }))
+    }
+
+    if (menu.items.length > 0) menu.popup()
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

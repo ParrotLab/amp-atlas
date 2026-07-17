@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSystems } from '../utils/systemStore'
-import { iconMap, BookIcon } from '../components/SystemIcons'
+import { iconMap, BookIcon, RefreshIcon } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
 import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
-import { listActive } from '../utils/draftStore'
+import { listActive, removeDraft } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import InboxRow from '../components/InboxRow'
+import PublishConfirmModal, { ReviewerDetail } from '../components/PublishConfirmModal'
 import './Inbox.css'
 
 interface Item {
@@ -26,6 +27,7 @@ interface Item {
   tab: InboxTab
   action: ReturnType<typeof classifyInboxPR>['action']
   badge: ReturnType<typeof classifyInboxPR>['badge']
+  reviewDetails?: ReviewerDetail[]
 }
 
 function timeAgo(dateStr: string): string {
@@ -58,8 +60,9 @@ let itemsCache: Item[] = []
 export default function Inbox() {
   const [items, setItems] = useState<Item[]>(() => itemsCache)
   const [tab, setTab] = useState<InboxTab>('review')
-  const [loading, setLoading] = useState(itemsCache.length === 0)
-  const [publishing, setPublishing] = useState<number | null>(null)
+  const [loading, setLoading] = useState(itemsCache.length === 0)   // cold load only (empty cache)
+  const [refreshing, setRefreshing] = useState(false)               // any load in flight (incl. warm/manual)
+  const [publishTarget, setPublishTarget] = useState<Item | null>(null)  // item whose publish modal is open
   const online = useOnline()
   const profile = useProfile()
   const navigate = useNavigate()
@@ -67,8 +70,11 @@ export default function Inbox() {
   const load = async () => {
     if (!online) { setLoading(false); return }
     if (!profile.login) return   // wait for identity; keep whatever we're already showing
-    // No setLoading(true) here: on repeat visits we already have cached items and
-    // refresh silently. The visible "Loading…" only appears on a cold first load.
+    // No setLoading(true) here: on repeat visits we already have cached items and refresh in
+    // place. `loading` (the skeleton) is cold-load only; `refreshing` drives the subtle in-place
+    // hint and the manual refresh button's spinner.
+    setRefreshing(true)
+    try {
     const all: Item[] = []
     for (const sys of getSystems()) {
       if (!sys.folderPath) continue
@@ -85,7 +91,7 @@ export default function Inbox() {
               repoPath: sys.folderPath, number: pr.number, title: pr.title,
               authorName: pr.author.name || pr.author.login, headRefName: pr.headRefName,
               createdAt: pr.createdAt, changedFiles: pr.changedFiles, url: pr.url,
-              tab: c.tab, action: c.action, badge: c.badge,
+              tab: c.tab, action: c.action, badge: c.badge, reviewDetails: pr.reviewDetails,
             })
           }
         }
@@ -104,7 +110,10 @@ export default function Inbox() {
     all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     itemsCache = all
     setItems(all)
-    setLoading(false)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
   }
 
   useEffect(() => { void load() }, [online, profile.login])
@@ -120,13 +129,27 @@ export default function Inbox() {
       : `${i.systemName} · ${files} · ${timeAgo(i.createdAt)}`
   }
 
-  const publish = async (i: Item) => {
-    setPublishing(i.number)
+  // Merge the target PR to Live, then clean up the draft in Atlas immediately (remote branch is
+  // deleted by mergePR; local branch delete is best-effort). Returns the outcome for the modal.
+  const doMerge = async (): Promise<{ ok: boolean; error?: string }> => {
+    const i = publishTarget
+    if (!i || i.number === undefined) return { ok: false, error: 'No pull request to publish.' }
     logCrumb(`published "${i.title}" (#${i.number}) from Inbox`)
     const r = await window.api.git.mergePR(i.repoPath, i.number)
-    setPublishing(null)
-    if (r.ok) { await load() } else { alert(`Couldn't publish: ${r.error}`) }
+    if (r.ok) {
+      removeDraft(i.systemId, i.headRefName)
+      try { await window.api.git.deleteBranch(i.repoPath, i.headRefName) } catch { /* best-effort */ }
+    }
+    return r
   }
+  const seeItLive = async () => {
+    const i = publishTarget
+    setPublishTarget(null)
+    if (!i) return
+    await window.api.git.switchBranch(i.repoPath, 'main')
+    navigate(`/system/${i.systemId}`)
+  }
+  const closePublish = () => { setPublishTarget(null); void load() }
 
   const makeEdits = async (i: Item) => {
     await window.api.git.switchBranch(i.repoPath, i.headRefName)
@@ -139,21 +162,46 @@ export default function Inbox() {
         <h1 className="inbox-title">Inbox</h1>
         <p className="inbox-subtitle">Reviews waiting on you, and your work in progress.</p>
 
-        <div className="inbox-tabs">
-          {TABS.map(t => (
+        <div className="inbox-tabs-row">
+          <div className="inbox-tabs">
+            {TABS.map(t => (
+              <button
+                key={t.key}
+                className={`inbox-tab ${t.key} ${tab === t.key ? 'on' : ''}`.trim()}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label} <span className="inbox-tab-count">{count(t.key)}</span>
+              </button>
+            ))}
+          </div>
+          {online && (
             <button
-              key={t.key}
-              className={`inbox-tab ${t.key} ${tab === t.key ? 'on' : ''}`.trim()}
-              onClick={() => setTab(t.key)}
+              className={`inbox-refresh${refreshing ? ' spinning' : ''}`}
+              onClick={() => { void load() }}
+              disabled={refreshing}
+              title="Check for new items"
+              aria-label="Refresh inbox"
             >
-              {t.label} <span className="inbox-tab-count">{count(t.key)}</span>
+              <RefreshIcon size={16} />
             </button>
-          ))}
+          )}
         </div>
 
         <div className="inbox-list">
           {!online && <div className="inbox-empty">You're offline — your inbox will refresh when you reconnect.</div>}
-          {online && loading && <div className="inbox-empty">Loading…</div>}
+          {online && loading && (
+            <div className="inbox-skeleton">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="inbox-skeleton-row">
+                  <div className="inbox-skeleton-chip" />
+                  <div className="inbox-skeleton-lines">
+                    <div className="inbox-skeleton-bar title" />
+                    <div className="inbox-skeleton-bar meta" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {online && !loading && shown.length === 0 && <div className="inbox-empty">{EMPTY[tab]}</div>}
           {online && !loading && shown.map(i => (
             <InboxRow
@@ -166,13 +214,21 @@ export default function Inbox() {
               action={i.action}
               badge={i.badge}
               url={i.url ?? ''}
-              publishing={publishing === i.number}
-              onPublish={() => publish(i)}
+              publishing={false}
+              onPublish={() => setPublishTarget(i)}
               onMakeEdits={() => makeEdits(i)}
             />
           ))}
         </div>
       </div>
+      <PublishConfirmModal
+        isOpen={!!publishTarget}
+        itemName={publishTarget?.title ?? 'this version'}
+        reviews={publishTarget?.reviewDetails}
+        onConfirm={doMerge}
+        onSeeItLive={seeItLive}
+        onClose={closePublish}
+      />
     </div>
   )
 }

@@ -134,3 +134,7 @@
   transition: all 100ms ease;
 }
 .status-refresh-btn:hover { background: rgba(139, 43, 255, 0.06); border-color: #C9BEDB; color: #8B2BFF; }
+
+/* Refresh button success state: green outline + green check for ~1.5s after a refresh. */
+.btn.btn-refreshed { border-color: #16A34A; color: #16A34A; }
+.btn.btn-refreshed .btn-lead { color: #16A34A; }

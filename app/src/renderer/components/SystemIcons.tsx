@@ -48,6 +48,7 @@ export const CrownIcon = ({ size = 18 }: { size?: number }) => <I size={size}><p
 export const MailIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M2 5a1 1 0 011-1h14a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V5z"/><path d="M2.5 5.5l7.5 6 7.5-6"/></I>
 
 export const RefreshIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3.5 10a6.5 6.5 0 0111-4.7l1.6 1.5"/><path d="M16.5 3.5v3.5H13"/><path d="M16.5 10a6.5 6.5 0 01-11 4.7L4 13.2"/><path d="M3.5 16.5V13H7"/></I>
+export const CheckIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 10.5l4 4 8-9"/></I>
 
 // UI / chrome icons (toolbar, selectors, focus mode)
 export const SearchIcon = ({ size = 18 }: { size?: number }) => <I size={size}><circle cx="9" cy="9" r="6"/><path d="M17 17l-3.5-3.5"/></I>
@@ -65,6 +66,8 @@ export const DividerIcon = ({ size = 18 }: { size?: number }) => <I size={size}>
 export const TableIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8.5h14M3 12.5h14M8.5 4v12"/></I>
 export const CheckSquareIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3.5" y="3.5" width="13" height="13" rx="2.5"/><path d="M7 10l2 2 4-4.5"/></I>
 export const TextIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 5.5h12M4 10h12M4 14.5h8"/></I>
+export const IndentIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8.5 5h8.5M8.5 15h8.5M11 8.5h6M11 11.5h6"/><path d="M3 7l2.5 3L3 13"/></I>
+export const OutdentIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8.5 5h8.5M8.5 15h8.5M11 8.5h6M11 11.5h6"/><path d="M5.5 7L3 10l2.5 3"/></I>
 export const ArchiveIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="3.5" rx="1"/><path d="M4.5 7.5v7a1 1 0 001 1h9a1 1 0 001-1v-7"/><path d="M8.5 11h3"/></I>
 export const ExpandIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5"/></I>
 export const CompressIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 8h5V3M17 8h-5V3M3 12h5v5M17 12h-5v5"/></I>

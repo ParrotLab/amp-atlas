@@ -6,9 +6,12 @@ import { editorExtensions } from '../utils/markdownSerializer'
 import { parseDocument } from '../utils/fileDocument'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
-import { iconMap, BookIcon } from '../components/SystemIcons'
+import { iconMap, BookIcon, CheckIcon, PencilIcon } from '../components/SystemIcons'
+import Button from '../components/Button'
 import { primaryColor, softTint } from '../utils/appearance'
 import Badge, { BadgeVariant } from '../components/Badge'
+import PublishConfirmModal, { ReviewerDetail } from '../components/PublishConfirmModal'
+import { removeDraft } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import './Review.css'
 
@@ -21,6 +24,7 @@ interface PRInfo {
   approvedBy: string[]
   changesRequestedBy: string[]
   requestedReviewers: string[]
+  reviewDetails?: ReviewerDetail[]
   url: string
   body: string
   headRefName: string
@@ -63,7 +67,7 @@ export default function Review() {
   const [action, setAction] = useState<'approve' | 'request-changes' | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [descOpen, setDescOpen] = useState(false)
-  const [publishing, setPublishing] = useState(false)
+  const [showPublish, setShowPublish] = useState(false)
   const online = useOnline()
 
   const system = systemId ? getSystem(systemId) : undefined
@@ -84,7 +88,7 @@ export default function Review() {
     window.api.git.listPRs(repoPath).then(result => {
       if (result.ok) {
         const found = result.prs.find(p => p.number === prNum)
-        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewState: found.reviewState, approvedBy: found.approvedBy, changesRequestedBy: found.changesRequestedBy, requestedReviewers: found.requestedReviewers, url: found.url, body: found.body, headRefName: found.headRefName })
+        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewState: found.reviewState, approvedBy: found.approvedBy, changesRequestedBy: found.changesRequestedBy, requestedReviewers: found.requestedReviewers, reviewDetails: found.reviewDetails, url: found.url, body: found.body, headRefName: found.headRefName })
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
@@ -164,13 +168,22 @@ export default function Review() {
     navigate(`/system/${systemId}`)
   }
 
-  const publish = async () => {
-    setPublishing(true)
+  // Merge the PR to Live, then clean up the draft in Atlas immediately (remote branch is deleted
+  // by mergePR; local branch delete is best-effort). Returns the merge outcome for the modal.
+  const doMerge = async (): Promise<{ ok: boolean; error?: string }> => {
     logCrumb(`published review #${prNum}${pr ? ` ("${pr.title}")` : ''}`)
     const r = await window.api.git.mergePR(repoPath, prNum)
-    setPublishing(false)
-    if (r.ok) navigate('/inbox')
-    else alert(`Couldn't publish: ${r.error}`)
+    if (r.ok && pr) {
+      if (systemId) removeDraft(systemId, pr.headRefName)
+      try { await window.api.git.deleteBranch(repoPath, pr.headRefName) } catch { /* best-effort */ }
+    }
+    return r
+  }
+  // "See it live": go to the system's Live Version (main).
+  const seeItLive = async () => {
+    setShowPublish(false)
+    await window.api.git.switchBranch(repoPath, 'main')
+    navigate(`/system/${systemId}`)
   }
 
   const fileNameOf = (path: string) => path.split('/').pop() || path
@@ -202,13 +215,19 @@ export default function Review() {
         <Link to="/inbox" className="review-back">← Inbox</Link>
 
         {status === 'done' ? (
-          <div className="review-header">
-            <div className="review-success">
-              {action === 'approve' ? '✓ Approved — the author can publish when ready.' : '✓ Changes requested — the author will be notified.'}
+          <div className="review-success-card">
+            <div className={`review-success-badge ${action === 'approve' ? 'approve' : 'changes'}`}>
+              {action === 'approve' ? <CheckIcon size={30} /> : <PencilIcon size={26} />}
             </div>
-            <div style={{ textAlign: 'center', marginTop: '12px' }}>
-              <Link to="/inbox" style={{ color: 'var(--amp-violet-700)', fontSize: '13px' }}>Back to Inbox</Link>
-            </div>
+            <h2 className="review-success-title">{action === 'approve' ? 'Approved' : 'Changes requested'}</h2>
+            <p className="review-success-sub">
+              {action === 'approve' ? (
+                <><strong>{pr?.title ?? 'This draft'}</strong> is approved — the author can publish it whenever they're ready.</>
+              ) : (
+                <><strong>{pr?.title ?? 'This draft'}</strong> — the author has been notified and can make edits.</>
+              )}
+            </p>
+            <Button variant="primary" onClick={() => navigate('/inbox')}>Back to Inbox</Button>
           </div>
         ) : pr ? (
           <>
@@ -316,7 +335,7 @@ export default function Review() {
                 <div className="review-actionbar-btns">
                   <button className="review-btn ghost" onClick={makeEdits}>Make edits</button>
                   {pr.reviewState === 'approved' && (
-                    <button className="review-btn publish" onClick={publish} disabled={publishing || !online}>{publishing ? 'Publishing…' : 'Publish'}</button>
+                    <button className="review-btn publish" onClick={() => setShowPublish(true)} disabled={!online}>Publish</button>
                   )}
                 </div>
               </div>
@@ -348,6 +367,14 @@ export default function Review() {
           <div className="review-header"><div style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '20px' }}>Loading…</div></div>
         )}
       </div>
+      <PublishConfirmModal
+        isOpen={showPublish}
+        itemName={pr?.title ?? 'this draft'}
+        reviews={pr?.reviewDetails}
+        onConfirm={doMerge}
+        onSeeItLive={seeItLive}
+        onClose={() => setShowPublish(false)}
+      />
     </div>
   )
 }

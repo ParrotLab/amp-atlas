@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Button from './Button'
 import Badge, { reviewVariant, reviewLabel } from './Badge'
 import SplitButton from './SplitButton'
-import { RefreshIcon, ChevronDownIcon, ArchiveIcon } from './SystemIcons'
+import { RefreshIcon, CheckIcon, ChevronDownIcon, ArchiveIcon } from './SystemIcons'
 import './StatusBar.css'
 
 interface DraftItem {
@@ -24,7 +24,8 @@ interface StatusBarProps {
   onSave: () => void
   onDiscard: () => void
   onPublish: () => void
-  onRefresh?: () => void
+  onPublishLive?: () => void
+  onRefresh?: () => Promise<void> | void
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
@@ -48,13 +49,23 @@ export default function StatusBar({
   editedCount, newCount, isDirty, hasUnpublishedWork = false,
   branchName, isMain,
   activeDrafts, lastSaved, lastRefreshedLabel,
-  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
+  onSave, onDiscard, onPublish, onPublishLive, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
   onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAdopt, setShowAdopt] = useState(false)
   const [adoptable, setAdoptable] = useState<{ name: string; isRemoteOnly: boolean }[]>([])
+  // Refresh button feedback: Refresh → Refreshing… → Refreshed (green + check, ~1.5s) → Refresh.
+  const [refreshState, setRefreshState] = useState<'idle' | 'refreshing' | 'done'>('idle')
+  const runRefresh = async () => {
+    if (refreshState === 'refreshing') return
+    setRefreshState('refreshing')
+    try { await onRefresh?.() } finally {
+      setRefreshState('done')
+      setTimeout(() => setRefreshState('idle'), 1500)
+    }
+  }
   // Prefer the draft's original name (keeps the user's capitalization); fall back to the humanized branch.
   const currentDraftTitle = activeDrafts.find(d => d.branch === branchName)?.title
   const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${currentDraftTitle ?? humanize(branchName)}` : ''
@@ -188,8 +199,16 @@ export default function StatusBar({
         {isMain ? (
           <div className="status-freshness">
             {lastRefreshedLabel && <span className="status-updated">{lastRefreshedLabel}</span>}
-            <Button variant="outline" size="sm" icon={<RefreshIcon />} onClick={() => onRefresh?.()} title="Pull the latest Live Version from GitHub">
-              Refresh
+            <Button
+              variant="outline"
+              size="sm"
+              icon={refreshState === 'done' ? <CheckIcon /> : <RefreshIcon />}
+              disabled={refreshState === 'refreshing'}
+              className={refreshState === 'done' ? 'btn-refreshed' : ''}
+              onClick={runRefresh}
+              title="Pull the latest Live Version from GitHub"
+            >
+              {refreshState === 'refreshing' ? 'Refreshing…' : refreshState === 'done' ? 'Refreshed' : 'Refresh'}
             </Button>
           </div>
         ) : (
@@ -201,6 +220,10 @@ export default function StatusBar({
             menuDisabled={canUseGit && !isDirty && !hasUnpublishedWork}
             onClick={() => canUseGit ? onSave() : onNeedGit?.()}
             items={[
+              // Once approved, publishing to the Live Version is the primary next step.
+              ...(prStatus?.reviewState === 'approved' && onPublishLive
+                ? [{ label: 'Publish', onClick: onPublishLive }]
+                : []),
               { label: publishLabel, kbd: '⌘↵', onClick: doPublish },
               { label: 'Discard changes', danger: true, onClick: doDiscard },
             ]}

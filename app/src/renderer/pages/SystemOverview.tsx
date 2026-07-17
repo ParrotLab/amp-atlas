@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
+import PublishConfirmModal, { ReviewerDetail } from '../components/PublishConfirmModal'
 import ConflictModal from '../components/ConflictModal'
 import MoveChangesModal from '../components/MoveChangesModal'
 import { useFileDocument } from '../hooks/useFileDocument'
@@ -99,7 +100,7 @@ export default function SystemOverview() {
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[] }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[]; reviewDetails?: ReviewerDetail[] }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -109,6 +110,7 @@ export default function SystemOverview() {
   const { showToast } = useToast()
   const [caps, setCaps] = useState({ isGitRepo: true, connected: true })
   const [publishedBranch, setPublishedBranch] = useState<string | null>(null)   // draft merged/published → show banner
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false)           // Publish-to-Live confirm modal
   const online = useOnline()
   const [treeRefresh, setTreeRefresh] = useState(0)
   type Pending =
@@ -278,7 +280,8 @@ export default function SystemOverview() {
         state: result.pr?.state,
         reviewState: result.pr?.reviewState,
         changesRequestedBy: result.pr?.changesRequestedBy,
-        reviewers: result.pr?.reviewers
+        reviewers: result.pr?.reviewers,
+        reviewDetails: result.pr?.reviewDetails,
       })
     }
   }, [rootPath, branch, isMainBranch, caps.isGitRepo, caps.connected])
@@ -317,6 +320,24 @@ export default function SystemOverview() {
     await fetchGitStatus()
     await restoreTabsForBranch('main')
     refreshDrafts()
+  }
+
+  // Publish an approved draft straight from the editor (via the more-actions menu). Merges the PR,
+  // then retires the draft the same way the banner flow does: switch to Live, delete the local
+  // branch, drop it from Atlas, and restore Live's tabs. Returns the merge outcome for the modal.
+  const publishApprovedDraft = async (): Promise<{ ok: boolean; error?: string }> => {
+    if (!rootPath || !prStatus.number) return { ok: false, error: 'No open review to publish.' }
+    logCrumb(`published draft "${humanize(branch)}" (#${prStatus.number}) from the editor`)
+    const r = await window.api.git.mergePR(rootPath, prStatus.number)
+    if (r.ok) {
+      await window.api.git.switchBranch(rootPath, 'main')
+      try { await window.api.git.deleteBranch(rootPath, branch) } catch { /* best-effort */ }
+      if (systemId) removeDraft(systemId, branch)
+      await fetchGitStatus()
+      await restoreTabsForBranch('main')
+      refreshDrafts()
+    }
+    return r
   }
 
   // "Save" = git add + commit. File edits are already written to disk by the editor's autosave.
@@ -899,6 +920,7 @@ export default function SystemOverview() {
           onSave={handleSave}
           onDiscard={handleDiscard}
           onPublish={handlePublish}
+          onPublishLive={() => setShowPublishConfirm(true)}
           onRefresh={handleRefreshLive}
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
@@ -969,6 +991,14 @@ export default function SystemOverview() {
         // On re-submit: pre-select everyone already on the review, and lock those who requested changes.
         preselectedReviewers={prStatus.state === 'OPEN' ? (prStatus.reviewers ?? []) : []}
         lockedReviewers={prStatus.state === 'OPEN' ? (prStatus.changesRequestedBy ?? []) : []}
+      />
+      <PublishConfirmModal
+        isOpen={showPublishConfirm}
+        itemName={prStatus.title ?? humanize(branch)}
+        reviews={prStatus.reviewDetails}
+        onConfirm={publishApprovedDraft}
+        onSeeItLive={() => setShowPublishConfirm(false)}
+        onClose={() => setShowPublishConfirm(false)}
       />
       <ConflictModal
         isOpen={conflictFiles !== null}

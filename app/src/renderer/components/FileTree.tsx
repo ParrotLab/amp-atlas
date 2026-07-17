@@ -47,6 +47,8 @@ export default function FileTree({
   // Drag-to-reorganize: the item being dragged + the folder currently highlighted as the drop target.
   const [draggingPath, setDraggingPath] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const activeItemRef = useRef<HTMLDivElement>(null)
+  const lastRevealed = useRef<string>('')
 
   const loadDirectory = useCallback(async (dirPath: string): Promise<TreeNode[]> => {
     const result = await window.api.fs.readDirectory(dirPath)
@@ -123,6 +125,42 @@ export default function FileTree({
     else onFileSelect?.(node.path)
   }, [toggleExpand, onFileSelect])
 
+  // Auto-reveal the file being viewed: expand the folders that lead to it so it shows
+  // in the tree. Only runs when the selected file itself changes (opening a file, a tab
+  // click, or restoring tabs on system/branch switch) — never on a manual collapse, so
+  // if you close a folder yourself it stays closed.
+  const revealFile = useCallback(async (absPath: string) => {
+    if (!absPath.startsWith(rootPath + '/')) return
+    const segs = absPath.slice(rootPath.length + 1).split('/')
+    segs.pop()                       // drop the filename → its ancestor folders
+    if (segs.length === 0) return    // top-level file: already visible, nothing to expand
+    const dirs: string[] = []
+    let cur = rootPath
+    for (const s of segs) { cur = `${cur}/${s}`; dirs.push(cur) }
+    const loaded = await Promise.all(dirs.map(async d => [d, await loadDirectory(d)] as const))
+    setExpandedNodes(prev => {
+      const next = new Map(prev)
+      for (const [d, children] of loaded) next.set(d, children)
+      return next
+    })
+  }, [rootPath, loadDirectory])
+
+  // When the *open file* changes, reveal its folders and scroll it into view. Scrolling lives here
+  // (keyed on selectedFile) rather than in a separate effect watching expandedNodes — otherwise
+  // manually expanding any folder would yank the tree back to the open file. block:'nearest' won't
+  // move the item if it's already visible.
+  useEffect(() => {
+    if (!selectedFile || selectedFile === lastRevealed.current) return
+    lastRevealed.current = selectedFile
+    let cancelled = false
+    void revealFile(selectedFile).then(() => {
+      if (cancelled) return
+      // Let React render the newly-expanded nodes before scrolling.
+      setTimeout(() => activeItemRef.current?.scrollIntoView({ block: 'nearest' }), 80)
+    })
+    return () => { cancelled = true }
+  }, [selectedFile, revealFile])
+
   const getChangeCount = useCallback((dirRelPath: string): number => {
     let count = 0
     const prefix = dirRelPath + '/'
@@ -179,7 +217,8 @@ export default function FileTree({
 
   const openMenu = (e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault(); e.stopPropagation()
-    if (!canEdit) { onNeedDraft?.(); return }
+    // On the read-only Live Version the menu still opens — it just offers Copy path only
+    // (so you can point Claude at a file), with the editing actions hidden.
     setMenu({ x: e.clientX, y: e.clientY, target: { path: node.path, isDirectory: node.isDirectory, relPath: relOf(node.path) } })
   }
 
@@ -203,6 +242,7 @@ export default function FileTree({
     return (
       <div key={node.path} className={`tree-node${node.isDirectory && dropTarget === node.path ? ' drop-region' : ''}`}>
         <div
+          ref={selectedFile === node.path ? activeItemRef : undefined}
           className={`${classes}${draggingPath === node.path ? ' dragging' : ''}`}
           style={{ paddingLeft: `${14 + depth * 16}px` }}
           onClick={() => handleClick(node)}
@@ -341,6 +381,7 @@ export default function FileTree({
       {menu && (
         <TreeContextMenu
           x={menu.x} y={menu.y} target={menu.target}
+          canEdit={canEdit}
           onNewFile={(t) => onNewFile?.(parentOf(t))}
           onNewFolder={(t) => onNewFolder?.(parentOf(t))}
           onRename={(t) => onRename?.(t.path, t.isDirectory)}

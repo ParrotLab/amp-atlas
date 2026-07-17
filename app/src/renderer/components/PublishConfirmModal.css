@@ -1,0 +1,97 @@
+/* PublishConfirmModal — publishing spinner, live! success, and error states. */
+
+.pcm-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 0;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary, #6B6966);
+}
+.pcm-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(139, 43, 255, 0.25);
+  border-top-color: var(--amp-violet-700, #8B2BFF);
+  border-radius: 50%;
+  animation: pcm-spin 0.7s linear infinite;
+}
+@keyframes pcm-spin { to { transform: rotate(360deg); } }
+
+.pcm-success {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.pcm-success-emoji { font-size: 40px; line-height: 1; margin-bottom: 10px; }
+.pcm-success-title {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  margin: 0 0 6px;
+}
+.pcm-success-sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pcm-error {
+  padding: 10px 0;
+  font-size: var(--text-sm);
+  color: #DC2626;
+  line-height: 1.5;
+}
+
+/* Review status list on the confirm screen. */
+.pcm-reviews {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.07));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pcm-reviews-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.pcm-review-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.pcm-review-avatar {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--amp-violet-700, #8B2BFF);
+  background: rgba(139, 43, 255, 0.12);
+}
+.pcm-review-name {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+.pcm-review-pill {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pcm-review-pill.approved { color: #157F3B; background: rgba(22, 163, 74, 0.12); }
+.pcm-review-pill.changes { color: #C25A00; background: rgba(255, 123, 0, 0.13); }
+.pcm-review-pill.pending { color: var(--color-text-tertiary); background: rgba(0, 0, 0, 0.05); }

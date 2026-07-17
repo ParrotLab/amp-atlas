@@ -10,7 +10,7 @@ import { iconMap, BookIcon, CheckIcon, PencilIcon } from '../components/SystemIc
 import Button from '../components/Button'
 import { primaryColor, softTint } from '../utils/appearance'
 import Badge, { BadgeVariant } from '../components/Badge'
-import PublishConfirmModal from '../components/PublishConfirmModal'
+import PublishConfirmModal, { ReviewerDetail } from '../components/PublishConfirmModal'
 import { removeDraft } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import './Review.css'
@@ -24,6 +24,7 @@ interface PRInfo {
   approvedBy: string[]
   changesRequestedBy: string[]
   requestedReviewers: string[]
+  reviewDetails?: ReviewerDetail[]
   url: string
   body: string
   headRefName: string
@@ -87,7 +88,7 @@ export default function Review() {
     window.api.git.listPRs(repoPath).then(result => {
       if (result.ok) {
         const found = result.prs.find(p => p.number === prNum)
-        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewState: found.reviewState, approvedBy: found.approvedBy, changesRequestedBy: found.changesRequestedBy, requestedReviewers: found.requestedReviewers, url: found.url, body: found.body, headRefName: found.headRefName })
+        if (found) setPr({ title: found.title, author: found.author, createdAt: found.createdAt, reviewState: found.reviewState, approvedBy: found.approvedBy, changesRequestedBy: found.changesRequestedBy, requestedReviewers: found.requestedReviewers, reviewDetails: found.reviewDetails, url: found.url, body: found.body, headRefName: found.headRefName })
       }
     })
     window.api.git.prDiff(repoPath, prNum).then(result => {
@@ -369,6 +370,7 @@ export default function Review() {
       <PublishConfirmModal
         isOpen={showPublish}
         itemName={pr?.title ?? 'this draft'}
+        reviews={pr?.reviewDetails}
         onConfirm={doMerge}
         onSeeItLive={seeItLive}
         onClose={() => setShowPublish(false)}

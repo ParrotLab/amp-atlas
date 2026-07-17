@@ -3,6 +3,12 @@ import Modal from './Modal'
 import Button from './Button'
 import './PublishConfirmModal.css'
 
+export interface ReviewerDetail {
+  name: string
+  status: 'approved' | 'changes_requested' | 'pending'
+  at?: string   // ISO timestamp of the decisive review (approved / changes)
+}
+
 interface PublishConfirmModalProps {
   isOpen: boolean
   itemName: string
@@ -12,9 +18,28 @@ interface PublishConfirmModalProps {
   onSeeItLive: () => void
   /** Close/cancel. Ignored while publishing. */
   onClose: () => void
+  /** Per-reviewer status shown on the confirm screen (optional). */
+  reviews?: ReviewerDetail[]
 }
 
 type Phase = 'confirm' | 'publishing' | 'success' | 'error'
+
+function ago(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 60) return `${Math.max(m, 1)}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d}d ago`
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const PILL = {
+  approved: { cls: 'approved', label: '✓ Approved' },
+  changes_requested: { cls: 'changes', label: '↻ Changes requested' },
+  pending: { cls: 'pending', label: '• Pending' },
+} as const
 
 /**
  * The publish-to-live flow: confirm → publishing → "your version is now live!" (with a "See it
@@ -22,7 +47,7 @@ type Phase = 'confirm' | 'publishing' | 'success' | 'error'
  * responsibility (via onSeeItLive); this component owns the confirmation/feedback UX only.
  */
 export default function PublishConfirmModal({
-  isOpen, itemName, onConfirm, onSeeItLive, onClose,
+  isOpen, itemName, onConfirm, onSeeItLive, onClose, reviews,
 }: PublishConfirmModalProps) {
   const [phase, setPhase] = useState<Phase>('confirm')
   const [errorMsg, setErrorMsg] = useState('')
@@ -52,7 +77,20 @@ export default function PublishConfirmModal({
       : undefined
 
   const body =
-    phase === 'publishing' ? (
+    phase === 'confirm' && reviews && reviews.length > 0 ? (
+      <div className="pcm-reviews">
+        <div className="pcm-reviews-label">Reviews</div>
+        {reviews.map((r, i) => (
+          <div key={i} className="pcm-review-row">
+            <span className="pcm-review-avatar">{(r.name.trim()[0] || '?').toUpperCase()}</span>
+            <span className="pcm-review-name">{r.name}</span>
+            <span className={`pcm-review-pill ${PILL[r.status].cls}`}>
+              {PILL[r.status].label}{r.at && r.status !== 'pending' ? ` · ${ago(r.at)}` : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+    ) : phase === 'publishing' ? (
       <div className="pcm-status"><span className="pcm-spinner" /> Publishing…</div>
     ) : phase === 'success' ? (
       <div className="pcm-success">

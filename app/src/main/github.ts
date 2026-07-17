@@ -92,6 +92,35 @@ export function reviewSummary(
   return { state, approvedBy, changesRequestedBy, pending: requestedReviewers, reviewers }
 }
 
+export interface ReviewerDetail {
+  name: string
+  status: 'approved' | 'changes_requested' | 'pending'
+  at?: string   // ISO submitted_at of the decisive review (approved / changes only)
+}
+
+/**
+ * Per-reviewer status with display names and timestamps, for the publish confirmation UI.
+ * Names are resolved (and cached) via resolveUserName; `at` is the reviewer's latest decisive
+ * review time. Order: approvals first, then changes-requested, then still-pending.
+ */
+async function buildReviewDetails(
+  reviews: { state: string; user: { login: string }; submitted_at?: string }[],
+  summary: ReviewSummary,
+): Promise<ReviewerDetail[]> {
+  const latestAt = new Map<string, string>()
+  for (const r of reviews) {
+    if ((r.state === 'APPROVED' || r.state === 'CHANGES_REQUESTED') && r.submitted_at) latestAt.set(r.user.login, r.submitted_at)
+  }
+  const rows: { login: string; status: ReviewerDetail['status']; at?: string }[] = [
+    ...summary.approvedBy.map(login => ({ login, status: 'approved' as const, at: latestAt.get(login) })),
+    ...summary.changesRequestedBy.map(login => ({ login, status: 'changes_requested' as const, at: latestAt.get(login) })),
+    ...summary.pending
+      .filter(login => !summary.approvedBy.includes(login) && !summary.changesRequestedBy.includes(login))
+      .map(login => ({ login, status: 'pending' as const })),
+  ]
+  return Promise.all(rows.map(async r => ({ name: await resolveUserName(r.login), status: r.status, at: r.at })))
+}
+
 export async function createPR(repoPath: string, title: string, body: string, reviewers: string[]) {
   const { owner, repo } = await ownerRepo(repoPath)
   const branch = (await simpleGit(repoPath).status()).current
@@ -109,7 +138,7 @@ export async function listPRs(repoPath: string) {
   return Promise.all(prs.map(async p => {
     const [detail, reviews] = await Promise.all([
       gh(`/repos/${owner}/${repo}/pulls/${p.number}`) as Promise<{ additions: number; deletions: number; changed_files: number }>,
-      gh(`/repos/${owner}/${repo}/pulls/${p.number}/reviews`) as Promise<{ state: string; user: { login: string } }[]>,
+      gh(`/repos/${owner}/${repo}/pulls/${p.number}/reviews`) as Promise<{ state: string; user: { login: string }; submitted_at?: string }[]>,
     ])
     const review = reviewSummary(reviews, (p.requested_reviewers ?? []).map(u => u.login))
     return {
@@ -117,6 +146,7 @@ export async function listPRs(repoPath: string) {
       author: { login: p.user.login, name: p.user.login }, createdAt: p.created_at,
       headRefName: p.head.ref,
       reviewState: review.state, approvedBy: review.approvedBy, changesRequestedBy: review.changesRequestedBy,
+      reviewDetails: await buildReviewDetails(reviews, review),
       url: p.html_url, additions: detail.additions, deletions: detail.deletions, changedFiles: detail.changed_files,
       body: p.body || '', requestedReviewers: review.pending, reviewers: review.reviewers,
     }
@@ -130,9 +160,9 @@ export async function prStatus(repoPath: string) {
   const list = await gh(`/repos/${owner}/${repo}/pulls?head=${owner}:${branch}&state=all`) as RawPr[]
   const active = pickActivePr(list)
   if (!active) return { hasPR: false }
-  const reviews = await gh(`/repos/${owner}/${repo}/pulls/${active.number}/reviews`) as { state: string; user: { login: string } }[]
+  const reviews = await gh(`/repos/${owner}/${repo}/pulls/${active.number}/reviews`) as { state: string; user: { login: string }; submitted_at?: string }[]
   const review = reviewSummary(reviews, active.requestedReviewers)
-  return { hasPR: true, pr: { ...active, reviewState: review.state, approvedBy: review.approvedBy, changesRequestedBy: review.changesRequestedBy, reviewers: review.reviewers } }
+  return { hasPR: true, pr: { ...active, reviewState: review.state, approvedBy: review.approvedBy, changesRequestedBy: review.changesRequestedBy, reviewers: review.reviewers, reviewDetails: await buildReviewDetails(reviews, review) } }
 }
 
 export async function checkMerged(repoPath: string) {

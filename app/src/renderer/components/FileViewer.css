@@ -333,16 +333,43 @@
 .file-viewer-body .tiptap ul[data-type="taskList"] {
   list-style: none;
   padding-left: 0;
+  margin: 0;
 }
 
 .file-viewer-body .tiptap ul[data-type="taskList"] li {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
 }
 
-.file-viewer-body .tiptap ul[data-type="taskList"] li label {
-  margin-top: 3px;
+/* Checkbox column: a one-line-tall box that centers the checkbox on the first text line,
+   so it stays aligned regardless of checkbox size or wrapped content. */
+.file-viewer-body .tiptap ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin: 0;
+  height: 1.75em;                 /* one text line (font-size 15px × line-height 1.75) */
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+.file-viewer-body .tiptap ul[data-type="taskList"] li > label input[type="checkbox"] {
+  accent-color: var(--amp-violet-700);   /* brand purple instead of native blue */
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+}
+/* Content column: fill the row; drop the inner paragraph margins so text lines up with the box. */
+.file-viewer-body .tiptap ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.file-viewer-body .tiptap ul[data-type="taskList"] li > div > p {
+  margin: 0;
+}
+/* Nested task lists indent under their parent item. */
+.file-viewer-body .tiptap ul[data-type="taskList"] li ul[data-type="taskList"] {
+  margin-top: 4px;
 }
 
 .file-updated-banner {

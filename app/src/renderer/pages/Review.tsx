@@ -10,6 +10,8 @@ import { iconMap, BookIcon, CheckIcon, PencilIcon } from '../components/SystemIc
 import Button from '../components/Button'
 import { primaryColor, softTint } from '../utils/appearance'
 import Badge, { BadgeVariant } from '../components/Badge'
+import PublishConfirmModal from '../components/PublishConfirmModal'
+import { removeDraft } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import './Review.css'
 
@@ -64,7 +66,7 @@ export default function Review() {
   const [action, setAction] = useState<'approve' | 'request-changes' | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [descOpen, setDescOpen] = useState(false)
-  const [publishing, setPublishing] = useState(false)
+  const [showPublish, setShowPublish] = useState(false)
   const online = useOnline()
 
   const system = systemId ? getSystem(systemId) : undefined
@@ -165,13 +167,22 @@ export default function Review() {
     navigate(`/system/${systemId}`)
   }
 
-  const publish = async () => {
-    setPublishing(true)
+  // Merge the PR to Live, then clean up the draft in Atlas immediately (remote branch is deleted
+  // by mergePR; local branch delete is best-effort). Returns the merge outcome for the modal.
+  const doMerge = async (): Promise<{ ok: boolean; error?: string }> => {
     logCrumb(`published review #${prNum}${pr ? ` ("${pr.title}")` : ''}`)
     const r = await window.api.git.mergePR(repoPath, prNum)
-    setPublishing(false)
-    if (r.ok) navigate('/inbox')
-    else alert(`Couldn't publish: ${r.error}`)
+    if (r.ok && pr) {
+      if (systemId) removeDraft(systemId, pr.headRefName)
+      try { await window.api.git.deleteBranch(repoPath, pr.headRefName) } catch { /* best-effort */ }
+    }
+    return r
+  }
+  // "See it live": go to the system's Live Version (main).
+  const seeItLive = async () => {
+    setShowPublish(false)
+    await window.api.git.switchBranch(repoPath, 'main')
+    navigate(`/system/${systemId}`)
   }
 
   const fileNameOf = (path: string) => path.split('/').pop() || path
@@ -323,7 +334,7 @@ export default function Review() {
                 <div className="review-actionbar-btns">
                   <button className="review-btn ghost" onClick={makeEdits}>Make edits</button>
                   {pr.reviewState === 'approved' && (
-                    <button className="review-btn publish" onClick={publish} disabled={publishing || !online}>{publishing ? 'Publishing…' : 'Publish'}</button>
+                    <button className="review-btn publish" onClick={() => setShowPublish(true)} disabled={!online}>Publish</button>
                   )}
                 </div>
               </div>
@@ -355,6 +366,13 @@ export default function Review() {
           <div className="review-header"><div style={{ color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '20px' }}>Loading…</div></div>
         )}
       </div>
+      <PublishConfirmModal
+        isOpen={showPublish}
+        itemName={pr?.title ?? 'this draft'}
+        onConfirm={doMerge}
+        onSeeItLive={seeItLive}
+        onClose={() => setShowPublish(false)}
+      />
     </div>
   )
 }

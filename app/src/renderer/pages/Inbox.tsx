@@ -158,10 +158,20 @@ export default function Inbox() {
   return (
     <div className="inbox-page">
       <div className="inbox-inner">
-        <div className="inbox-header">
-          <div>
-            <h1 className="inbox-title">Inbox</h1>
-            <p className="inbox-subtitle">Reviews waiting on you, and your work in progress.</p>
+        <h1 className="inbox-title">Inbox</h1>
+        <p className="inbox-subtitle">Reviews waiting on you, and your work in progress.</p>
+
+        <div className="inbox-tabs-row">
+          <div className="inbox-tabs">
+            {TABS.map(t => (
+              <button
+                key={t.key}
+                className={`inbox-tab ${t.key} ${tab === t.key ? 'on' : ''}`.trim()}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label} <span className="inbox-tab-count">{count(t.key)}</span>
+              </button>
+            ))}
           </div>
           {online && (
             <button
@@ -176,26 +186,21 @@ export default function Inbox() {
           )}
         </div>
 
-        <div className="inbox-tabs">
-          {TABS.map(t => (
-            <button
-              key={t.key}
-              className={`inbox-tab ${t.key} ${tab === t.key ? 'on' : ''}`.trim()}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label} <span className="inbox-tab-count">{count(t.key)}</span>
-            </button>
-          ))}
-        </div>
-
         <div className="inbox-list">
           {!online && <div className="inbox-empty">You're offline — your inbox will refresh when you reconnect.</div>}
           {online && loading && (
             <div className="inbox-skeleton">
-              {[0, 1, 2, 3].map(i => <div key={i} className="inbox-skeleton-row" />)}
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="inbox-skeleton-row">
+                  <div className="inbox-skeleton-chip" />
+                  <div className="inbox-skeleton-lines">
+                    <div className="inbox-skeleton-bar title" />
+                    <div className="inbox-skeleton-bar meta" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-          {online && !loading && refreshing && <div className="inbox-refreshing">Refreshing…</div>}
           {online && !loading && shown.length === 0 && <div className="inbox-empty">{EMPTY[tab]}</div>}
           {online && !loading && shown.map(i => (
             <InboxRow

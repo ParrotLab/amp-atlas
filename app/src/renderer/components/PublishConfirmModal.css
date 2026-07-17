@@ -1,0 +1,46 @@
+/* PublishConfirmModal — publishing spinner, live! success, and error states. */
+
+.pcm-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 0;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary, #6B6966);
+}
+.pcm-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(139, 43, 255, 0.25);
+  border-top-color: var(--amp-violet-700, #8B2BFF);
+  border-radius: 50%;
+  animation: pcm-spin 0.7s linear infinite;
+}
+@keyframes pcm-spin { to { transform: rotate(360deg); } }
+
+.pcm-success {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.pcm-success-emoji { font-size: 40px; line-height: 1; margin-bottom: 10px; }
+.pcm-success-title {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  margin: 0 0 6px;
+}
+.pcm-success-sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pcm-error {
+  padding: 10px 0;
+  font-size: var(--text-sm);
+  color: #DC2626;
+  line-height: 1.5;
+}

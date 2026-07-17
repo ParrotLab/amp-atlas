@@ -3,6 +3,39 @@ import { joinTextblockBackward } from '@tiptap/pm/commands'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/**
+ * Stop the markdown serializer from over-escaping prose. By default @tiptap/markdown HTML-encodes
+ * `< > &` (so `a > b` is written to disk as `a &gt; b`) and backslash-escapes `` ` * _ [ ] ~ ``
+ * (so `~200` becomes `\~200`). That makes the saved files ugly and unlike what the user typed.
+ *
+ * We override the serializer's `encodeTextForMarkdown` to skip HTML encoding and escape only the
+ * two characters that genuinely change meaning on re-parse — backslash and backtick. The library's
+ * own code-context guard is preserved, so text inside code marks / code blocks stays literal.
+ *
+ * Exposed as a plain function (not just the extension hook) because the extension's onCreate fires
+ * asynchronously, so a synchronous getMarkdown right after editor creation would miss it.
+ */
+export function applyMarkdownEscapeFix(editor: { storage: any }): void {
+  const mgr = editor?.storage?.markdown?.manager
+  if (!mgr || typeof mgr.encodeTextForMarkdown !== 'function' || mgr.__escapeFixApplied) return
+  mgr.__escapeFixApplied = true
+  mgr.encodeTextForMarkdown = function (text: string, node: any, parentNode: any): string {
+    const codeTypes = this.codeTypes
+    const insideCode =
+      (parentNode?.type != null && codeTypes?.has?.(parentNode.type)) ||
+      (node?.marks || []).some((m: any) => codeTypes?.has?.(typeof m === 'string' ? m : m.type))
+    if (insideCode) return text
+    return text.replace(/([\\`])/g, '\\$1')
+  }
+}
+
+export const MarkdownEscapeFix = Extension.create({
+  name: 'markdownEscapeFix',
+  onCreate() { applyMarkdownEscapeFix(this.editor) },
+})
+
 /**
  * Backspace at the very start of a text block should *join* it with the block before it,
  * not lift it out of its container. ProseMirror's default Backspace (`joinBackward`) unwraps

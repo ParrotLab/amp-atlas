@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { editorExtensions } from '../utils/markdownSerializer'
+import { reflowMarkdown } from '../utils/reflowMarkdown'
 import { useFileWatchers } from '../hooks/useFileWatchers'
 import { ExpandIcon, CompressIcon, PanelIcon, EyeIcon } from './SystemIcons'
 import { displayName } from '../utils/naming'
@@ -74,9 +75,13 @@ export default function FileViewer({
   // marking every file "modified" the moment it's opened.
   useEffect(() => {
     if (!editor) return
+    // Reflow hard-wrapped prose (single newlines mid-paragraph) back into flowing paragraphs so
+    // tool-generated files don't show literal mid-sentence line breaks. Compare against the
+    // reflowed text so an already-loaded doc isn't needlessly re-set.
+    const loaded = reflowMarkdown(body)
     const current = editor.getMarkdown()
-    if (current.trim() === body.trim()) return
-    editor.commands.setContent(body, { contentType: 'markdown', emitUpdate: false })
+    if (current.trim() === loaded.trim()) return
+    editor.commands.setContent(loaded, { contentType: 'markdown', emitUpdate: false })
   }, [body, editor])
 
   // Display-only: show "Last edited" from file metadata (does not read content).

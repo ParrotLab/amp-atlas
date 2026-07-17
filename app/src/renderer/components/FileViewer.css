@@ -173,6 +173,17 @@
   outline: none;
 }
 
+/* Text selection is rendered by the SelectionHighlight extension as a decoration (.pm-selected),
+   NOT by the browser's native ::selection paint. Native selection paint intermittently failed to
+   clear under the BubbleMenu's compositing layer (a "ghost" highlight after collapse), so we hide
+   it and draw our own — a real element that's removed the instant the selection collapses. */
+.file-viewer-body .tiptap ::selection {
+  background: transparent;
+}
+.file-viewer-body .tiptap .pm-selected {
+  background: #EAD9FF;
+}
+
 .file-viewer-body .tiptap > *:first-child {
   margin-top: 0;
 }

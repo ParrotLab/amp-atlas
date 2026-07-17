@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSystems } from '../utils/systemStore'
-import { iconMap, BookIcon } from '../components/SystemIcons'
+import { iconMap, BookIcon, RefreshIcon } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
 import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
@@ -58,7 +58,8 @@ let itemsCache: Item[] = []
 export default function Inbox() {
   const [items, setItems] = useState<Item[]>(() => itemsCache)
   const [tab, setTab] = useState<InboxTab>('review')
-  const [loading, setLoading] = useState(itemsCache.length === 0)
+  const [loading, setLoading] = useState(itemsCache.length === 0)   // cold load only (empty cache)
+  const [refreshing, setRefreshing] = useState(false)               // any load in flight (incl. warm/manual)
   const [publishing, setPublishing] = useState<number | null>(null)
   const online = useOnline()
   const profile = useProfile()
@@ -67,8 +68,11 @@ export default function Inbox() {
   const load = async () => {
     if (!online) { setLoading(false); return }
     if (!profile.login) return   // wait for identity; keep whatever we're already showing
-    // No setLoading(true) here: on repeat visits we already have cached items and
-    // refresh silently. The visible "Loading…" only appears on a cold first load.
+    // No setLoading(true) here: on repeat visits we already have cached items and refresh in
+    // place. `loading` (the skeleton) is cold-load only; `refreshing` drives the subtle in-place
+    // hint and the manual refresh button's spinner.
+    setRefreshing(true)
+    try {
     const all: Item[] = []
     for (const sys of getSystems()) {
       if (!sys.folderPath) continue
@@ -104,7 +108,10 @@ export default function Inbox() {
     all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     itemsCache = all
     setItems(all)
-    setLoading(false)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
   }
 
   useEffect(() => { void load() }, [online, profile.login])
@@ -136,8 +143,23 @@ export default function Inbox() {
   return (
     <div className="inbox-page">
       <div className="inbox-inner">
-        <h1 className="inbox-title">Inbox</h1>
-        <p className="inbox-subtitle">Reviews waiting on you, and your work in progress.</p>
+        <div className="inbox-header">
+          <div>
+            <h1 className="inbox-title">Inbox</h1>
+            <p className="inbox-subtitle">Reviews waiting on you, and your work in progress.</p>
+          </div>
+          {online && (
+            <button
+              className={`inbox-refresh${refreshing ? ' spinning' : ''}`}
+              onClick={() => { void load() }}
+              disabled={refreshing}
+              title="Check for new items"
+              aria-label="Refresh inbox"
+            >
+              <RefreshIcon size={16} />
+            </button>
+          )}
+        </div>
 
         <div className="inbox-tabs">
           {TABS.map(t => (
@@ -153,7 +175,12 @@ export default function Inbox() {
 
         <div className="inbox-list">
           {!online && <div className="inbox-empty">You're offline — your inbox will refresh when you reconnect.</div>}
-          {online && loading && <div className="inbox-empty">Loading…</div>}
+          {online && loading && (
+            <div className="inbox-skeleton">
+              {[0, 1, 2, 3].map(i => <div key={i} className="inbox-skeleton-row" />)}
+            </div>
+          )}
+          {online && !loading && refreshing && <div className="inbox-refreshing">Refreshing…</div>}
           {online && !loading && shown.length === 0 && <div className="inbox-empty">{EMPTY[tab]}</div>}
           {online && !loading && shown.map(i => (
             <InboxRow

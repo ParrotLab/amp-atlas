@@ -145,20 +145,21 @@ export default function FileTree({
     })
   }, [rootPath, loadDirectory])
 
+  // When the *open file* changes, reveal its folders and scroll it into view. Scrolling lives here
+  // (keyed on selectedFile) rather than in a separate effect watching expandedNodes — otherwise
+  // manually expanding any folder would yank the tree back to the open file. block:'nearest' won't
+  // move the item if it's already visible.
   useEffect(() => {
-    if (selectedFile && selectedFile !== lastRevealed.current) {
-      lastRevealed.current = selectedFile
-      void revealFile(selectedFile)
-    }
+    if (!selectedFile || selectedFile === lastRevealed.current) return
+    lastRevealed.current = selectedFile
+    let cancelled = false
+    void revealFile(selectedFile).then(() => {
+      if (cancelled) return
+      // Let React render the newly-expanded nodes before scrolling.
+      setTimeout(() => activeItemRef.current?.scrollIntoView({ block: 'nearest' }), 80)
+    })
+    return () => { cancelled = true }
   }, [selectedFile, revealFile])
-
-  // Once the path is expanded, scroll the active file into view (block:'nearest' won't
-  // move it if it's already visible, so it never yanks the tree around needlessly).
-  useEffect(() => {
-    if (!selectedFile) return
-    const t = setTimeout(() => activeItemRef.current?.scrollIntoView({ block: 'nearest' }), 80)
-    return () => clearTimeout(t)
-  }, [selectedFile, expandedNodes])
 
   const getChangeCount = useCallback((dirRelPath: string): number => {
     let count = 0

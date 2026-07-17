@@ -5,9 +5,10 @@ import { iconMap, BookIcon, RefreshIcon } from '../components/SystemIcons'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
 import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
-import { listActive } from '../utils/draftStore'
+import { listActive, removeDraft } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import InboxRow from '../components/InboxRow'
+import PublishConfirmModal from '../components/PublishConfirmModal'
 import './Inbox.css'
 
 interface Item {
@@ -60,7 +61,7 @@ export default function Inbox() {
   const [tab, setTab] = useState<InboxTab>('review')
   const [loading, setLoading] = useState(itemsCache.length === 0)   // cold load only (empty cache)
   const [refreshing, setRefreshing] = useState(false)               // any load in flight (incl. warm/manual)
-  const [publishing, setPublishing] = useState<number | null>(null)
+  const [publishTarget, setPublishTarget] = useState<Item | null>(null)  // item whose publish modal is open
   const online = useOnline()
   const profile = useProfile()
   const navigate = useNavigate()
@@ -127,13 +128,27 @@ export default function Inbox() {
       : `${i.systemName} · ${files} · ${timeAgo(i.createdAt)}`
   }
 
-  const publish = async (i: Item) => {
-    setPublishing(i.number)
+  // Merge the target PR to Live, then clean up the draft in Atlas immediately (remote branch is
+  // deleted by mergePR; local branch delete is best-effort). Returns the outcome for the modal.
+  const doMerge = async (): Promise<{ ok: boolean; error?: string }> => {
+    const i = publishTarget
+    if (!i || i.number === undefined) return { ok: false, error: 'No pull request to publish.' }
     logCrumb(`published "${i.title}" (#${i.number}) from Inbox`)
     const r = await window.api.git.mergePR(i.repoPath, i.number)
-    setPublishing(null)
-    if (r.ok) { await load() } else { alert(`Couldn't publish: ${r.error}`) }
+    if (r.ok) {
+      removeDraft(i.systemId, i.headRefName)
+      try { await window.api.git.deleteBranch(i.repoPath, i.headRefName) } catch { /* best-effort */ }
+    }
+    return r
   }
+  const seeItLive = async () => {
+    const i = publishTarget
+    setPublishTarget(null)
+    if (!i) return
+    await window.api.git.switchBranch(i.repoPath, 'main')
+    navigate(`/system/${i.systemId}`)
+  }
+  const closePublish = () => { setPublishTarget(null); void load() }
 
   const makeEdits = async (i: Item) => {
     await window.api.git.switchBranch(i.repoPath, i.headRefName)
@@ -193,13 +208,20 @@ export default function Inbox() {
               action={i.action}
               badge={i.badge}
               url={i.url ?? ''}
-              publishing={publishing === i.number}
-              onPublish={() => publish(i)}
+              publishing={false}
+              onPublish={() => setPublishTarget(i)}
               onMakeEdits={() => makeEdits(i)}
             />
           ))}
         </div>
       </div>
+      <PublishConfirmModal
+        isOpen={!!publishTarget}
+        itemName={publishTarget?.title ?? 'this version'}
+        onConfirm={doMerge}
+        onSeeItLive={seeItLive}
+        onClose={closePublish}
+      />
     </div>
   )
 }

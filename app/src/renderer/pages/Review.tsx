@@ -6,7 +6,8 @@ import { editorExtensions } from '../utils/markdownSerializer'
 import { parseDocument } from '../utils/fileDocument'
 import { useOnline } from '../hooks/useOnline'
 import { useProfile } from '../hooks/useProfile'
-import { iconMap, BookIcon } from '../components/SystemIcons'
+import { iconMap, BookIcon, CheckIcon, PencilIcon } from '../components/SystemIcons'
+import Button from '../components/Button'
 import { primaryColor, softTint } from '../utils/appearance'
 import Badge, { BadgeVariant } from '../components/Badge'
 import { logCrumb } from '../utils/breadcrumb'
@@ -202,13 +203,19 @@ export default function Review() {
         <Link to="/inbox" className="review-back">← Inbox</Link>
 
         {status === 'done' ? (
-          <div className="review-header">
-            <div className="review-success">
-              {action === 'approve' ? '✓ Approved — the author can publish when ready.' : '✓ Changes requested — the author will be notified.'}
+          <div className="review-success-card">
+            <div className={`review-success-badge ${action === 'approve' ? 'approve' : 'changes'}`}>
+              {action === 'approve' ? <CheckIcon size={30} /> : <PencilIcon size={26} />}
             </div>
-            <div style={{ textAlign: 'center', marginTop: '12px' }}>
-              <Link to="/inbox" style={{ color: 'var(--amp-violet-700)', fontSize: '13px' }}>Back to Inbox</Link>
-            </div>
+            <h2 className="review-success-title">{action === 'approve' ? 'Approved' : 'Changes requested'}</h2>
+            <p className="review-success-sub">
+              {action === 'approve' ? (
+                <><strong>{pr?.title ?? 'This draft'}</strong> is approved — the author can publish it whenever they're ready.</>
+              ) : (
+                <><strong>{pr?.title ?? 'This draft'}</strong> — the author has been notified and can make edits.</>
+              )}
+            </p>
+            <Button variant="primary" onClick={() => navigate('/inbox')}>Back to Inbox</Button>
           </div>
         ) : pr ? (
           <>

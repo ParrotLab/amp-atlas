@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { getSystem, updateSystemFolder, SystemConfig } from '../utils/systemStore'
 import NewDraftModal from '../components/NewDraftModal'
 import PublishModal from '../components/PublishModal'
-import PublishConfirmModal from '../components/PublishConfirmModal'
+import PublishConfirmModal, { ReviewerDetail } from '../components/PublishConfirmModal'
 import ConflictModal from '../components/ConflictModal'
 import MoveChangesModal from '../components/MoveChangesModal'
 import { useFileDocument } from '../hooks/useFileDocument'
@@ -100,7 +100,7 @@ export default function SystemOverview() {
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[] }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[]; reviewDetails?: ReviewerDetail[] }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -280,7 +280,8 @@ export default function SystemOverview() {
         state: result.pr?.state,
         reviewState: result.pr?.reviewState,
         changesRequestedBy: result.pr?.changesRequestedBy,
-        reviewers: result.pr?.reviewers
+        reviewers: result.pr?.reviewers,
+        reviewDetails: result.pr?.reviewDetails,
       })
     }
   }, [rootPath, branch, isMainBranch, caps.isGitRepo, caps.connected])
@@ -994,6 +995,7 @@ export default function SystemOverview() {
       <PublishConfirmModal
         isOpen={showPublishConfirm}
         itemName={prStatus.title ?? humanize(branch)}
+        reviews={prStatus.reviewDetails}
         onConfirm={publishApprovedDraft}
         onSeeItLive={() => setShowPublishConfirm(false)}
         onClose={() => setShowPublishConfirm(false)}

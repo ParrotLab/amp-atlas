@@ -8,7 +8,7 @@ import { classifyInboxPR, InboxTab } from '../utils/inboxClassify'
 import { listActive, removeDraft } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 import InboxRow from '../components/InboxRow'
-import PublishConfirmModal from '../components/PublishConfirmModal'
+import PublishConfirmModal, { ReviewerDetail } from '../components/PublishConfirmModal'
 import './Inbox.css'
 
 interface Item {
@@ -27,6 +27,7 @@ interface Item {
   tab: InboxTab
   action: ReturnType<typeof classifyInboxPR>['action']
   badge: ReturnType<typeof classifyInboxPR>['badge']
+  reviewDetails?: ReviewerDetail[]
 }
 
 function timeAgo(dateStr: string): string {
@@ -90,7 +91,7 @@ export default function Inbox() {
               repoPath: sys.folderPath, number: pr.number, title: pr.title,
               authorName: pr.author.name || pr.author.login, headRefName: pr.headRefName,
               createdAt: pr.createdAt, changedFiles: pr.changedFiles, url: pr.url,
-              tab: c.tab, action: c.action, badge: c.badge,
+              tab: c.tab, action: c.action, badge: c.badge, reviewDetails: pr.reviewDetails,
             })
           }
         }
@@ -223,6 +224,7 @@ export default function Inbox() {
       <PublishConfirmModal
         isOpen={!!publishTarget}
         itemName={publishTarget?.title ?? 'this version'}
+        reviews={publishTarget?.reviewDetails}
         onConfirm={doMerge}
         onSeeItLive={seeItLive}
         onClose={closePublish}

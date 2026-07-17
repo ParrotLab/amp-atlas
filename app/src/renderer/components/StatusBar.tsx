@@ -24,6 +24,7 @@ interface StatusBarProps {
   onSave: () => void
   onDiscard: () => void
   onPublish: () => void
+  onPublishLive?: () => void
   onRefresh?: () => Promise<void> | void
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
@@ -48,7 +49,7 @@ export default function StatusBar({
   editedCount, newCount, isDirty, hasUnpublishedWork = false,
   branchName, isMain,
   activeDrafts, lastSaved, lastRefreshedLabel,
-  onSave, onDiscard, onPublish, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
+  onSave, onDiscard, onPublish, onPublishLive, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
   onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
@@ -219,6 +220,10 @@ export default function StatusBar({
             menuDisabled={canUseGit && !isDirty && !hasUnpublishedWork}
             onClick={() => canUseGit ? onSave() : onNeedGit?.()}
             items={[
+              // Once approved, publishing to the Live Version is the primary next step.
+              ...(prStatus?.reviewState === 'approved' && onPublishLive
+                ? [{ label: 'Publish', onClick: onPublishLive }]
+                : []),
               { label: publishLabel, kbd: '⌘↵', onClick: doPublish },
               { label: 'Discard changes', danger: true, onClick: doDiscard },
             ]}

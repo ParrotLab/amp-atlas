@@ -15,6 +15,13 @@ export default defineConfig({
         '@': resolve('src/renderer')
       }
     },
-    plugins: [react()]
+    plugins: [react()],
+    // Mermaid is imported lazily (see MermaidBlockView), so Vite would otherwise only discover it
+    // when someone first opens a file containing a diagram — then optimize it mid-session and
+    // force a full page reload, losing the open file and any in-flight autosave. Pre-bundling at
+    // dev-server start avoids that. It stays a separate async chunk in production either way.
+    optimizeDeps: {
+      include: ['mermaid']
+    }
   }
 })

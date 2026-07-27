@@ -64,6 +64,7 @@ export const ListOrderedIcon = ({ size = 18 }: { size?: number }) => <I size={si
 export const QuoteIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 5v10"/><path d="M8 6.5h8M8 10h8M8 13.5h5"/></I>
 export const DividerIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M3 10h14"/></I>
 export const TableIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8.5h14M3 12.5h14M8.5 4v12"/></I>
+export const DiagramIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="7" y="2.5" width="6" height="4" rx="1"/><rect x="2" y="13.5" width="6" height="4" rx="1"/><rect x="12" y="13.5" width="6" height="4" rx="1"/><path d="M10 6.5v3M5 13.5v-3h10v3"/></I>
 export const CheckSquareIcon = ({ size = 18 }: { size?: number }) => <I size={size}><rect x="3.5" y="3.5" width="13" height="13" rx="2.5"/><path d="M7 10l2 2 4-4.5"/></I>
 export const TextIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M4 5.5h12M4 10h12M4 14.5h8"/></I>
 export const IndentIcon = ({ size = 18 }: { size?: number }) => <I size={size}><path d="M8.5 5h8.5M8.5 15h8.5M11 8.5h6M11 11.5h6"/><path d="M3 7l2.5 3L3 13"/></I>

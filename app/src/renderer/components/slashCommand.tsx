@@ -4,6 +4,7 @@ import { ReactRenderer } from '@tiptap/react'
 import SlashMenu, { SlashMenuRef } from './SlashMenu'
 import {
   ListBulletIcon, ListOrderedIcon, CheckSquareIcon, QuoteIcon, CodeIcon, DividerIcon, TableIcon,
+  DiagramIcon,
 } from './SystemIcons'
 
 type Range = { from: number; to: number }
@@ -26,6 +27,9 @@ export const SLASH_ITEMS: SlashItem[] = [
   { title: 'Checklist', keywords: ['todo', 'task', 'check', 'checkbox'], icon: <CheckSquareIcon size={17} />, run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleTaskList().run() },
   { title: 'Quote', keywords: ['quote', 'blockquote', 'callout'], icon: <QuoteIcon size={17} />, run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run() },
   { title: 'Code block', keywords: ['code', 'snippet', 'fence'], icon: <CodeIcon size={17} />, run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run() },
+  // Seeded with a two-node diagram rather than an empty block — the people using Atlas don't
+  // write mermaid from memory, and an empty box gives them nothing to edit into shape.
+  { title: 'Diagram', keywords: ['diagram', 'mermaid', 'flowchart', 'chart', 'graph'], icon: <DiagramIcon size={17} />, run: ({ editor, range }) => editor.chain().focus().deleteRange(range).insertContent({ type: 'mermaidBlock', content: [{ type: 'text', text: 'graph TD\n  A[Start] --> B[Next]' }] }).run() },
   { title: 'Table', keywords: ['table', 'grid'], icon: <TableIcon size={17} />, run: ({ editor, range }) => editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
   { title: 'Divider', keywords: ['divider', 'rule', 'hr', 'separator', 'line'], icon: <DividerIcon size={17} />, run: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHorizontalRule().run() },
 ]

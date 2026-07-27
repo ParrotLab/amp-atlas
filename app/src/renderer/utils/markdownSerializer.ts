@@ -5,6 +5,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table'
 import { Markdown } from '@tiptap/markdown'
 import { JoinInPlaceBackspace, SelectionHighlight, MarkdownEscapeFix, applyMarkdownEscapeFix } from './editorKeymap'
+import { MermaidBlock } from './mermaidBlock'
 
 /** Single source of truth for the editor's extension set (used by FileViewer, Review, and tests). */
 export function editorExtensions() {
@@ -20,6 +21,7 @@ export function editorExtensions() {
     TableCell,
     TableHeader,
     Markdown,
+    MermaidBlock,
     JoinInPlaceBackspace,
     SelectionHighlight,
     MarkdownEscapeFix,

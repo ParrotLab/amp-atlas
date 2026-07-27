@@ -1,0 +1,130 @@
+/* ==========================================================================
+   Mermaid diagram blocks
+   Shared by the editor (FileViewer) and the read-only Review "Final" view.
+   Those two have separate stylesheets that duplicate their code-block rules;
+   this lives here so the diagram styling is defined once for both.
+   ========================================================================== */
+
+.tiptap .mermaid-block {
+  position: relative;
+  margin: 16px 0;
+}
+
+/* --- Source view ---------------------------------------------------------
+   Matches the surrounding code-block treatment. The extra class in the
+   selector is deliberate: `.file-viewer-body .tiptap pre` is (0,2,1) and
+   would otherwise win over a plain `.mermaid-source`. */
+.tiptap .mermaid-block pre.mermaid-source {
+  background: #1a1a2e;
+  color: #e0ddd8;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  /* Explicit because Tiptap sets `white-space: inherit` on the NodeViewContent element;
+     mermaid is whitespace-sensitive, so collapsing indentation would break diagrams. */
+  white-space: pre;
+}
+
+.tiptap .mermaid-block pre.mermaid-source code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  white-space: pre;
+}
+
+/* Hidden rather than unmounted while a diagram is shown — ProseMirror needs its
+   contentDOM to stay in the tree, and `display: none` would strip its layout box
+   just as the caret is being placed inside it on click. */
+.tiptap .mermaid-block[data-mode='rendered'] pre.mermaid-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* --- Rendered diagram ---------------------------------------------------- */
+.tiptap .mermaid-block .mermaid-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--amp-cream-100, #fefcf9);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  cursor: text;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.tiptap .mermaid-block .mermaid-preview:hover {
+  border-color: var(--color-border-default);
+}
+
+.tiptap .mermaid-block .mermaid-svg {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Scale to the column rather than overflowing it — Review caps its container at
+   500px tall (Review.css), so a wide diagram must shrink instead of clipping. */
+.tiptap .mermaid-block .mermaid-svg svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.tiptap .mermaid-block .mermaid-placeholder {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--amp-gray-400);
+}
+
+/* --- Syntax error -------------------------------------------------------- */
+.tiptap .mermaid-block .mermaid-error {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+}
+
+.tiptap .mermaid-block .mermaid-error-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-status-error);
+}
+
+.tiptap .mermaid-block .mermaid-error-msg {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+}
+
+/* The source is echoed under the message so the user can see what failed without
+   having to click into the block first. */
+.tiptap .mermaid-block pre.mermaid-error-src {
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  background: var(--color-bg-tertiary);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tiptap .mermaid-block .mermaid-preview { transition: none; }
+}

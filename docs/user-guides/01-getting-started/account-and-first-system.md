@@ -15,8 +15,10 @@ So "adding a System" here means *"point AMP Atlas at a System that's already on 
 computer,"* not *"create a brand-new System from scratch."* (Creating a fresh System from
 inside the app is planned for later — for now, your team lead sets new Systems up for you.)
 
-If you don't yet have a System folder on your computer, ask your team lead — they'll get it
-onto your machine first, and then you connect to it here.
+If you don't yet have a System folder on your computer, you have two options: ask your team
+lead — they'll get it onto your machine first — or put it there yourself by following
+[Get your first System onto your computer](./getting-your-system-folder.md). Either way,
+once the folder's on your Mac you come back here and connect to it.
 
 ---
 

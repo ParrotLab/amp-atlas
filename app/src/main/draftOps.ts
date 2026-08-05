@@ -1,4 +1,5 @@
 import { simpleGit } from 'simple-git'
+import { prepareRemoteAuth } from './gitAuth'
 
 export function slugifyDraft(name: string): string {
   return 'draft/' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -47,14 +48,15 @@ export async function switchDraft(repoPath: string, branch: string): Promise<voi
 }
 
 /** New Draft: switch to the Live Version, pull latest if possible, then branch. */
-export async function createDraftFromMain(repoPath: string, draftName: string): Promise<{ branch: string; pulled: boolean }> {
+export async function createDraftFromMain(repoPath: string, draftName: string, token?: string): Promise<{ branch: string; pulled: boolean }> {
   const git = simpleGit(repoPath)
   const info = await git.branch()
   const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
   await git.checkout(base)
   let pulled = false
   try {
-    await git.pull(['--ff-only'])
+    const auth = await prepareRemoteAuth(git, token)
+    await git.raw([...auth, 'pull', '--ff-only'])
     pulled = true
   } catch {
     // offline / no remote / non-ff — branch from local base with pulled=false
@@ -69,13 +71,14 @@ export async function createDraftFromMain(repoPath: string, draftName: string): 
  * Never disturbs the current branch or working tree; diverged/non-ff cases are left as-is.
  * Returns whether the local base advanced.
  */
-export async function refreshMain(repoPath: string): Promise<{ updated: boolean }> {
+export async function refreshMain(repoPath: string, token?: string): Promise<{ updated: boolean }> {
   const git = simpleGit(repoPath)
   const info = await git.branch()
   const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
   const before = await git.revparse([base]).catch(() => '')
+  const auth = await prepareRemoteAuth(git, token)
   try {
-    await git.fetch('origin', base)
+    await git.raw([...auth, 'fetch', 'origin', base])
   } catch {
     return { updated: false } // offline / no remote
   }
@@ -84,7 +87,7 @@ export async function refreshMain(repoPath: string): Promise<{ updated: boolean 
     try { await git.merge(['--ff-only', `origin/${base}`]) } catch { /* diverged — leave local as-is */ }
   } else {
     // Advance the local base ref to origin without checking it out (fast-forward only).
-    try { await git.raw(['fetch', 'origin', `${base}:${base}`]) } catch { /* non-ff — ignore */ }
+    try { await git.raw([...auth, 'fetch', 'origin', `${base}:${base}`]) } catch { /* non-ff — ignore */ }
   }
   const after = await git.revparse([base]).catch(() => '')
   return { updated: before !== after }
@@ -98,14 +101,15 @@ export type UpdateFromLiveResult =
  * Bring the current draft up to date with the Live Version (origin base branch) before publishing.
  * Merges cleanly when possible; on a real overlap it aborts the merge so the draft is left untouched.
  */
-export async function updateFromLive(repoPath: string): Promise<UpdateFromLiveResult> {
+export async function updateFromLive(repoPath: string, token?: string): Promise<UpdateFromLiveResult> {
   const git = simpleGit(repoPath)
   const info = await git.branch()
   const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
 
   // Fetch the latest Live Version. Offline / no remote => nothing to merge, proceed.
   try {
-    await git.fetch('origin', base)
+    const auth = await prepareRemoteAuth(git, token)
+    await git.raw([...auth, 'fetch', 'origin', base])
   } catch {
     return { ok: true, updated: false }
   }

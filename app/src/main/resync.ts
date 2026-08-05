@@ -1,4 +1,5 @@
 import { simpleGit } from 'simple-git'
+import { prepareRemoteAuth } from './gitAuth'
 
 function baseName(all: string[]): string {
   return all.includes('main') ? 'main' : all.includes('master') ? 'master' : 'main'
@@ -19,11 +20,12 @@ export async function hasUnpublishedWork(repoPath: string): Promise<boolean> {
 }
 
 /** Hard-reset the local system to exactly match the Live Version. Destroys local changes. */
-export async function resyncFromLive(repoPath: string): Promise<{ base: string }> {
+export async function resyncFromLive(repoPath: string, token?: string): Promise<{ base: string }> {
   const git = simpleGit(repoPath)
   const info = await git.branch()
   const base = baseName(info.all)
-  await git.fetch('origin', base)
+  const auth = await prepareRemoteAuth(git, token)
+  await git.raw([...auth, 'fetch', 'origin', base])
   await git.checkout(base)
   await git.reset(['--hard', `origin/${base}`])
   await git.clean('f', ['-d'])

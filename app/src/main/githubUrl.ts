@@ -9,3 +9,14 @@ export function parseOwnerRepo(remoteUrl: string): OwnerRepo | null {
   if (ssh) return { owner: ssh[1], repo: ssh[2] }
   return null
 }
+
+/**
+ * Canonical HTTPS remote URL for a GitHub repo, from any https or ssh remote.
+ * Atlas authenticates git over HTTPS (http.extraheader), so ssh remotes must be
+ * normalized to https for that auth to apply. Returns null for non-GitHub remotes.
+ */
+export function toHttpsRemoteUrl(remoteUrl: string): string | null {
+  const parsed = parseOwnerRepo(remoteUrl)
+  if (!parsed) return null
+  return `https://github.com/${parsed.owner}/${parsed.repo}.git`
+}

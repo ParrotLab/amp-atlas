@@ -5,7 +5,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { simpleGit } from 'simple-git'
 import { startDeviceFlow, pollForToken, getIdentity } from './githubAuth'
 import { tokenStore } from './tokenStore'
-import { buildAuthHeader } from './authHeader'
+import { prepareRemoteAuth } from './gitAuth'
 import * as github from './github'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive, refreshMain } from './draftOps'
 import { startWatch, stopWatch } from './watcher'
@@ -289,7 +289,8 @@ ipcMain.handle('git:publish', async (_event, repoPath: string) => {
     if (!branch) return { ok: false, error: 'No branch found' }
     const token = tokenStore().getToken()
     if (!token) return { ok: false, error: 'Not connected to GitHub' }
-    await git.raw(['-c', `http.https://github.com/.extraheader=${buildAuthHeader(token)}`, 'push', 'origin', branch, '--set-upstream'])
+    const auth = await prepareRemoteAuth(git, token)
+    await git.raw([...auth, 'push', 'origin', branch, '--set-upstream'])
     return { ok: true }
   } catch (error) {
     logError('publish', error)
@@ -324,7 +325,7 @@ ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, b
 
 ipcMain.handle('git:createDraft', async (_event, repoPath: string, draftName: string) => {
   try {
-    const { branch, pulled } = await createDraftFromMain(repoPath, draftName)
+    const { branch, pulled } = await createDraftFromMain(repoPath, draftName, tokenStore().getToken() ?? undefined)
     return { ok: true, branch, pulled }
   } catch (error) {
     return { ok: false, error: String(error) }
@@ -352,13 +353,13 @@ ipcMain.handle('git:createDraftFromChanges', async (_event, repoPath: string, dr
 })
 
 ipcMain.handle('git:refreshMain', async (_event, repoPath: string) => {
-  try { return { ok: true, ...(await refreshMain(repoPath)) } }
+  try { return { ok: true, ...(await refreshMain(repoPath, tokenStore().getToken() ?? undefined)) } }
   catch (error) { logError('refreshMain', error); return { ok: false, updated: false } }
 })
 
 ipcMain.handle('git:updateFromLive', async (_event, repoPath: string) => {
   try {
-    return await updateFromLive(repoPath)
+    return await updateFromLive(repoPath, tokenStore().getToken() ?? undefined)
   } catch (error) {
     // An unexpected failure must not block publishing — treat as "nothing to update".
     logError('updateFromLive', error)
@@ -472,7 +473,7 @@ ipcMain.handle('git:hasUnpublishedWork', async (_event, repoPath: string) => {
 })
 
 ipcMain.handle('git:resyncFromLive', async (_event, repoPath: string) => {
-  try { await resyncFromLive(repoPath); return { ok: true } }
+  try { await resyncFromLive(repoPath, tokenStore().getToken() ?? undefined); return { ok: true } }
   catch (error) { logError('resync', error); return { ok: false, error: String(error) } }
 })
 

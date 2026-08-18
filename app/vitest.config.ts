@@ -8,5 +8,7 @@ export default defineConfig({
     // Node built-ins (fs, child_process, simple-git) still work under jsdom, so
     // main-process tests run fine here too. (environmentMatchGlobs was removed in vitest 4.)
     environment: 'jsdom',
+    // Mocks mermaid, which cannot render under jsdom (no SVG layout).
+    setupFiles: ['./vitest.setup.ts'],
   },
 })

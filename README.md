@@ -4,8 +4,6 @@ Internal desktop app for the AMP (AI Momentum Protocols) team — an Obsidian-li
 
 > **Drafts** instead of branches. **Save** instead of commit. **Publish** instead of push. Same git workflow underneath, no developer vocabulary on the surface.
 
-For the product context, see [`PROJECT-SYNTHESIS.md`](./PROJECT-SYNTHESIS.md).
-
 ---
 
 ## Status
@@ -88,8 +86,7 @@ amp-atlas/
 │   └── electron.vite.config.ts
 ├── design/                   # Personas, journey maps, mockups
 ├── design-system/            # Fonts, tokens, typography, preview.html
-├── docs/                     # Implementation plans
-└── PROJECT-SYNTHESIS.md      # Product vision + brand + requirements
+└── docs/                     # Implementation plans
 ```
 
 ### Routes

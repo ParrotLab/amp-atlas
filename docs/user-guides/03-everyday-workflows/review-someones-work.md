@@ -115,10 +115,11 @@ Live Version trustworthy.
 An author can ask **more than one person** to review. As far as AMP Atlas is concerned, once
 **one** reviewer approves, the Draft can be published.
 
-> **Your team may have extra rules.** Some teams require more than one approval, or that
-> someone other than the author signs off. Those rules aren't shown inside AMP Atlas, so a
-> **Publish** can occasionally be blocked even though the app looks ready. If that happens,
-> it's not a bug — check with your team lead about your team's publishing rules.
+> **The repo may have extra rules.** A repository can require more than one approval, or that
+> someone other than the author signs off (GitHub branch protection). Those rules aren't shown
+> inside AMP Atlas, so a **Publish** can occasionally be blocked even though the app looks
+> ready. If that happens, it's not a bug — check the repository's branch protection settings on
+> GitHub (or with whoever manages the repo).
 
 ---
 

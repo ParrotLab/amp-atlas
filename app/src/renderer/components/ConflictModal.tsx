@@ -7,7 +7,7 @@ interface ConflictModalProps {
   onClose: () => void
 }
 
-/** Calm, non-technical escalation when the Live Version changed in a way that overlaps the draft. */
+/** Calm, non-technical recovery when the Live Version changed in a way that overlaps the draft. */
 export default function ConflictModal({ isOpen, files, onClose }: ConflictModalProps) {
   return (
     <Modal
@@ -24,7 +24,9 @@ export default function ConflictModal({ isOpen, files, onClose }: ConflictModalP
         . Your draft is safe and unchanged — nothing was lost.
       </p>
       <p>
-        To finish publishing, <strong>contact your team lead</strong> and they’ll help merge the two versions.
+        To finish publishing, bring your draft up to date with those edits:
+        <strong>Refresh</strong> the Live Version, then re-apply your changes in a new draft on
+        top of the latest. Comfortable with GitHub? You can also resolve the overlap directly there.
       </p>
     </Modal>
   )

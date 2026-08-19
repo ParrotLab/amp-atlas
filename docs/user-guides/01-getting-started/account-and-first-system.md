@@ -5,20 +5,19 @@ takes about five minutes, and there's nothing technical to configure.
 
 ---
 
-## Before you start: your System folders are already set up
+## Before you start: a System is a GitHub repo on your computer
 
-One thing to know up front: in this version of AMP Atlas, your team's Systems **already
-exist** as folders on your computer, set up ahead of time. Your job is to **connect** AMP
-Atlas to those folders — not to build them.
+One thing to know up front: in this version of AMP Atlas, you **connect** to a System that's
+already a folder on your computer — you don't build one from scratch inside the app. A System
+is simply a **GitHub repository**, cloned to your Mac.
 
-So "adding a System" here means *"point AMP Atlas at a System that's already on my
+So "adding a System" here means *"point AMP Atlas at a repo folder that's already on my
 computer,"* not *"create a brand-new System from scratch."* (Creating a fresh System from
-inside the app is planned for later — for now, your team lead sets new Systems up for you.)
+inside the app is planned for later.)
 
-If you don't yet have a System folder on your computer, you have two options: ask your team
-lead — they'll get it onto your machine first — or put it there yourself by following
-[Get your first System onto your computer](./getting-your-system-folder.md). Either way,
-once the folder's on your Mac you come back here and connect to it.
+If you don't yet have a System folder on your computer, put one there by following
+[Get your first System onto your computer](./getting-your-system-folder.md) — it walks you
+through cloning a GitHub repo. Once the folder's on your Mac, come back here and connect to it.
 
 ---
 
@@ -26,8 +25,9 @@ once the folder's on your Mac you come back here and connect to it.
 
 Download AMP Atlas and open it like any other app on your Mac.
 
-> _Notes: AMP Atlas is an internal app, so it isn't in a public app store — ask your team
-> lead for the download. It currently runs on macOS._
+> _Notes: AMP Atlas is distributed as a direct download (not through a public app store) — get
+> the latest build from the [Releases page](https://github.com/ParrotLab/amp-atlas-releases/releases/latest).
+> It currently runs on macOS (Apple Silicon)._
 
 The first time you open it, AMP Atlas asks you to connect your account before you can do
 anything else. That's the next step.
@@ -80,11 +80,11 @@ You'll be asked for a few things:
 Pick the folder your System lives in, and AMP Atlas connects to it. Everything already in
 it shows up right away, ready to work with.
 
-> **The folder needs to be a connected System already.** It must be a folder your team set
-> up and that's linked to GitHub. Also make sure you pick the **top folder of the System**,
-> not a folder *inside* it — pointing AMP Atlas at a sub-folder won't work either. If the
-> folder isn't a connected System, AMP Atlas will let you know with a clear message rather
-> than adding it. When in doubt, ask your team lead which folder to choose.
+> **The folder needs to be a GitHub repo already.** It must be a folder that's a clone of a
+> GitHub repository. Also make sure you pick the **top folder of the System**, not a folder
+> *inside* it — pointing AMP Atlas at a sub-folder won't work either. If the folder isn't a
+> connected repo, AMP Atlas will let you know with a clear message rather than adding it. Not
+> sure? See [Get your first System onto your computer](./getting-your-system-folder.md).
 
 > **Already use Obsidian?** A System folder works just like an Obsidian vault — in fact, you
 > can point AMP Atlas at the same folder and use both.
@@ -116,7 +116,7 @@ System showing on your dashboard. If your System card is there, you're set.
   to get a fresh code.
 - **You approved in the browser but AMP Atlas still says "not connected."** Return to the
   AMP Atlas window and give it a moment; if it doesn't update, try connecting once more.
-- **AMP Atlas won't add my folder.** That usually means the folder isn't a System connected
-  to GitHub yet. Check with your team lead that you picked the right folder.
-- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or ask
-  your team lead.
+- **AMP Atlas won't add my folder.** That usually means the folder isn't a git repository
+  connected to GitHub yet. Make sure you picked a folder that's a clone of a GitHub repo.
+- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or open a
+  [GitHub issue](https://github.com/ParrotLab/amp-atlas/issues).

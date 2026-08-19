@@ -59,8 +59,8 @@ If you're more hands-on, **Claude Code** works directly alongside your System's 
 a bit more technical, but powerful for larger pieces of work.
 
 > **Not sure which to use?** Start with the **Claude app** — it's the friendlier entry
-> point. You can always try Claude Code later. Your team lead can point you to whichever is
-> set up for your team, and help with the one-time setup that points Claude at your System.
+> point. You can always try Claude Code later. Both work with your System's folder; Claude Code
+> just needs a one-time setup that points it at your System.
 
 ---
 

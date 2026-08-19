@@ -1,7 +1,8 @@
 # Troubleshooting & FAQ
 
-Quick answers to the things that most often trip people up. If your question isn't here, ask
-your team lead or in your team's support channel.
+Quick answers to the things that most often trip people up. If your question isn't here, check
+the [everyday workflow guides](../03-everyday-workflows/) or open a
+[GitHub issue](https://github.com/ParrotLab/amp-atlas/issues).
 
 ---
 
@@ -41,8 +42,9 @@ the very latest, use the **Refresh** button in the status bar. See
 
 **"I tried to publish and got a notice that the Live Version changed."**
 Your Draft touched the same spot as a change someone else just published, so AMP Atlas paused
-rather than guess. It's rare and nothing is lost — the notice lists the affected files and
-asks you to **check with your team lead**, who'll help combine the changes.
+rather than guess. It's rare and nothing is lost. To finish: **Refresh** the Live Version,
+start a fresh Draft, and re-apply your changes on top of the latest. See
+[When the Live Version changes](../03-everyday-workflows/updates-and-conflicts.md).
 
 **"I have a bunch of Drafts — how do I tell them apart?"**
 By their names, and by the **status bar**, which always shows which Draft you're currently in.
@@ -87,15 +89,15 @@ It shows up in your **Inbox**, under the **Needs your review** tab.
 ## Systems & setup
 
 **"How do I create a brand-new System?"**
-In this version you don't create one from scratch inside the app — Systems are folders your
-team sets up ahead of time, and you **connect** to them. If you need a new System, ask your
-team lead to set it up; then add it from the **Add system** tile on the dashboard or in
+A System is just a GitHub repository on your computer. In this version you connect an existing
+repo rather than creating one from scratch inside the app: make (or pick) a repo on GitHub,
+clone it to your computer, then add it from the **Add system** tile on the dashboard or in
 **Settings**. See
 [Set up your account & first System](../01-getting-started/account-and-first-system.md).
 
 **"AMP Atlas won't add my folder."**
-That usually means the folder isn't a System connected to GitHub yet. Check with your team lead
-that you picked the right folder.
+That usually means the folder isn't a git repository connected to GitHub yet. Make sure you
+picked a folder that's a clone of a GitHub repo (it will have a hidden `.git` folder inside).
 
 ---
 
@@ -130,6 +132,8 @@ official until it goes through the same **review** and gets published. See
 
 - Re-check the guide for the area you're in — most screens are covered in
   [Everyday Workflows](../03-everyday-workflows/).
-- Ask in your team's support channel.
-- Flag anything that seems genuinely broken to your team lead — if something feels confusing or
-  wrong, it's worth surfacing. Your judgment helps make the system (and these docs) better.
+- Search the [open issues](https://github.com/ParrotLab/amp-atlas/issues) — someone may have hit
+  the same thing.
+- If something seems genuinely broken, open a
+  [bug report](https://github.com/ParrotLab/amp-atlas/issues/new?template=bug_report.yml).
+  Your reports help make Atlas (and these docs) better.

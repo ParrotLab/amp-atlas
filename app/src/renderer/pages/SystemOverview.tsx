@@ -438,7 +438,7 @@ export default function SystemOverview() {
     // Bring the draft up to date with the Live Version before pushing.
     const update = await window.api.git.updateFromLive(rootPath)
     if (!update.ok) {
-      setConflictFiles(update.files)   // real overlap — escalate calmly, do not push
+      setConflictFiles(update.files)   // real overlap — show the recovery modal, do not push
       return false
     }
 

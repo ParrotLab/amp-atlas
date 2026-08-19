@@ -33,11 +33,11 @@ describe('classifyInboxPR', () => {
   it('changes-requested wins even with a pending reviewer (state already resolved upstream)', () => {
     // reviewSummary already treats a re-requested reviewer as pending; a 'changes_requested' state
     // here means a genuine open change request → Make Edits.
-    expect(classifyInboxPR(pr({ author: { login: me }, reviewState: 'changes_requested', requestedReviewers: ['rachel'] }), me))
+    expect(classifyInboxPR(pr({ author: { login: me }, reviewState: 'changes_requested', requestedReviewers: ['reviewer1'] }), me))
       .toEqual({ tab: 'drafts', action: 'make-edits', badge: 'changes' })
   })
   it('my fresh PR out for review is In review', () => {
-    expect(classifyInboxPR(pr({ author: { login: me }, requestedReviewers: ['rachel'] }), me))
+    expect(classifyInboxPR(pr({ author: { login: me }, requestedReviewers: ['reviewer1'] }), me))
       .toEqual({ tab: 'drafts', action: 'view', badge: 'inreview' })
   })
 })

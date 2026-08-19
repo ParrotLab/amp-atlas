@@ -26,15 +26,15 @@ describe('authConfigArgs', () => {
 describe('ensureHttpsRemote', () => {
   it('rewrites an ssh origin to https and returns the new url', async () => {
     const setUrl = vi.fn(async () => {})
-    const result = await ensureHttpsRemote('git@github.com:ParrotLab/marketing_system.git', setUrl)
-    expect(result).toBe('https://github.com/ParrotLab/marketing_system.git')
-    expect(setUrl).toHaveBeenCalledWith('https://github.com/ParrotLab/marketing_system.git')
+    const result = await ensureHttpsRemote('git@github.com:example-org/other-repo.git', setUrl)
+    expect(result).toBe('https://github.com/example-org/other-repo.git')
+    expect(setUrl).toHaveBeenCalledWith('https://github.com/example-org/other-repo.git')
   })
 
   it('leaves an already-canonical https origin untouched (no write)', async () => {
     const setUrl = vi.fn(async () => {})
-    const result = await ensureHttpsRemote('https://github.com/ParrotLab/marketing_system.git', setUrl)
-    expect(result).toBe('https://github.com/ParrotLab/marketing_system.git')
+    const result = await ensureHttpsRemote('https://github.com/example-org/other-repo.git', setUrl)
+    expect(result).toBe('https://github.com/example-org/other-repo.git')
     expect(setUrl).not.toHaveBeenCalled()
   })
 
@@ -48,20 +48,20 @@ describe('ensureHttpsRemote', () => {
 
 describe('prepareRemoteAuth', () => {
   it('rewrites an ssh origin to https and returns auth args when given a token', async () => {
-    const dir = await repoWithOrigin('git@github.com:ParrotLab/marketing_system.git')
+    const dir = await repoWithOrigin('git@github.com:example-org/other-repo.git')
     const git = simpleGit(dir)
     const args = await prepareRemoteAuth(git, 'tok123')
     expect(args).toEqual(authConfigArgs('tok123'))
     expect((await git.remote(['get-url', 'origin']))?.trim())
-      .toBe('https://github.com/ParrotLab/marketing_system.git')
+      .toBe('https://github.com/example-org/other-repo.git')
   })
 
   it('returns no auth args and does not touch origin without a token', async () => {
-    const dir = await repoWithOrigin('git@github.com:ParrotLab/marketing_system.git')
+    const dir = await repoWithOrigin('git@github.com:example-org/other-repo.git')
     const git = simpleGit(dir)
     const args = await prepareRemoteAuth(git, undefined)
     expect(args).toEqual([])
     expect((await git.remote(['get-url', 'origin']))?.trim())
-      .toBe('git@github.com:ParrotLab/marketing_system.git')
+      .toBe('git@github.com:example-org/other-repo.git')
   })
 })

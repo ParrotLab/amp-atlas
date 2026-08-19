@@ -6,10 +6,10 @@ const pr = (number: number, headRefName: string, login: string, title = `PR ${nu
 
 describe('selectWatchers', () => {
   it('returns PRs (not on the current branch) whose files include relPath', () => {
-    const prs = [pr(1, 'draft/other', 'hannah'), pr(2, 'draft/mine', 'me')]
+    const prs = [pr(1, 'draft/other', 'teammate1'), pr(2, 'draft/mine', 'me')]
     const filesByPr = { 1: ['systems/a/notes.md'], 2: ['systems/a/notes.md'] }
     const out = selectWatchers(prs, filesByPr, 'draft/mine', 'systems/a/notes.md')
-    expect(out).toEqual([{ number: 1, login: 'hannah', title: 'PR 1', branch: 'draft/other' }])
+    expect(out).toEqual([{ number: 1, login: 'teammate1', title: 'PR 1', branch: 'draft/other' }])
   })
 
   it('excludes the current branch even when it touches the file', () => {
@@ -19,13 +19,13 @@ describe('selectWatchers', () => {
   })
 
   it('returns [] when no PR touches the file', () => {
-    const prs = [pr(1, 'draft/other', 'hannah')]
+    const prs = [pr(1, 'draft/other', 'teammate1')]
     const out = selectWatchers(prs, { 1: ['b.md'] }, 'draft/mine', 'a.md')
     expect(out).toEqual([])
   })
 
   it('returns every PR that touches the file', () => {
-    const prs = [pr(1, 'draft/a', 'hannah'), pr(3, 'draft/c', 'sam')]
+    const prs = [pr(1, 'draft/a', 'teammate1'), pr(3, 'draft/c', 'teammate2')]
     const filesByPr = { 1: ['a.md'], 3: ['a.md', 'c.md'] }
     const out = selectWatchers(prs, filesByPr, 'draft/mine', 'a.md')
     expect(out.map(w => w.number)).toEqual([1, 3])

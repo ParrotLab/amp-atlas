@@ -68,7 +68,7 @@ User guides live in **[`docs/user-guides/`](docs/user-guides/README.md)**:
 
 ## Contributing
 
-Contributions are welcome — Atlas is meant to be built on. Start with **[CONTRIBUTING.md](CONTRIBUTING.md)** and the [good first issues](https://github.com/ParrotLab/amp-atlas/labels/good%20first%20issue).
+Contributions are welcome — Atlas is meant to be built on. Start with **[CONTRIBUTING.md](CONTRIBUTING.md)** and browse the [open issues](https://github.com/ParrotLab/amp-atlas/issues).
 
 ### Build from source
 

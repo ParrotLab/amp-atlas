@@ -11,7 +11,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) first — it applies to ev
 - **Report a bug** — open a [Bug report](https://github.com/ParrotLab/amp-atlas/issues/new?template=bug_report.yml).
 - **Request a feature** — open a [Feature request](https://github.com/ParrotLab/amp-atlas/issues/new?template=feature_request.yml).
 - **Improve the docs** — the user guides live in [`docs/user-guides/`](docs/user-guides/README.md).
-- **Write code** — start with a [good first issue](https://github.com/ParrotLab/amp-atlas/labels/good%20first%20issue).
+- **Write code** — browse the [open issues](https://github.com/ParrotLab/amp-atlas/issues) for something to pick up.
 
 > For anything larger than a small fix, **open an issue first** so we can align on the approach before you invest time.
 

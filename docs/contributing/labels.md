@@ -15,7 +15,6 @@ A small, consistent label set keeps the tracker readable. Here's what each label
 
 | Label | Use it when |
 |---|---|
-| `good first issue` | Small, well-scoped, and friendly for a newcomer's first contribution. |
 | `help wanted` | We'd welcome an outside contributor picking this up. |
 | `duplicate` | Already tracked in another issue (link it, then close). |
 | `invalid` | Not reproducible, out of scope, or not actually an issue. |
@@ -28,5 +27,4 @@ We use **`enhancement`** as the single label for all feature ideas and improveme
 ## Guidance
 
 - Most issues get **one type label** plus, optionally, one triage/status label.
-- Apply `good first issue` generously — it's how new contributors find a way in.
 - Prefer closing with `duplicate` / `invalid` / `wontfix` (with a short reason) over leaving stale issues open.

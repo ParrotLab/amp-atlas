@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting & FAQ
+    url: https://github.com/ParrotLab/amp-atlas/blob/main/docs/user-guides/04-reference/troubleshooting-faq.md
+    about: Common issues (restart, sign-in, conflicts) often have a self-serve fix here first.

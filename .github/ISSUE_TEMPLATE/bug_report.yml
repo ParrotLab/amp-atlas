@@ -1,0 +1,56 @@
+name: Bug report
+description: Something in Atlas isn't working the way it should
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Before filing, it's worth a quick look at the
+        [Troubleshooting & FAQ](../blob/main/docs/user-guides/04-reference/troubleshooting-faq.md) —
+        some common hiccups (restart, stale locks, sign-in) have self-serve fixes there.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I published a draft, it stayed in my Inbox even after the PR merged.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we make it happen?
+      placeholder: |
+        1. Open a System
+        2. Create a draft and Save
+        3. Publish
+        4. See that ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Atlas version
+      description: Find it in Settings (or the app menu).
+      placeholder: 1.1.1
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (optional)
+      description: If you copied logs from Settings, paste them here.
+      render: shell

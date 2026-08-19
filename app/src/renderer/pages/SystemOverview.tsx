@@ -98,6 +98,7 @@ export default function SystemOverview() {
     title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void | Promise<void>
   }>(null)
   const [conflictFiles, setConflictFiles] = useState<string[] | null>(null)
+  const [conflictPrUrl, setConflictPrUrl] = useState<string | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
   const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[]; reviewDetails?: ReviewerDetail[] }>({ hasPR: false })
@@ -438,7 +439,21 @@ export default function SystemOverview() {
     // Bring the draft up to date with the Live Version before pushing.
     const update = await window.api.git.updateFromLive(rootPath)
     if (!update.ok) {
-      setConflictFiles(update.files)   // real overlap — show the recovery modal, do not push
+      // Same-line clash. Push the draft and open (or reuse) its PR so the overlap can be
+      // resolved in GitHub's web editor, then point the user there.
+      let prUrl: string | null = null
+      const pushed = await window.api.git.publish(rootPath)
+      if (pushed.ok && !isMainBranch) {
+        const created = await window.api.git.createPR(rootPath, title, description, reviewers)
+        if (created.ok && created.url) prUrl = created.url
+        else {
+          const st = await window.api.git.prStatus(rootPath)   // PR already existed — get its URL
+          if (st.ok && st.hasPR && st.pr?.url) prUrl = st.pr.url
+        }
+        await fetchPrStatus()
+      }
+      setConflictPrUrl(prUrl)
+      setConflictFiles(update.files)   // show the modal (with the GitHub link if we have it)
       return false
     }
 
@@ -1003,7 +1018,8 @@ export default function SystemOverview() {
       <ConflictModal
         isOpen={conflictFiles !== null}
         files={conflictFiles ?? []}
-        onClose={() => setConflictFiles(null)}
+        prUrl={conflictPrUrl}
+        onClose={() => { setConflictFiles(null); setConflictPrUrl(null) }}
       />
       <MoveChangesModal
         isOpen={showMoveChanges}

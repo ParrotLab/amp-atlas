@@ -42,8 +42,9 @@ the very latest, use the **Refresh** button in the status bar. See
 
 **"I tried to publish and got a notice that the Live Version changed."**
 Your Draft touched the same spot as a change someone else just published, so AMP Atlas paused
-rather than guess. It's rare and nothing is lost. To finish: **Refresh** the Live Version,
-start a fresh Draft, and re-apply your changes on top of the latest. See
+rather than guess. It's rare and nothing is lost. AMP Atlas opens a **pull request on GitHub**
+so you can combine the two versions there: click **Resolve on GitHub** in the notice, use
+GitHub's **Resolve conflicts** editor, merge, then hit **Refresh** back in AMP Atlas. See
 [When the Live Version changes](../03-everyday-workflows/updates-and-conflicts.md).
 
 **"I have a bunch of Drafts — how do I tell them apart?"**

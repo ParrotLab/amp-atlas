@@ -48,19 +48,22 @@ that:
 - lists **which files** are affected, and
 - explains how to finish.
 
-Your Draft is safe and unchanged. Here's the simplest way through it:
+Your Draft is safe and unchanged. When this happens, AMP Atlas **opens a pull request on
+GitHub** for your Draft so the overlap can be sorted out there. In the notice, click
+**Resolve on GitHub** to go straight to it. Then:
 
-1. **Refresh the Live Version** (the button in the status bar) so you're looking at the latest.
-2. **Start a fresh Draft** from that up-to-date Live Version.
-3. **Re-apply your changes** on top — now they sit cleanly alongside the other person's edit,
-   with no clash.
+1. On the pull request, click **Resolve conflicts** to open GitHub's web editor.
+2. For each highlighted spot, keep the lines you want — yours, theirs, or a mix — and remove
+   the conflict markers.
+3. Mark it resolved and **merge** the pull request.
+4. Back in AMP Atlas, hit **Refresh** on the Live Version — you're up to date, and your change
+   is now part of it.
 
-Because a clash only happens on the *same lines*, this is also your chance to see the other
-change and reconcile the two on purpose, rather than one silently overwriting the other.
+Because a clash only happens on the *same lines*, this is your chance to see the other change
+and reconcile the two on purpose, rather than one silently overwriting the other.
 
-> **Comfortable with GitHub?** You can also open the System on GitHub (the **View on GitHub**
-> link) and resolve the overlap directly in GitHub's web editor. Either path works — pick
-> whichever you prefer.
+> **Offline when it happens?** If AMP Atlas can't reach GitHub, it'll tell you your Draft is
+> safe and to try again once you're reconnected — then the **Resolve on GitHub** step is ready.
 
 ![The calm notice that the Live Version changed, listing the affected files](../images/conflict-notice.png)
 *When there's a clash, AMP Atlas pauses and shows you how to bring your Draft up to date.*
@@ -78,7 +81,8 @@ The most important reassurance: **your work is safe through all of this.**
 - Publishing only ever goes through once things are safely combined.
 
 So if you see the "the Live Version changed" notice, there's no need to worry. It's just AMP
-Atlas being careful on your behalf — and a quick Refresh and re-apply gets you moving again.
+Atlas being careful on your behalf — and resolving the pull request on GitHub gets you moving
+again.
 
 ---
 

@@ -1,112 +1,103 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/atlas-logo-light.svg">
+  <img src="docs/assets/atlas-logo-dark.png" alt="AMP Atlas" width="320">
+</picture>
+
 # AMP Atlas
 
-Internal desktop app for the AMP (AI Momentum Protocols) team — an Obsidian-like markdown editor that sits on top of GitHub, designed for non-technical users.
+**An open, opinionated desktop app for building playbooks and systems the AMP way — on top of GitHub, without the developer vocabulary.**
 
-> **Drafts** instead of branches. **Save** instead of commit. **Publish** instead of push. Same git workflow underneath, no developer vocabulary on the surface.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/ParrotLab/amp-atlas-releases?label=release)](https://github.com/ParrotLab/amp-atlas-releases/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#install)
 
----
+<!-- Drop a product screenshot/GIF at docs/assets/atlas-hero.png (see docs/assets/README.md) -->
+<img src="docs/assets/atlas-hero.png" alt="AMP Atlas screenshot" width="820" />
 
-## Status
-
-Functional alpha. End-to-end loop works against real GitHub repos:
-
-- ✅ Multi-system (multi-repo) sidebar, add/rename/remove + icon & color picker
-- ✅ Dashboard with system cards, Jump Back In, recently edited
-- ✅ TipTap-based markdown editor with frontmatter properties drawer
-- ✅ Draft workflow (create / switch / save / discard / publish) over real `simple-git`
-- ✅ Publish modal with diff summary against Live Version, reviewer selection
-- ✅ PR creation via `gh` CLI on publish
-- ✅ Inbox listing open PRs across all configured systems
-- ✅ Review page: per-file expandable diff, Final/Changes toggle, per-file "✓ Reviewed" check-off, gated Approve / Request Changes
-
-### Known stopgaps (before shipping to non-technical users)
-
-- **`gh` CLI dependency** — PR create / list / diff / review all shell out to `gh`. Needs replacement with GitHub OAuth + REST API so users don't need `gh` installed and authed. (`app/src/main/index.ts:239`, `app/src/renderer/pages/SystemOverview.tsx:198`)
-- **Reviewer mapping** — Display name → GitHub username is hardcoded in main. Needs a real team config. (`app/src/main/index.ts:249`)
-- **Token storage** — When OAuth lands, use Electron `safeStorage` (or `keytar`) for the token.
+</div>
 
 ---
+
+## What is Atlas
+
+Atlas is a desktop app that replaces Obsidian and sits on top of GitHub. It's built for non-technical people who want to implement AMP's opinionated framework for building playbooks and systems — without wrestling with branches, commits, and merge conflicts.
+
+> **Drafts** instead of branches. **Save** instead of commit. **Publish** instead of push. The same git workflow underneath — no developer vocabulary on the surface.
+
+## Why Atlas (and why it's open)
+
+AMP is a methodology company, not a software company. Atlas isn't a product we're selling — it's an opinionated *enabler* for the way we teach people to build with AI. The usual path (Obsidian plus raw GitHub) is clunky and gets in the way; Atlas makes the methodology easy to actually do.
+
+That's why it's open source. **Use it, fork it and make it your own, or contribute back to make it better.** This is not SaaS — there's no lock-in and no account required to own your work. Your content lives in your own GitHub repos, in plain Markdown, forever.
+
+## Install
+
+Atlas ships as a desktop app. Grab the latest build from **[Releases](https://github.com/ParrotLab/amp-atlas-releases/releases/latest)**:
+
+| Platform | Download |
+|---|---|
+| macOS (Apple Silicon) | [Download `.dmg`](https://github.com/ParrotLab/amp-atlas-releases/releases/latest) |
+| macOS (Intel) | Not yet built — [build from source](#build-from-source) |
+| Windows | Not yet built — [build from source](#build-from-source) |
+
+Atlas auto-updates from the public releases feed. If macOS blocks the first launch, right-click the app and choose **Open** — see the [Getting Started guide](docs/user-guides/01-getting-started/welcome.md).
+
+## How it works
+
+Atlas is a thin, friendly layer over real git:
+
+- Each **System** is one of your GitHub repos, on your machine.
+- You write in a clean Markdown editor with a frontmatter properties drawer.
+- **Save** commits, **Publish** opens a pull request, **Review** shows the diffs and approvals.
+- Everything stays versioned and traceable in GitHub — Atlas just hides the plumbing.
+
+Sign-in is GitHub OAuth (device flow) — no `gh` CLI and no manual tokens.
+
+## Documentation
+
+User guides live in **[`docs/user-guides/`](docs/user-guides/README.md)**:
+
+- [Getting started](docs/user-guides/01-getting-started/welcome.md)
+- [Core concepts](docs/user-guides/02-core-concepts/operating-model.md)
+- [Everyday workflows](docs/user-guides/03-everyday-workflows/editing-basics.md)
+- [Reference & troubleshooting](docs/user-guides/04-reference/troubleshooting-faq.md)
+
+*A hosted docs site is on the roadmap.*
+
+## Contributing
+
+Contributions are welcome — Atlas is meant to be built on. Start with **[CONTRIBUTING.md](CONTRIBUTING.md)** and browse the [open issues](https://github.com/ParrotLab/amp-atlas/issues).
+
+### Build from source
+
+```bash
+git clone https://github.com/ParrotLab/amp-atlas.git
+cd amp-atlas/app
+npm install
+npm run dev      # launch the app with hot reload
+```
+
+Requirements: Node 18+. Produce a production package with `npm run build`.
 
 ## Tech stack
 
-- **Electron** (main process) + **electron-vite** for build / HMR
-- **React 19** + **react-router-dom** (HashRouter) in the renderer
-- **TipTap 3** for the editor + Final-view rendering
-- **simple-git** for repo ops; **`gh` CLI** for PR ops (stopgap, see above)
-- **gray-matter** for YAML frontmatter; **turndown** + **markdown-it** for HTML ↔ Markdown
-- Storage: `localStorage` for system list / settings; user's filesystem for everything else (no DB)
+- **Electron** + **electron-vite** (build / hot reload)
+- **React 19** + react-router (HashRouter)
+- **TipTap 3** editor
+- **simple-git** for repo operations; **GitHub REST API** + OAuth device flow for pull requests
+- **gray-matter** (frontmatter), **turndown** + **markdown-it** (HTML <-> Markdown)
+- Storage: `localStorage` for settings; your filesystem and GitHub for everything else (no database)
 
----
+## Roadmap & issues
 
-## Run it locally
+Track work, file bugs, and suggest ideas in **[Issues](https://github.com/ParrotLab/amp-atlas/issues)**.
 
-### Prerequisites
+## License
 
-- Node 18+
-- `gh` CLI installed and authed (`gh auth status` should show a token with `repo` scope) — required for PR features
-- A local clone of any repo you want to use as a "system"
+[MIT](LICENSE) © Parrot Lab (AMP - AI Momentum Protocols). Fork it, ship it, make it yours.
 
-### Setup
+## Acknowledgments
 
-```bash
-cd app
-npm install
-npm run dev
-```
-
-`npm run dev` launches the Electron window with HMR for the renderer. Main-process changes require a restart.
-
-Add a system from **Settings** in the sidebar: pick a folder on disk that's a git repo with a GitHub remote, give it a name and color/icon, and it'll show up everywhere.
-
-### Build
-
-```bash
-cd app
-npm run build      # type-check + bundle main/preload/renderer
-npm run preview    # run the production build
-```
-
-Production packaging (electron-builder, code signing, auto-update via GitHub Releases) is not yet wired — see [`memory/reference_electron_build.md`](#) in personal notes for the planned setup.
-
----
-
-## Repo layout
-
-```
-amp-atlas/
-├── app/                      # The Electron app
-│   ├── src/
-│   │   ├── main/index.ts     # Main process — IPC handlers, git/gh ops
-│   │   ├── preload/index.ts  # Bridge API exposed to renderer (window.api)
-│   │   └── renderer/
-│   │       ├── App.tsx       # Router
-│   │       ├── pages/        # Dashboard, Inbox, Review, SystemOverview, Settings
-│   │       ├── components/   # Sidebar, FileTree, StatusBar, modals, etc.
-│   │       └── utils/        # systemStore (localStorage), markdown helpers
-│   └── electron.vite.config.ts
-├── design/                   # Personas, journey maps, mockups
-├── design-system/            # Fonts, tokens, typography, preview.html
-└── docs/                     # Implementation plans
-```
-
-### Routes
-
-| Path                                 | Page          |
-|--------------------------------------|---------------|
-| `/`                                  | Dashboard     |
-| `/inbox`                             | Inbox (open PRs across all systems) |
-| `/review/:systemId/:prNumber`        | Review (file diffs + approve / request changes) |
-| `/system/:systemId`                  | System overview / editor |
-| `/settings`                          | Settings — manage systems |
-
----
-
-## Design language
-
-- Light warm sidebar (`#FEFCF9`), cream backgrounds (`#F5F0EB`), white floating cards
-- Plum / violet / orange / lavender accents on cream
-- 16px radius cards, soft shadows, no harsh borders
-- PP Neue Montreal (UI) + PP Editorial New (display) — bundled in `app/src/renderer/assets/fonts`
-- Non-technical vocabulary everywhere: **Draft**, **Save**, **Publish**, **Live Version**
-
-See `design/00-design-guide.md` and `design-system/preview.html` for the full system.
+Built on [Electron](https://www.electronjs.org/), [TipTap](https://tiptap.dev/), [simple-git](https://github.com/steveukx/git-js), and the broader open-source community.

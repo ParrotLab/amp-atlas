@@ -1,11 +1,8 @@
 # AMP Atlas — Feature Roadmap
 
-> **Naming:** The product is being renamed **AMP Atlas → AMP Atlas**. This is a *documentation-only* rename for now — the repo, app identifiers, and code stay as-is until a later dedicated rename pass.
-
 **Date:** 2026-07-07
-**Companion doc:** [`mvp-planning.md`](./mvp-planning.md) — the decision worksheet this roadmap is derived from.
 
-This roadmap has three horizons: **MVP** (what we ship to the internal leadership team now), **v2** (next, once MVP lands), and **Future** (aspirational / directional). Items are grouped by area; see `mvp-planning.md` for the reasoning behind each decision.
+This roadmap has three horizons: **MVP** (what we ship now), **v2** (next, once MVP lands), and **Future** (aspirational / directional). Items are grouped by area.
 
 ---
 

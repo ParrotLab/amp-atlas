@@ -1,11 +1,11 @@
 # AMP Atlas — User Guides
 
-The end-user documentation for AMP Atlas, drafted as markdown for pasting into the team
-wiki. Written for non-technical team members — no git, no jargon.
+The end-user documentation for AMP Atlas. Written for non-technical people — no git, no jargon.
 
 Read in order for a full onboarding, or jump to what you need.
 
 ## 1. Getting Started
+- **New L3 Mastery student? Start here:** [Atlas for L3 Mastery — early access](./01-getting-started/l3-early-access.md)
 1. [Welcome / What is AMP Atlas](./01-getting-started/welcome.md)
 2. [Set up your account & first System](./01-getting-started/account-and-first-system.md)
 3. [A tour of the app](./01-getting-started/app-tour.md)
@@ -26,7 +26,3 @@ Read in order for a full onboarding, or jump to what you need.
 ## 4. Reference
 13. [Templates guide](./04-reference/templates-guide.md)
 14. [Troubleshooting & FAQ](./04-reference/troubleshooting-faq.md)
-
----
-
-_Planning doc: [`docs/superpowers/specs/2026-07-10-atlas-user-guides-design.md`](../superpowers/specs/2026-07-10-atlas-user-guides-design.md)_

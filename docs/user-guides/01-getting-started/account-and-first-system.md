@@ -21,13 +21,11 @@ through cloning a GitHub repo. Once the folder's on your Mac, come back here and
 
 ---
 
-## 1. Install and open AMP Atlas
+## 1. Get AMP Atlas running
 
-Download AMP Atlas and open it like any other app on your Mac.
-
-> _Notes: AMP Atlas is distributed as a direct download (not through a public app store) — get
-> the latest build from the [Releases page](https://github.com/ParrotLab/amp-atlas-releases/releases/latest).
-> It currently runs on macOS (Apple Silicon)._
+Atlas is open source, so you run it from the source rather than downloading an app. See
+**[Atlas for L3 Mastery — early access](./l3-early-access.md)** for the quick setup — it takes
+a few commands and works on macOS, Windows, and Linux.
 
 The first time you open it, AMP Atlas asks you to connect your account before you can do
 anything else. That's the next step.

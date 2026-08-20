@@ -23,9 +23,8 @@ Atlas is a desktop app. Grab the latest build from the
 **[Releases page](https://github.com/ParrotLab/amp-atlas-releases/releases/latest)**.
 
 - **macOS (Apple Silicon):** download the `.dmg`, open it, and drag Atlas to your
-  Applications folder. That's it.
-- If macOS ever hesitates on first launch, right-click the app and choose **Open** once —
-  after that it opens normally.
+  Applications folder. Double-click to launch — Atlas is signed and notarized by Apple, so it
+  opens cleanly with no security warnings.
 
 > **On an Intel Mac or Windows?** Prebuilt installers are Apple-Silicon-only for now. You
 > can still run Atlas by [building it from source](https://github.com/ParrotLab/amp-atlas#build-from-source)

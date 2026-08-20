@@ -325,6 +325,16 @@ ipcMain.handle('git:createPR', async (_event, repoPath: string, title: string, b
   }
 })
 
+ipcMain.handle('git:convertPrToDraft', async (_event, repoPath: string, num: number) => {
+  try { await github.convertToDraft(repoPath, num); return { ok: true } }
+  catch (error) { logError('convertPrToDraft', error); return { ok: false, error: String(error) } }
+})
+
+ipcMain.handle('git:markPrReady', async (_event, repoPath: string, num: number) => {
+  try { await github.markReadyForReview(repoPath, num); return { ok: true } }
+  catch (error) { logError('markPrReady', error); return { ok: false, error: String(error) } }
+})
+
 ipcMain.handle('git:createDraft', async (_event, repoPath: string, draftName: string) => {
   try {
     const { branch, pulled } = await createDraftFromMain(repoPath, draftName, tokenStore().getToken() ?? undefined)

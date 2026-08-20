@@ -101,7 +101,7 @@ export default function SystemOverview() {
   const [conflictPrUrl, setConflictPrUrl] = useState<string | null>(null)
   const [showMoveChanges, setShowMoveChanges] = useState(false)
   const [moveBannerDismissed, setMoveBannerDismissed] = useState(false)
-  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[]; reviewDetails?: ReviewerDetail[] }>({ hasPR: false })
+  const [prStatus, setPrStatus] = useState<{ hasPR: boolean; number?: number; title?: string; body?: string; state?: string; draft?: boolean; reviewState?: 'in_review' | 'changes_requested' | 'approved'; changesRequestedBy?: string[]; reviewers?: string[]; reviewDetails?: ReviewerDetail[] }>({ hasPR: false })
 
   const rootPath = system?.folderPath || ''
 
@@ -282,6 +282,7 @@ export default function SystemOverview() {
         title: result.pr?.title,
         body: result.pr?.body,
         state: result.pr?.state,
+        draft: result.pr?.draft,
         reviewState: result.pr?.reviewState,
         changesRequestedBy: result.pr?.changesRequestedBy,
         reviewers: result.pr?.reviewers,
@@ -478,6 +479,8 @@ export default function SystemOverview() {
       if (prStatus.hasPR && prStatus.number && prStatus.state === 'OPEN') {
         const upd = await window.api.git.updatePR(rootPath, prStatus.number, title, description, reviewers)
         if (!upd.ok) { showToast("Couldn't update the review — try again."); return false }
+        // If it had been pulled back to draft, re-submitting makes it ready for review again.
+        if (prStatus.draft) await window.api.git.markPrReady(rootPath, prStatus.number)
       } else {
         const prResult = await window.api.git.createPR(rootPath, title, description, reviewers)
         if (!prResult.ok && !prResult.alreadyExists) { showToast("Couldn't submit for review — try again."); return false }
@@ -487,6 +490,16 @@ export default function SystemOverview() {
     await fetchGitStatus()
     await fetchPrStatus()   // reflect the new/updated PR (In Review tag) without a reload
     return true
+  }
+
+  // "Pull back to draft": claw back a submitted PR so the author can keep working, then re-submit
+  // to request review again (the re-submit path marks it ready via markPrReady).
+  const handlePullBackToDraft = async () => {
+    if (!rootPath || !prStatus.number) return
+    const r = await window.api.git.convertPrToDraft(rootPath, prStatus.number)
+    if (!r.ok) { showToast("Couldn't pull it back to draft — try again."); return }
+    showToast('Pulled back to draft — out of review until you resubmit.')
+    await fetchPrStatus()
   }
 
   // Run `action`, but if there are unsaved edits in a draft, prompt Save/Discard first.
@@ -943,6 +956,7 @@ export default function SystemOverview() {
           onSwitchBranch={handleSwitchBranch}
           onNewDraft={handleNewDraft}
           onArchiveBranch={handleArchiveBranch}
+          onPullBackToDraft={handlePullBackToDraft}
           onAddExistingWork={handleAddExistingWork}
           repoPath={rootPath}
           prStatus={prStatus}

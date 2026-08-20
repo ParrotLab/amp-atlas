@@ -217,6 +217,10 @@ export default function Inbox() {
               publishing={false}
               onPublish={() => setPublishTarget(i)}
               onMakeEdits={() => makeEdits(i)}
+              onPullBackToDraft={i.number !== undefined ? async () => {
+                const r = await window.api.git.convertPrToDraft(i.repoPath, i.number!)
+                if (r.ok) void load()
+              } : undefined}
             />
           ))}
         </div>

@@ -29,9 +29,10 @@ interface StatusBarProps {
   onSwitchBranch?: (branch: string) => void
   onNewDraft?: () => void
   onArchiveBranch?: (branch: string) => void
+  onPullBackToDraft?: () => void
   onAddExistingWork?: (branch: string) => void
   repoPath?: string
-  prStatus?: { hasPR: boolean; state?: string; reviewState?: 'in_review' | 'changes_requested' | 'approved' }
+  prStatus?: { hasPR: boolean; state?: string; draft?: boolean; reviewState?: 'in_review' | 'changes_requested' | 'approved' }
   canUseGit?: boolean
   canUseGitHub?: boolean
   onNeedGit?: () => void
@@ -50,7 +51,7 @@ export default function StatusBar({
   branchName, isMain,
   activeDrafts, lastSaved, lastRefreshedLabel,
   onSave, onDiscard, onPublish, onPublishLive, onRefresh, onSwitchBranch, onNewDraft, onArchiveBranch,
-  onAddExistingWork, repoPath, prStatus,
+  onPullBackToDraft, onAddExistingWork, repoPath, prStatus,
   canUseGit = true, canUseGitHub = true, onNeedGit, onNeedGitHub,
 }: StatusBarProps) {
   const [showDropdown, setShowDropdown] = useState(false)
@@ -225,6 +226,10 @@ export default function StatusBar({
                 ? [{ label: 'Publish', onClick: onPublishLive }]
                 : []),
               { label: publishLabel, kbd: '⌘↵', onClick: doPublish },
+              // Claw an in-review PR back to draft to keep working (re-submit requests review again).
+              ...(prOpen && onPullBackToDraft && !prStatus?.draft
+                ? [{ label: 'Pull back to draft', onClick: onPullBackToDraft }]
+                : []),
               { label: 'Discard changes', danger: true, onClick: doDiscard },
             ]}
           />

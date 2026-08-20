@@ -10,8 +10,7 @@
 **An open, opinionated desktop app for building playbooks and systems the AMP way — on top of GitHub, without the developer vocabulary.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/ParrotLab/amp-atlas-releases?label=release)](https://github.com/ParrotLab/amp-atlas-releases/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#install)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](#run-it)
 
 <!-- Drop a product screenshot/GIF at docs/assets/atlas-hero.png (see docs/assets/README.md) -->
 <img src="docs/assets/atlas-hero.png" alt="AMP Atlas screenshot" width="820" />
@@ -32,17 +31,18 @@ AMP is a methodology company, not a software company. Atlas isn't a product we'r
 
 That's why it's open source. **Use it, fork it and make it your own, or contribute back to make it better.** This is not SaaS — there's no lock-in and no account required to own your work. Your content lives in your own GitHub repos, in plain Markdown, forever.
 
-## Install
+## Run it
 
-Atlas ships as a desktop app. Grab the latest build from **[Releases](https://github.com/ParrotLab/amp-atlas-releases/releases/latest)**:
+Atlas is open source — you run it from the source, so it's yours, not an app we install for you. It works on **macOS, Windows, and Linux**. You'll need [Node.js](https://nodejs.org) 18+ and git:
 
-| Platform | Download |
-|---|---|
-| macOS (Apple Silicon) | [Download `.dmg`](https://github.com/ParrotLab/amp-atlas-releases/releases/latest) |
-| macOS (Intel) | Not yet built — [build from source](#build-from-source) |
-| Windows | Not yet built — [build from source](#build-from-source) |
+```bash
+git clone https://github.com/ParrotLab/amp-atlas.git
+cd amp-atlas/app
+npm install
+npm run dev      # launches Atlas
+```
 
-Atlas auto-updates from the public releases feed. If macOS blocks the first launch, right-click the app and choose **Open** — see the [Getting Started guide](docs/user-guides/01-getting-started/welcome.md).
+To update later, `git pull` and run `npm run dev` again. For a step-by-step walkthrough plus first-System setup, see the [getting-started guide](docs/user-guides/01-getting-started/l3-early-access.md).
 
 ## How it works
 
@@ -70,16 +70,7 @@ User guides live in **[`docs/user-guides/`](docs/user-guides/README.md)**:
 
 Contributions are welcome — Atlas is meant to be built on. Start with **[CONTRIBUTING.md](CONTRIBUTING.md)** and browse the [open issues](https://github.com/ParrotLab/amp-atlas/issues).
 
-### Build from source
-
-```bash
-git clone https://github.com/ParrotLab/amp-atlas.git
-cd amp-atlas/app
-npm install
-npm run dev      # launch the app with hot reload
-```
-
-Requirements: Node 18+. Produce a production package with `npm run build`.
+Running locally is covered in [Run it](#run-it) above. To produce a production build, use `npm run build`.
 
 ## Tech stack
 

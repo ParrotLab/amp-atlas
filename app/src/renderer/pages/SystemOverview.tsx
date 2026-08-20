@@ -26,7 +26,7 @@ import { useOnline } from '../hooks/useOnline'
 import { githubActionsAvailable } from '../utils/capabilities'
 import { setLastPull, getLastPull, relativeTime } from '../utils/pullStatus'
 import { getStoredTabs, setStoredTabs } from '../utils/tabStore'
-import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, getDrafts, DraftEntry } from '../utils/draftStore'
+import { listActive, registerDraft, setDraftState, touchDraft, removeDraft, getDraft, getDrafts, DraftEntry } from '../utils/draftStore'
 import { logCrumb } from '../utils/breadcrumb'
 
 function humanize(branch: string): string {
@@ -232,21 +232,24 @@ export default function SystemOverview() {
       setIsMainBranch(result.status.current === 'main' || result.status.current === 'master')
       setIsDirty(!result.status.isClean)
 
-      // Register the current draft so it appears in the app's draft list.
       const cur = result.status.current
       const onMain = cur === 'main' || cur === 'master'
-      if (systemId && cur && !onMain) {
+
+      // Is there anything to publish? (uncommitted edits OR committed-but-unpublished work)
+      let hasWork = false
+      if (!onMain) {
+        const w = await window.api.git.hasUnpublishedWork(rootPath)
+        hasWork = w.ok ? w.hasWork : true
+      }
+      setHasUnpublished(hasWork)
+
+      // Register the current draft so it appears in the app's draft list — but don't resurrect a
+      // just-published branch we already removed from the store. Re-register only if we still
+      // track it, or it has real unpublished work (a merged/published branch has neither).
+      if (systemId && cur && !onMain && (getDraft(systemId, cur) || hasWork)) {
         registerDraft(systemId, cur, humanize(cur))
         touchDraft(systemId, cur)
         setActiveDrafts(listActive(systemId))
-      }
-
-      // Is there anything to publish? (uncommitted edits OR committed-but-unpublished work)
-      if (onMain) {
-        setHasUnpublished(false)
-      } else {
-        const w = await window.api.git.hasUnpublishedWork(rootPath)
-        setHasUnpublished(w.ok ? w.hasWork : true)
       }
     }
 

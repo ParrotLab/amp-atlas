@@ -1,5 +1,6 @@
 import { simpleGit } from 'simple-git'
 import { prepareRemoteAuth } from './gitAuth'
+import { clearStaleIndexLock } from './gitLock'
 
 export function slugifyDraft(name: string): string {
   return 'draft/' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -36,6 +37,7 @@ export async function listAdoptableBranches(repoPath: string): Promise<Adoptable
 /** Create a new draft that carries the current uncommitted working-tree changes (Flow 2). */
 export async function createDraftFromChanges(repoPath: string, draftName: string): Promise<{ branch: string }> {
   const git = simpleGit(repoPath)
+  await clearStaleIndexLock(repoPath)
   const branch = slugifyDraft(draftName)
   // checkoutLocalBranch keeps the dirty working tree; changes follow onto the new branch.
   await git.checkoutLocalBranch(branch)
@@ -44,6 +46,7 @@ export async function createDraftFromChanges(repoPath: string, draftName: string
 
 /** Plain checkout of an existing branch (no stashing — the renderer resolves dirty state first). */
 export async function switchDraft(repoPath: string, branch: string): Promise<void> {
+  await clearStaleIndexLock(repoPath)
   await simpleGit(repoPath).checkout(branch)
 }
 
@@ -52,6 +55,7 @@ export async function createDraftFromMain(repoPath: string, draftName: string, t
   const git = simpleGit(repoPath)
   const info = await git.branch()
   const base = info.all.includes('main') ? 'main' : info.all.includes('master') ? 'master' : 'main'
+  await clearStaleIndexLock(repoPath)
   await git.checkout(base)
   let pulled = false
   try {
@@ -82,6 +86,7 @@ export async function refreshMain(repoPath: string, token?: string): Promise<{ u
   } catch {
     return { updated: false } // offline / no remote
   }
+  await clearStaleIndexLock(repoPath)
   const current = (await git.status()).current
   if (current === base) {
     try { await git.merge(['--ff-only', `origin/${base}`]) } catch { /* diverged — leave local as-is */ }
@@ -118,6 +123,7 @@ export async function updateFromLive(repoPath: string, token?: string): Promise<
   const behind = (await git.raw(['rev-list', '--count', `HEAD..origin/${base}`])).trim()
   if (behind === '0') return { ok: true, updated: false }
 
+  await clearStaleIndexLock(repoPath)
   try {
     await git.merge([`origin/${base}`])
     return { ok: true, updated: true }

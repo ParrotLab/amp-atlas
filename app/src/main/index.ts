@@ -8,6 +8,7 @@ import { tokenStore } from './tokenStore'
 import { prepareRemoteAuth } from './gitAuth'
 import * as github from './github'
 import { createDraftFromMain, createDraftFromChanges, switchDraft, listAdoptableBranches, updateFromLive, refreshMain } from './draftOps'
+import { clearStaleIndexLock } from './gitLock'
 import { startWatch, stopWatch } from './watcher'
 import { ensureDir, createFile, move as movePath, del as delPath, listFolders, listFiles } from './fsops'
 import { setupAutoUpdate } from './updater'
@@ -272,6 +273,7 @@ ipcMain.handle('git:log', async (_event, repoPath: string, maxCount: number = 20
 
 ipcMain.handle('git:save', async (_event, repoPath: string, message: string) => {
   try {
+    await clearStaleIndexLock(repoPath)
     const git = simpleGit(repoPath)
     await git.add('-A')
     const result = await git.commit(message)

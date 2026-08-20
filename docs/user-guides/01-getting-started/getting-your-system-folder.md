@@ -4,16 +4,15 @@ Before AMP Atlas can connect to a System, that System's folder needs to live on 
 Mac. This guide gets it there. It's a one-time setup, it takes about five minutes, and
 there's nothing technical to type — just one free app.
 
-> **Do you even need this guide?** If your team lead has already put your System folders
-> on your computer, you can skip straight to
-> [Set up your account & your first System](./account-and-first-system.md). This guide is
-> for when you're getting a System onto your machine yourself.
+> **Do you even need this guide?** If a System folder is already on your computer, you can skip
+> straight to [Set up your account & your first System](./account-and-first-system.md). This
+> guide is for when you're getting a System onto your machine yourself.
 
 ---
 
 ## What we're doing (and why)
 
-A System lives on GitHub, which keeps your team's work safe and reviewable. To work on it,
+A System lives on GitHub, which keeps your work safe and reviewable. To work on it,
 you first make a copy of that System's folder on your own computer — this is called
 **cloning**. AMP Atlas then connects to that local folder.
 
@@ -32,19 +31,19 @@ if you only use it once.
 
 ## 2. Sign in to GitHub
 
-GitHub Desktop will ask you to sign in. Use the **same GitHub account your team lead set
-you up with**.
+GitHub Desktop will ask you to sign in. Use the **GitHub account that has access to your
+System's repository**.
 
-> Don't have a GitHub account yet, or not sure? Ask your team lead — they'll make sure
-> you're set up and have access to the right Systems.
+> Don't have a GitHub account yet? [Create one for free](https://github.com/signup), then make
+> sure it has access to the repository you want to use as a System.
 
 ---
 
 ## 3. Clone your System
 
 1. In GitHub Desktop, choose **File → Clone repository**.
-2. You'll see a list of the repositories you have access to. **Pick the one your team lead
-   points you to** — that's your System.
+2. You'll see a list of the repositories you have access to. **Pick the one you want to use as
+   your System.**
 3. Choose where to save it. The default location (a "GitHub" folder inside your Documents)
    is perfectly fine — just remember where it is.
 4. Click **Clone**.
@@ -76,9 +75,8 @@ cloned onto your Mac — ready to connect in AMP Atlas.
 
 ### Trouble here?
 
-- **I don't see my System in the clone list.** That means your GitHub account doesn't have
-  access to it yet. Ask your team lead to add you to the repository.
-- **I'm not sure which repository is my System.** Ask your team lead for the exact name —
-  there may be several, and only some are yours.
-- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or ask
-  your team lead.
+- **I don't see my repository in the clone list.** That means your GitHub account doesn't have
+  access to it yet. Make sure you're signed in with the right account (and, if it's someone
+  else's repo, that they've given you access).
+- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or open a
+  [GitHub issue](https://github.com/ParrotLab/amp-atlas/issues).

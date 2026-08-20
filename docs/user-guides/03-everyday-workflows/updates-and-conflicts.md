@@ -46,17 +46,27 @@ that:
 
 - the **Live Version changed** while you were working,
 - lists **which files** are affected, and
-- asks you to **check with your team lead**, who will help sort it out.
+- explains how to finish.
 
-That's the current design on purpose: rather than drop you into a confusing technical
-merge screen, AMP Atlas keeps it simple and points you to a person. Your team lead can help
-combine the two sets of changes safely.
+Your Draft is safe and unchanged. When this happens, AMP Atlas **opens a pull request on
+GitHub** for your Draft so the overlap can be sorted out there. In the notice, click
+**Resolve on GitHub** to go straight to it. Then:
+
+1. On the pull request, click **Resolve conflicts** to open GitHub's web editor.
+2. For each highlighted spot, keep the lines you want — yours, theirs, or a mix — and remove
+   the conflict markers.
+3. Mark it resolved and **merge** the pull request.
+4. Back in AMP Atlas, hit **Refresh** on the Live Version — you're up to date, and your change
+   is now part of it.
+
+Because a clash only happens on the *same lines*, this is your chance to see the other change
+and reconcile the two on purpose, rather than one silently overwriting the other.
+
+> **Offline when it happens?** If AMP Atlas can't reach GitHub, it'll tell you your Draft is
+> safe and to try again once you're reconnected — then the **Resolve on GitHub** step is ready.
 
 ![The calm notice that the Live Version changed, listing the affected files](../images/conflict-notice.png)
-*When there's a clash, AMP Atlas pauses and points you to your team lead.*
-
-> **A richer "resolve it yourself" screen may come later.** For now, a clash is rare, and the
-> friendly "check with your team lead" path is the intended way through it.
+*When there's a clash, AMP Atlas pauses and shows you how to bring your Draft up to date.*
 
 ---
 
@@ -71,15 +81,15 @@ The most important reassurance: **your work is safe through all of this.**
 - Publishing only ever goes through once things are safely combined.
 
 So if you see the "the Live Version changed" notice, there's no need to worry. It's just AMP
-Atlas being careful on your behalf — and a quick word with your team lead gets you moving
+Atlas being careful on your behalf — and resolving the pull request on GitHub gets you moving
 again.
 
 ---
 
 **You should now understand** why the Live Version changes while you work, that AMP Atlas
 catches your Draft up automatically when you publish, that **Refresh** is how you pull the
-latest on the Live Version, what the "check with your team lead" clash notice means, and —
-most importantly — that your work is never lost.
+latest on the Live Version, what the clash notice means and how to bring your Draft up to
+date, and — most importantly — that your work is never lost.
 
 That's the full everyday workflow. For deeper reference, see the
 [Templates guide](../04-reference/templates-guide.md) and

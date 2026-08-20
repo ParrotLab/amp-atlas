@@ -50,7 +50,7 @@ export default function Settings() {
     const r = await window.api.diagnostics.recent()
     if (r.ok) await navigator.clipboard.writeText(r.text)
     if (shouldOpenForm(SUPPORT_FORM_URL)) window.open(SUPPORT_FORM_URL)
-    else showToast('Logs copied — paste them to your team lead.')
+    else showToast('Logs copied — attach them to a GitHub issue.')
   }
 
   // Step 1: user clicks Re-sync on a system row.

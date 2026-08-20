@@ -19,6 +19,40 @@ async function gh(path: string, init: RequestInit = {}): Promise<unknown> {
   return res.status === 204 ? null : res.json()
 }
 
+async function ghGraphql(query: string, variables: Record<string, unknown>): Promise<unknown> {
+  const token = tokenStore().getToken()
+  if (!token) throw new TokenError('not connected')
+  const res = await fetch(`${API}/graphql`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  })
+  if (res.status === 401) { tokenStore().clearToken(); throw new TokenError('expired') }
+  if (!res.ok) throw new Error(`GitHub GraphQL ${res.status}: ${await res.text()}`)
+  const json = await res.json() as { data?: unknown; errors?: { message: string }[] }
+  if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join('; '))
+  return json.data
+}
+
+/** GraphQL global node id for a PR — required by the draft mutations (REST can't toggle draft). */
+async function prNodeId(repoPath: string, num: number): Promise<string> {
+  const { owner, repo } = await ownerRepo(repoPath)
+  const pr = await gh(`/repos/${owner}/${repo}/pulls/${num}`) as { node_id: string }
+  return pr.node_id
+}
+
+/** Pull a submitted PR back to draft so the author can keep working before re-requesting review. */
+export async function convertToDraft(repoPath: string, num: number): Promise<void> {
+  const id = await prNodeId(repoPath, num)
+  await ghGraphql('mutation($id:ID!){ convertPullRequestToDraft(input:{pullRequestId:$id}){ clientMutationId } }', { id })
+}
+
+/** Mark a draft PR ready for review again (the inverse of convertToDraft). */
+export async function markReadyForReview(repoPath: string, num: number): Promise<void> {
+  const id = await prNodeId(repoPath, num)
+  await ghGraphql('mutation($id:ID!){ markPullRequestReadyForReview(input:{pullRequestId:$id}){ clientMutationId } }', { id })
+}
+
 async function ownerRepo(repoPath: string): Promise<{ owner: string; repo: string }> {
   const url = (await simpleGit(repoPath).remote(['get-url', 'origin']))?.trim() || ''
   const or = parseOwnerRepo(url)
@@ -26,7 +60,7 @@ async function ownerRepo(repoPath: string): Promise<{ owner: string; repo: strin
   return or
 }
 
-type RawPr = { number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null; requested_reviewers?: { login: string }[] | null }
+type RawPr = { number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null; draft?: boolean; requested_reviewers?: { login: string }[] | null }
 
 /**
  * Pure: pick the *active* PR for a branch from a `state=all` list.
@@ -34,13 +68,14 @@ type RawPr = { number: number; title: string; state: string; merged_at: string |
  * PR is finished, so we return null — the branch should be treated as having no active PR, so a
  * re-submit starts a fresh review instead of trying to reopen a dead one.
  */
-export function pickActivePr(list: RawPr[]): { number: number; title: string; url: string; state: string; body: string; requestedReviewers: string[] } | null {
+export function pickActivePr(list: RawPr[]): { number: number; title: string; url: string; state: string; body: string; draft: boolean; requestedReviewers: string[] } | null {
   const p = list.find(x => x.state === 'open') ?? list[0]
   if (!p) return null
   if (p.state !== 'open' && !p.merged_at) return null   // closed, not merged → no active PR
   return {
     number: p.number, title: p.title, url: p.html_url,
     state: p.merged_at ? 'MERGED' : p.state.toUpperCase(), body: p.body || '',
+    draft: !!p.draft,
     requestedReviewers: (p.requested_reviewers ?? []).map(u => u.login),
   }
 }

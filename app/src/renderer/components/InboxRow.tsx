@@ -17,6 +17,7 @@ interface InboxRowProps {
   publishing?: boolean
   onPublish: () => void
   onMakeEdits: () => void
+  onPullBackToDraft?: () => void
 }
 
 // Match the canonical review badge variants + labels used across the app (Badge.tsx).
@@ -27,7 +28,7 @@ const BADGE = {
   draft: { variant: 'neutral' as const, label: 'Draft' },
 }
 
-export default function InboxRow({ to, title, meta, color, icon, action, badge, url, publishing, onPublish, onMakeEdits }: InboxRowProps) {
+export default function InboxRow({ to, title, meta, color, icon, action, badge, url, publishing, onPublish, onMakeEdits, onPullBackToDraft }: InboxRowProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const tint = softTint(primaryColor(color))
 
@@ -54,6 +55,7 @@ export default function InboxRow({ to, title, meta, color, icon, action, badge, 
               <div className="inboxrow-menu-scrim" onClick={() => setMenuOpen(false)} />
               <div className="inboxrow-menu">
                 {action === 'view' && <button className="inboxrow-menu-item" onClick={() => { setMenuOpen(false); onMakeEdits() }}>Make edits</button>}
+                {badge === 'inreview' && onPullBackToDraft && <button className="inboxrow-menu-item" onClick={() => { setMenuOpen(false); onPullBackToDraft() }}>Move back to draft</button>}
                 {url && <button className="inboxrow-menu-item" onClick={() => { setMenuOpen(false); window.open(url) }}>View on GitHub</button>}
               </div>
             </>

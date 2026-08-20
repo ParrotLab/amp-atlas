@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { pickActivePr, reviewSummary } from '../github'
 
-const pr = (over: Partial<{ number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null }> = {}) => ({
+const pr = (over: Partial<{ number: number; title: string; state: string; merged_at: string | null; html_url: string; body: string | null; draft: boolean }> = {}) => ({
   number: 1, title: 'PR', state: 'open', merged_at: null, html_url: 'https://gh/1', body: 'b', ...over,
 })
 
@@ -32,6 +32,11 @@ describe('pickActivePr', () => {
       pr({ number: 3, state: 'open' }),
     ])
     expect(active).toMatchObject({ number: 3, state: 'OPEN' })
+  })
+
+  it('carries the draft flag (defaults to false)', () => {
+    expect(pickActivePr([pr({ state: 'open', draft: true })])).toMatchObject({ draft: true })
+    expect(pickActivePr([pr({ state: 'open' })])).toMatchObject({ draft: false })
   })
 })
 

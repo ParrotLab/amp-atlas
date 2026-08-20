@@ -99,13 +99,15 @@ interface ElectronAPI {
     >
     refreshMain: (repoPath: string) => Promise<{ ok: boolean; updated: boolean }>
     createPR: (repoPath: string, title: string, body: string, reviewers: string[]) => Promise<{ ok: boolean; error?: string; url?: string; alreadyExists?: boolean }>
+    convertPrToDraft: (repoPath: string, num: number) => Promise<{ ok: boolean; error?: string }>
+    markPrReady: (repoPath: string, num: number) => Promise<{ ok: boolean; error?: string }>
     createDraft: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string; pulled?: boolean }>
     createDraftFromChanges: (repoPath: string, draftName: string) => Promise<{ ok: boolean; error?: string; branch?: string }>
     listAdoptableBranches: (repoPath: string) => Promise<{ ok: boolean; error?: string; branches: { name: string; isRemoteOnly: boolean }[] }>
     switchBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     deleteBranch: (repoPath: string, branch: string) => Promise<{ ok: boolean; error?: string }>
     discard: (repoPath: string) => Promise<{ ok: boolean; error?: string }>
-    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; reviewState: 'in_review' | 'changes_requested' | 'approved'; approvedBy: string[]; changesRequestedBy: string[]; requestedReviewers: string[]; reviewers: string[]; reviewDetails: Array<{ name: string; status: 'approved' | 'changes_requested' | 'pending'; at?: string }>; body: string } }>
+    prStatus: (repoPath: string) => Promise<{ ok: boolean; hasPR: boolean; pr?: { number: number; title: string; url: string; state: string; draft: boolean; reviewState: 'in_review' | 'changes_requested' | 'approved'; approvedBy: string[]; changesRequestedBy: string[]; requestedReviewers: string[]; reviewers: string[]; reviewDetails: Array<{ name: string; status: 'approved' | 'changes_requested' | 'pending'; at?: string }>; body: string } }>
     checkMerged: (repoPath: string) => Promise<{ ok: boolean; merged: boolean; branch?: string }>
     listPRs: (repoPath: string) => Promise<{ ok: boolean; prs: Array<{ number: number; title: string; state: string; author: { login: string; name: string }; createdAt: string; headRefName: string; reviewState: 'in_review' | 'changes_requested' | 'approved'; approvedBy: string[]; changesRequestedBy: string[]; reviewDetails: Array<{ name: string; status: 'approved' | 'changes_requested' | 'pending'; at?: string }>; url: string; additions: number; deletions: number; changedFiles: number; body: string; requestedReviewers: string[]; reviewers: string[] }> }>
     prDiff: (repoPath: string, prNumber: number) => Promise<{ ok: boolean; files: string[]; error?: string }>

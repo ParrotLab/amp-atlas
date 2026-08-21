@@ -1018,6 +1018,7 @@ export default function SystemOverview() {
         newCount={gitNew.size}
         repoPath={rootPath}
         hasPR={prStatus.hasPR}
+        draft={!!prStatus.draft}
         existingTitle={prStatus.title}
         existingBody={prStatus.body}
         // On re-submit: pre-select everyone already on the review, and lock those who requested changes.

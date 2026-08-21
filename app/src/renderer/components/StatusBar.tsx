@@ -72,7 +72,8 @@ export default function StatusBar({
   const displayBranch = isMain ? 'Live Version' : branchName ? `Draft: ${currentDraftTitle ?? humanize(branchName)}` : ''
   const unsaved = editedCount + newCount
   const prOpen = prStatus?.hasPR && prStatus.state === 'OPEN'
-  const publishLabel = prOpen ? 'Add to review' : 'Submit for review'
+  // A draft PR (pulled back) isn't in review, so it's "Submit for review", not "Add to review".
+  const publishLabel = prOpen && !prStatus?.draft ? 'Add to review' : 'Submit for review'
 
   useEffect(() => {
     if (!showAdopt || !repoPath) return

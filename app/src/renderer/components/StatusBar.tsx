@@ -84,10 +84,13 @@ export default function StatusBar({
     })
   }, [showAdopt, repoPath, activeDrafts])
 
-  // reviewState already resolves precedence (a change request beats an approval; a re-requested
+  // A pulled-back PR is a draft again — show that, not its (stale) review state. Otherwise
+  // reviewState resolves precedence (a change request beats an approval; a re-requested
   // reviewer counts as pending → in_review), so the badge maps straight off it.
   const prBadge = prOpen && (
-    <Badge variant={reviewVariant(prStatus?.reviewState)}>{reviewLabel(prStatus?.reviewState)}</Badge>
+    prStatus?.draft
+      ? <Badge variant="neutral">Draft</Badge>
+      : <Badge variant={reviewVariant(prStatus?.reviewState)}>{reviewLabel(prStatus?.reviewState)}</Badge>
   )
 
   const doPublish = () => { canUseGitHub ? onPublish() : onNeedGitHub?.() }

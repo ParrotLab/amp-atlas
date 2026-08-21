@@ -15,6 +15,7 @@ interface PublishModalProps {
   newCount: number
   repoPath: string
   hasPR?: boolean
+  draft?: boolean
   existingTitle?: string
   existingBody?: string
   /** Reviewers who requested changes: pre-selected, not de-selectable, and re-requested on submit. */
@@ -30,7 +31,10 @@ function avatarColor(login: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
-export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, existingTitle, existingBody, lockedReviewers = [], preselectedReviewers = [] }: PublishModalProps) {
+export default function PublishModal({ isOpen, onClose, onPublish, draftName, modifiedCount, newCount, repoPath, hasPR = false, draft = false, existingTitle, existingBody, lockedReviewers = [], preselectedReviewers = [] }: PublishModalProps) {
+  // hasPR drives prefill (reuse the existing PR's title/body); inReview drives the labels —
+  // a pulled-back draft PR is "Submit for review", not "Add to review".
+  const inReview = hasPR && !draft
   const [title, setTitle] = useState('')
   const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
   const descEditor = useEditor({ extensions: editorExtensions(), editable: true, content: '' })
@@ -127,13 +131,13 @@ export default function PublishModal({ isOpen, onClose, onPublish, draftName, mo
       isOpen={isOpen}
       onClose={onClose}
       maxWidth={520}
-      title={hasPR ? 'Add to review' : 'Submit for review'}
-      subtitle={hasPR ? 'Update the title or description, and request more reviewers.' : 'Share your work and request a review.'}
+      title={inReview ? 'Add to review' : 'Submit for review'}
+      subtitle={inReview ? 'Update the title or description, and request more reviewers.' : 'Share your work and request a review.'}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim() || status === 'publishing'} onClick={handlePublish}>
-            {status === 'publishing' ? 'Submitting…' : hasPR ? 'Add to review' : 'Submit for review'}
+            {status === 'publishing' ? 'Submitting…' : inReview ? 'Add to review' : 'Submit for review'}
           </Button>
         </>
       }

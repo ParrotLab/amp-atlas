@@ -16,7 +16,7 @@ computer,"* not *"create a brand-new System from scratch."* (Creating a fresh Sy
 inside the app is planned for later.)
 
 If you don't yet have a System folder on your computer, put one there by following
-[Get your first System onto your computer](./getting-your-system-folder.md) — it walks you
+[Get your first System onto your computer](./03-getting-your-system-folder.md) — it walks you
 through cloning a GitHub repo. Once the folder's on your Mac, come back here and connect to it.
 
 ---
@@ -24,7 +24,7 @@ through cloning a GitHub repo. Once the folder's on your Mac, come back here and
 ## 1. Get AMP Atlas running
 
 Atlas is open source, so you run it from the source rather than downloading an app. See
-**[Atlas for L3 Mastery — early access](./l3-early-access.md)** for the quick setup — it takes
+**[Atlas for L3 Mastery — early access](./02-l3-early-access.md)** for the quick setup — it takes
 a few commands and works on macOS, Windows, and Linux.
 
 The first time you open it, AMP Atlas asks you to connect your account before you can do
@@ -46,8 +46,6 @@ AMP Atlas can act on your behalf.
    AMP Atlas reach your team's repositories.
 4. Come back to AMP Atlas — you're connected.
 
-![Connect screen: the device code and the "Connect to GitHub" button](../images/connect-screen.png)
-*The Connect screen you see on first launch.*
 
 That's it. You won't have to do this again on this computer. (If your connection ever drops
 later, AMP Atlas won't kick you out — your local work keeps running, and you just click
@@ -82,7 +80,7 @@ it shows up right away, ready to work with.
 > GitHub repository. Also make sure you pick the **top folder of the System**, not a folder
 > *inside* it — pointing AMP Atlas at a sub-folder won't work either. If the folder isn't a
 > connected repo, AMP Atlas will let you know with a clear message rather than adding it. Not
-> sure? See [Get your first System onto your computer](./getting-your-system-folder.md).
+> sure? See [Get your first System onto your computer](./03-getting-your-system-folder.md).
 
 > **Already use Obsidian?** A System folder works just like an Obsidian vault — in fact, you
 > can point AMP Atlas at the same folder and use both.
@@ -97,8 +95,8 @@ and how many playbooks it has. Click it to open it up and look around.
 ![A System card on the dashboard showing its status and playbook count](../images/dashboard-card.png)
 *Your connected System, ready to open.*
 
-From here, a good next move is the [tour of the app](./app-tour.md) so you know where
-everything is — or dive straight into [editing basics](../03-everyday-workflows/editing-basics.md)
+From here, a good next move is the [tour of the app](./05-app-tour.md) so you know where
+everything is — or dive straight into [editing basics](../03-everyday-workflows/01-editing-basics.md)
 if you'd rather learn by doing.
 
 ---
@@ -116,5 +114,5 @@ System showing on your dashboard. If your System card is there, you're set.
   AMP Atlas window and give it a moment; if it doesn't update, try connecting once more.
 - **AMP Atlas won't add my folder.** That usually means the folder isn't a git repository
   connected to GitHub yet. Make sure you picked a folder that's a clone of a GitHub repo.
-- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or open a
+- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/02-troubleshooting-faq.md) or open a
   [GitHub issue](https://github.com/ParrotLab/amp-atlas/issues).

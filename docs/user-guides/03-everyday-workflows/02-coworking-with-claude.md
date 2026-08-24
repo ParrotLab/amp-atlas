@@ -72,7 +72,7 @@ Here's a reliable way to start a new project with Claude, step by step:
    "Onboarding email refresh"). This keeps all the work safe and easy to find.
 2. **Create the project folder in AMP Atlas.** In your Draft, click the **+** next to
    **Work** to start a new project. AMP Atlas sets up the project with its starter files —
-   a *braindump* and a *pitch* (see the [Templates guide](../04-reference/templates-guide.md)).
+   a *braindump* and a *pitch* (see the [Templates guide](../04-reference/01-templates-guide.md)).
 3. **Start filling in the braindump and pitch.** Drop your raw notes into the braindump, and
    begin the pitch — the problem, the approach, what success looks like. You don't have to do
    this alone: you can have Claude help fill out the pitch too.
@@ -84,7 +84,7 @@ Here's a reliable way to start a new project with Claude, step by step:
 6. **Refine together.** Edit directly, or go back to Claude and ask for changes. Bounce back
    and forth as much as you like — AMP Atlas shows the latest version each time.
 7. **When it's ready, submit for review.** Once you're happy, take it through the normal
-   [review](./submit-for-review.md) — because Claude's work goes through the same sign-off as
+   [review](./03-submit-for-review.md) — because Claude's work goes through the same sign-off as
    anyone's.
 
 ### What if Claude started working before you made a Draft?
@@ -115,4 +115,4 @@ it's right. The review step exists for exactly this reason.
 **You should now understand** how Claude and AMP Atlas share the same files, why you keep
 Claude's work in a Draft, the two ways to work with it, and the back-and-forth rhythm of
 refining a project together. Next, when your work is ready:
-[submitting your work for review](./submit-for-review.md).
+[submitting your work for review](./03-submit-for-review.md).

@@ -65,8 +65,6 @@ and reconcile the two on purpose, rather than one silently overwriting the other
 > **Offline when it happens?** If AMP Atlas can't reach GitHub, it'll tell you your Draft is
 > safe and to try again once you're reconnected — then the **Resolve on GitHub** step is ready.
 
-![The calm notice that the Live Version changed, listing the affected files](../images/conflict-notice.png)
-*When there's a clash, AMP Atlas pauses and shows you how to bring your Draft up to date.*
 
 ---
 
@@ -92,5 +90,5 @@ latest on the Live Version, what the clash notice means and how to bring your Dr
 date, and — most importantly — that your work is never lost.
 
 That's the full everyday workflow. For deeper reference, see the
-[Templates guide](../04-reference/templates-guide.md) and
-[Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md).
+[Templates guide](../04-reference/01-templates-guide.md) and
+[Troubleshooting & FAQ](../04-reference/02-troubleshooting-faq.md).

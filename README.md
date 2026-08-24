@@ -42,7 +42,7 @@ npm install
 npm run dev      # launches Atlas
 ```
 
-To update later, `git pull` and run `npm run dev` again. For a step-by-step walkthrough plus first-System setup, see the [getting-started guide](docs/user-guides/01-getting-started/l3-early-access.md).
+To update later, `git pull` and run `npm run dev` again. For a step-by-step walkthrough plus first-System setup, see the [getting-started guide](docs/user-guides/01-getting-started/02-l3-early-access.md).
 
 ## How it works
 
@@ -59,10 +59,10 @@ Sign-in is GitHub OAuth (device flow) — no `gh` CLI and no manual tokens.
 
 User guides live in **[`docs/user-guides/`](docs/user-guides/README.md)**:
 
-- [Getting started](docs/user-guides/01-getting-started/welcome.md)
-- [Core concepts](docs/user-guides/02-core-concepts/operating-model.md)
-- [Everyday workflows](docs/user-guides/03-everyday-workflows/editing-basics.md)
-- [Reference & troubleshooting](docs/user-guides/04-reference/troubleshooting-faq.md)
+- [Getting started](docs/user-guides/01-getting-started/01-welcome.md)
+- [Core concepts](docs/user-guides/02-core-concepts/01-operating-model.md)
+- [Everyday workflows](docs/user-guides/03-everyday-workflows/01-editing-basics.md)
+- [Reference & troubleshooting](docs/user-guides/04-reference/02-troubleshooting-faq.md)
 
 *A hosted docs site is on the roadmap.*
 

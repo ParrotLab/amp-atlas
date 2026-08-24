@@ -78,7 +78,7 @@ Some things are better started from a template than a blank page. In the file tr
 - **New sub-system** (in the Reference area) — a new area within the System.
 
 Each comes pre-filled with helpful prompts to replace. See the
-[Templates guide](../04-reference/templates-guide.md) for what each one gives you and when
+[Templates guide](../04-reference/01-templates-guide.md) for what each one gives you and when
 to use it.
 
 ![The "+" on a folder offering New playbook, New project, and New sub-system](../images/template-plus-menu.png)
@@ -120,7 +120,7 @@ A quick map of the steps, because they're distinct:
   options on the Save button, or from the status bar.)
 - **Publish** is the final step — after your Draft is approved, *you* publish it to become
   the new **Live Version**. More on both in
-  [Submitting your work for review](./submit-for-review.md).
+  [Submitting your work for review](./03-submit-for-review.md).
 
 So your everyday rhythm is: work in a Draft, **Save** as you go, and — when it's ready —
 submit it for review, then publish once it's approved.
@@ -135,4 +135,4 @@ submit it for review, then publish once it's approved.
 **You should now be able to** open a document, start a Draft to make changes safely, write
 and format text (including the "/" menu), create new files and template-based items, read a
 playbook's status, and understand how **Save**, **submit**, and **Publish** differ. Next,
-the fun part: [coworking with Claude](./coworking-with-claude.md).
+the fun part: [coworking with Claude](./02-coworking-with-claude.md).

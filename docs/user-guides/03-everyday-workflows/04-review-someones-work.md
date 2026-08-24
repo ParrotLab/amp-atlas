@@ -83,7 +83,7 @@ Since it's one note, a little structure goes a long way. Two habits your team us
   - **praise** — something done well. Worth saying — reviews aren't only for problems.
 - **Focus on the layer the author asked for.** If they said the structure is still in flux,
   give feedback there — don't nitpick wording on something whose shape might change. (See
-  [the three layers](./submit-for-review.md#ask-for-the-right-kind-of-feedback).)
+  [the three layers](./03-submit-for-review.md#ask-for-the-right-kind-of-feedback).)
 
 For example: *"Structure looks right. **blocking:** the LAUNCH rubric score in step 3 is
 wrong. **nitpick:** the intro could be tighter. **praise:** the examples are great."*
@@ -107,8 +107,6 @@ When you've read everything and written your note, make the call:
 Approve when it's genuinely ready. Request changes when it's not. Either way, you've kept the
 Live Version trustworthy.
 
-![The review action bar: a note field with Approve and Request changes buttons](../images/review-action-bar.png)
-*Your feedback goes in one note, alongside Approve / Request changes.*
 
 ### How many approvals it takes
 
@@ -137,4 +135,4 @@ An author can ask **more than one person** to review. As far as AMP Atlas is con
 **You should now be able to** find reviews in your Inbox, read the changes both ways, mark
 files reviewed, leave one clear, well-structured note (without editing the author's Draft),
 and decide between **Approve** and **Request changes**. Next:
-[working on several projects at once](./working-on-multiple-drafts.md).
+[working on several projects at once](./05-working-on-multiple-drafts.md).

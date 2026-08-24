@@ -41,8 +41,6 @@ in**, so you know which workstream you're touching before you make a change.
 A good habit: glance at the status bar before you start editing, just to confirm you're in
 the Draft you meant to be in.
 
-![The version switcher dropdown listing several Drafts to switch between](../images/draft-switcher-dropdown.png)
-*Switch between your Drafts from the status bar's version switcher.*
 
 ---
 
@@ -66,7 +64,7 @@ work** option lets you adopt it as a Draft.
 
 ## Publishing them independently
 
-Each Draft goes through its own [review](./submit-for-review.md) and gets **published on its
+Each Draft goes through its own [review](./03-submit-for-review.md) and gets **published on its
 own schedule**. Finishing and publishing one Draft doesn't affect your others — they keep
 sitting there, untouched, ready for you to come back to. You're never forced to finish
 everything at once.
@@ -76,4 +74,4 @@ everything at once.
 **You should now be able to** run several pieces of work at once as separate Drafts, name
 and switch between them (each one starting from the Live Version), and publish each
 independently. Next, something that comes up when lots of work is happening at once:
-[when the Live Version changes](./updates-and-conflicts.md).
+[when the Live Version changes](./06-updates-and-conflicts.md).

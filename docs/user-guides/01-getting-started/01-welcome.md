@@ -85,7 +85,7 @@ knowing on day one:
 | **Publish** | Sending an approved Draft to become the new Live Version. |
 | **Review** | A teammate checking your Draft before it's published. |
 
-There's a fuller [glossary](../02-core-concepts/glossary.md) when you want it — but these
+There's a fuller [glossary](../02-core-concepts/03-glossary.md) when you want it — but these
 will carry you a long way.
 
 ---
@@ -94,10 +94,10 @@ will carry you a long way.
 
 You're ready to start. Here's the path we'd recommend:
 
-1. **[Set up your account & first System](./account-and-first-system.md)** — get into the
+1. **[Set up your account & first System](./04-account-and-first-system.md)** — get into the
    app and open your first System.
-2. **[A tour of the app](./app-tour.md)** — get your bearings.
-3. **[Why we work this way](../02-core-concepts/operating-model.md)** — the thinking
+2. **[A tour of the app](./05-app-tour.md)** — get your bearings.
+3. **[Why we work this way](../02-core-concepts/01-operating-model.md)** — the thinking
    behind Systems, when you're curious about the *why*.
 
 ---

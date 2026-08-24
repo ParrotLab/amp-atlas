@@ -91,7 +91,7 @@ Delivery System
 Notice how a **Project** starts you off with a **Braindump** (raw thinking) and a
 **Pitch** (the case for the work), and then you add your working files and finished
 results alongside them as the project grows. That progression is covered in the
-[Templates guide](../04-reference/templates-guide.md).
+[Templates guide](../04-reference/01-templates-guide.md).
 
 ---
 
@@ -105,7 +105,7 @@ A few reassurances:
   right top-level shape (Reference, Work, Playbooks, and so on) — you connect to them, you
   don't have to build them. And when you add a new **Playbook**, **Project**, or
   **Sub-system** *inside* a System, AMP Atlas lays out the right starter pieces for you from
-  a template (see the [Templates guide](../04-reference/templates-guide.md)).
+  a template (see the [Templates guide](../04-reference/01-templates-guide.md)).
 - **Not every System looks identical inside Reference.** The outer shape is always the
   same, but what's *inside* Reference is tailored to what each System actually does — a
   Delivery System and a Marketing System will naturally hold different material.
@@ -115,4 +115,4 @@ A few reassurances:
 **You should now be able to** open any System and know where to find its playbooks, its
 trusted Reference material, and its in-progress Project work — and know the difference
 between "official" (Reference) and "in-progress" (Work). Next, let's actually do some
-work: [Editing basics](../03-everyday-workflows/editing-basics.md).
+work: [Editing basics](../03-everyday-workflows/01-editing-basics.md).

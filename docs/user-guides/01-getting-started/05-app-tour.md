@@ -42,21 +42,21 @@ At the bottom, you'll see your own name and avatar.
 *The sidebar is always there for moving between areas.*
 
 > _Adding a System isn't a sidebar item — you do it from the **Add system** tile on the
-> dashboard, or from **Settings**. See [Set up your first System](./account-and-first-system.md)._
+> dashboard, or from **Settings**. See [Set up your first System](./04-account-and-first-system.md)._
 
 ---
 
 ## Inside a System — the file tree and editor
 
 When you open a System, you'll see its contents laid out as a **file tree** — the folders
-and documents that make up that System, organized in the [standard shape](../02-core-concepts/folder-structure.md).
+and documents that make up that System, organized in the [standard shape](../02-core-concepts/02-folder-structure.md).
 
 - Click any document to open it in the **editor**, where you read and write.
 - Right-click in the tree to create new files and folders, or use the **+** on a folder to
   start a new playbook, project, or sub-system from a template.
 
 The editor is a clean, friendly writing space — no code, no clutter. There's more on it in
-[Editing basics](../03-everyday-workflows/editing-basics.md).
+[Editing basics](../03-everyday-workflows/01-editing-basics.md).
 
 ![A System open with the file tree on the left and the editor on the right](../images/system-tree-editor.png)
 *Inside a System: the file tree and the editor.*
@@ -87,8 +87,8 @@ you:
 - **Your drafts** — your Drafts that are in review or waiting on your changes.
 
 Each item has a clear next action. Reviewing is covered in
-[Reviewing someone else's work](../03-everyday-workflows/review-someones-work.md); publishing
-in [Submitting your work for review](../03-everyday-workflows/submit-for-review.md).
+[Reviewing someone else's work](../03-everyday-workflows/04-review-someones-work.md); publishing
+in [Submitting your work for review](../03-everyday-workflows/03-submit-for-review.md).
 
 ![The Inbox with its three tabs: Needs your review, Ready to publish, Your drafts](../images/inbox-tabs.png)
 *The Inbox groups your actions into three tabs.*
@@ -118,10 +118,10 @@ digging.
 > **read-only** — you can look but not change it (you'll see the "Read only" pill). That's by
 > design: the Live Version is official, so edits always happen in a Draft. To make changes,
 > switch to or create a Draft from the status bar (see
-> [Editing basics](../03-everyday-workflows/editing-basics.md)).
+> [Editing basics](../03-everyday-workflows/01-editing-basics.md)).
 
 ---
 
 **You should now recognize** the dashboard, the sidebar, a System's file tree and editor,
 the quick-search and "/" shortcuts, the Inbox tabs, and the status bar — enough to find your
-way around without getting lost. Next: [Editing basics](../03-everyday-workflows/editing-basics.md).
+way around without getting lost. Next: [Editing basics](../03-everyday-workflows/01-editing-basics.md).

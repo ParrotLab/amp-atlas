@@ -2,7 +2,7 @@ name: Issue triage
 
 # Auto-classify + label new issues per our label guide, flag likely duplicates,
 # and point common problems at the troubleshooting FAQ. Advisory + non-destructive.
-# Requires an ANTHROPIC_API_KEY repo/org secret (added by `/install-github-app`).
+# Uses the CLAUDE_CODE_OAUTH_TOKEN secret (added by `/install-github-app`).
 
 on:
   issues:
@@ -23,7 +23,7 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Cost guards: cheap model + capped turns.
           claude_args: >-
             --max-turns 4

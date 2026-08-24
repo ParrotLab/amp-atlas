@@ -1,0 +1,44 @@
+name: Issue triage
+
+# Auto-classify + label new issues per our label guide, flag likely duplicates,
+# and point common problems at the troubleshooting FAQ. Advisory + non-destructive.
+# Requires an ANTHROPIC_API_KEY repo/org secret (added by `/install-github-app`).
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write        # apply labels + comment
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Cost guards: cheap model + capped turns.
+          claude_args: >-
+            --max-turns 4
+            --model claude-sonnet-5
+            --allowedTools "mcp__github__list_issues,mcp__github__update_issue,mcp__github__create_issue_comment"
+          prompt: |
+            Triage this new issue: ${{ github.event.issue.html_url }}
+
+            1. Read `docs/contributing/labels.md` (our label guide) and apply the single best
+               TYPE label — one of: bug, enhancement, documentation, question. Add a status
+               label (e.g. `help wanted`) only if the issue clearly warrants it.
+            2. Scan existing OPEN issues. If this looks like a duplicate, add one short, friendly
+               comment linking the original. Do not close anything.
+            3. If it's a common problem already answered in
+               `docs/user-guides/04-reference/02-troubleshooting-faq.md`, add a brief comment
+               pointing the author there.
+
+            Keep it concise and friendly. Apply the minimum necessary — no over-labeling.

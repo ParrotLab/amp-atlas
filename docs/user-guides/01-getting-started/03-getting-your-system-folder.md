@@ -5,7 +5,7 @@ Mac. This guide gets it there. It's a one-time setup, it takes about five minute
 there's nothing technical to type — just one free app.
 
 > **Do you even need this guide?** If a System folder is already on your computer, you can skip
-> straight to [Set up your account & your first System](./account-and-first-system.md). This
+> straight to [Set up your account & your first System](./04-account-and-first-system.md). This
 > guide is for when you're getting a System onto your machine yourself.
 
 ---
@@ -62,7 +62,7 @@ That's it — you can close GitHub Desktop. You won't need it day to day; AMP At
 your Systems in sync from here on.
 
 Next, open AMP Atlas and follow
-[Set up your account & your first System](./account-and-first-system.md). When it asks you
+[Set up your account & your first System](./04-account-and-first-system.md). When it asks you
 to pick a **folder**, choose the one GitHub Desktop just created (the **top folder** of the
 System, not a folder inside it).
 
@@ -78,5 +78,5 @@ cloned onto your Mac — ready to connect in AMP Atlas.
 - **I don't see my repository in the clone list.** That means your GitHub account doesn't have
   access to it yet. Make sure you're signed in with the right account (and, if it's someone
   else's repo, that they've given you access).
-- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md) or open a
+- **Still stuck?** See [Troubleshooting & FAQ](../04-reference/02-troubleshooting-faq.md) or open a
   [GitHub issue](https://github.com/ParrotLab/amp-atlas/issues).

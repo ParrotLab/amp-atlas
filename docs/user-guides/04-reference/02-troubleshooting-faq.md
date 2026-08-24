@@ -18,7 +18,7 @@ you'll be able to edit.
 Because they're still in your **Draft**, which is private to you. Your team only sees changes
 after your Draft is reviewed, approved, and **published** to the Live Version. This is by
 design — it's what keeps the Live Version trustworthy. See
-[Submitting your work for review](../03-everyday-workflows/submit-for-review.md).
+[Submitting your work for review](../03-everyday-workflows/03-submit-for-review.md).
 
 **"What's the difference between Save, Submit, and Publish?"**
 **Save** keeps your progress inside your Draft (private). **Submit for review** sends it to a
@@ -38,20 +38,20 @@ official Live Version. If you need to make more changes, start a fresh Draft.
 No — there's no badge to watch. AMP Atlas brings your Draft up to date **automatically when
 you publish**, so you don't have to track it. If you're viewing the **Live Version** and want
 the very latest, use the **Refresh** button in the status bar. See
-[When the Live Version changes](../03-everyday-workflows/updates-and-conflicts.md).
+[When the Live Version changes](../03-everyday-workflows/06-updates-and-conflicts.md).
 
 **"I tried to publish and got a notice that the Live Version changed."**
 Your Draft touched the same spot as a change someone else just published, so AMP Atlas paused
 rather than guess. It's rare and nothing is lost. AMP Atlas opens a **pull request on GitHub**
 so you can combine the two versions there: click **Resolve on GitHub** in the notice, use
 GitHub's **Resolve conflicts** editor, merge, then hit **Refresh** back in AMP Atlas. See
-[When the Live Version changes](../03-everyday-workflows/updates-and-conflicts.md).
+[When the Live Version changes](../03-everyday-workflows/06-updates-and-conflicts.md).
 
 **"I have a bunch of Drafts — how do I tell them apart?"**
 By their names, and by the **status bar**, which always shows which Draft you're currently in.
 Naming Drafts clearly when you create them ("Onboarding refresh," "Rubric fix") makes this
 easy. See
-[Working on several projects at once](../03-everyday-workflows/working-on-multiple-drafts.md).
+[Working on several projects at once](../03-everyday-workflows/05-working-on-multiple-drafts.md).
 
 **"Can I start a Draft based on another Draft I'm working on?"**
 Not in this version — Drafts always start from the Live Version. (The New Draft window shows
@@ -66,7 +66,7 @@ start fresh.
 No — **don't edit someone else's Draft.** The Draft belongs to its author, so you give
 feedback in a **note** and choose **Approve** or **Request changes**, and *they* make the
 edits. This keeps ownership clear. See
-[Reviewing someone else's work](../03-everyday-workflows/review-someones-work.md).
+[Reviewing someone else's work](../03-everyday-workflows/04-review-someones-work.md).
 
 **"How do I comment on a specific line?"**
 In AMP Atlas, a review is a **single note** plus your Approve / Request-changes decision —
@@ -94,7 +94,7 @@ A System is just a GitHub repository on your computer. In this version you conne
 repo rather than creating one from scratch inside the app: make (or pick) a repo on GitHub,
 clone it to your computer, then add it from the **Add system** tile on the dashboard or in
 **Settings**. See
-[Set up your account & first System](../01-getting-started/account-and-first-system.md).
+[Set up your account & first System](../01-getting-started/04-account-and-first-system.md).
 
 **"AMP Atlas won't add my folder."**
 That usually means the folder isn't a git repository connected to GitHub yet. Make sure you
@@ -125,7 +125,7 @@ touch it directly. Connecting once is the only time GitHub comes up.
 Safe, as long as Claude's work is happening in a **Draft** (the recommended setup). Claude works
 in your System's folder *outside* AMP Atlas, and AMP Atlas shows you the result. Nothing becomes
 official until it goes through the same **review** and gets published. See
-[Coworking with Claude](../03-everyday-workflows/coworking-with-claude.md).
+[Coworking with Claude](../03-everyday-workflows/02-coworking-with-claude.md).
 
 ---
 

@@ -49,14 +49,14 @@ The last command launches Atlas. Keep that terminal window open while you use it
 
 Once Atlas is running, follow the normal getting-started path:
 
-1. **[Set up your account & your first System](./account-and-first-system.md)** — connect
+1. **[Set up your account & your first System](./04-account-and-first-system.md)** — connect
    your GitHub account (a one-time click) and point Atlas at your first System.
-2. **[Get your first System onto your computer](./getting-your-system-folder.md)** — if you
+2. **[Get your first System onto your computer](./03-getting-your-system-folder.md)** — if you
    don't have a System folder yet, this walks you through cloning a GitHub repo to use as
    one.
-3. **[A tour of the app](./app-tour.md)** — get your bearings.
+3. **[A tour of the app](./05-app-tour.md)** — get your bearings.
 
-New to the core idea? Start with **[Welcome to AMP Atlas](./welcome.md)** — it explains the
+New to the core idea? Start with **[Welcome to AMP Atlas](./01-welcome.md)** — it explains the
 **Draft → Review → Publish** cycle that everything is built on.
 
 ---
@@ -65,7 +65,7 @@ New to the core idea? Start with **[Welcome to AMP Atlas](./welcome.md)** — it
 
 Atlas is built so you can solve most things yourself:
 
-- Check the **[Troubleshooting & FAQ](../04-reference/troubleshooting-faq.md)** first — the
+- Check the **[Troubleshooting & FAQ](../04-reference/02-troubleshooting-faq.md)** first — the
   common hiccups (restart, sign-in, conflicts) have quick self-serve fixes there.
 - Still stuck, or found a bug? **[Open an issue](https://github.com/ParrotLab/amp-atlas/issues)** —
   your reports genuinely make Atlas (and these docs) better.

@@ -76,7 +76,7 @@ the details are accurate"* saves everyone time.
 ## What happens next
 
 Your reviewer will do one of two things (covered from their side in
-[Reviewing someone else's work](./review-someones-work.md)):
+[Reviewing someone else's work](./04-review-someones-work.md)):
 
 - **Approve** — your work is good to become official. Approving is a **sign-off; it does not
   publish yet.** Your Draft then shows up in *your* **Inbox** under **Ready to publish**.
@@ -99,11 +99,11 @@ live.)
 > **Heads up:** while your Draft is in review, the Live Version might move forward (if someone
 > else's work gets published). AMP Atlas brings your Draft up to date automatically when you
 > publish. In the rare case your changes clash with theirs, it'll pause and guide you — see
-> [When the Live Version changes](./updates-and-conflicts.md).
+> [When the Live Version changes](./06-updates-and-conflicts.md).
 
 ---
 
 **You should now be able to** submit a Draft for review, tell your reviewer what kind of
 feedback you want, handle requested changes without starting over, and publish once approved.
 Next, the other side of the table:
-[reviewing someone else's work](./review-someones-work.md).
+[reviewing someone else's work](./04-review-someones-work.md).

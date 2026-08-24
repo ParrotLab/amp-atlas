@@ -57,7 +57,7 @@ keeps the whole System reliable over months and years.
 Every System is organized the same way, so you always know where to find things — and so
 does Claude. Approved, trustworthy material lives in one place; in-progress drafts and
 project work live in another. (The next guide,
-[the AMP folder structure](./folder-structure.md), walks through exactly how.)
+[the AMP folder structure](./02-folder-structure.md), walks through exactly how.)
 
 That consistent shape is a **promise**: *if you're looking for X, X is always in the
 same place.* It's what lets you (or Claude) walk into a System you've never opened before
@@ -97,4 +97,4 @@ what keeps the system accountable no matter how much of the work AI eventually d
 **You should now understand:** why your team's knowledge lives in Systems, why one
 reviewed Live Version per area keeps that knowledge trustworthy, and why people and
 Claude working from the same source is the whole point. Next:
-[the AMP folder structure](./folder-structure.md) — how a System is organized inside.
+[the AMP folder structure](./02-folder-structure.md) — how a System is organized inside.

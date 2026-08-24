@@ -59,8 +59,8 @@ Sending your Draft to one or more teammates to look over. This is how a Draft mo
 The step where a teammate reads your Draft and either **approves** it or **requests
 changes**. Reviews are how your team keeps quality high and catches things before they
 become official. See
-[Submitting your work for review](../03-everyday-workflows/submit-for-review.md) and
-[Reviewing someone else's work](../03-everyday-workflows/review-someones-work.md).
+[Submitting your work for review](../03-everyday-workflows/03-submit-for-review.md) and
+[Reviewing someone else's work](../03-everyday-workflows/04-review-someones-work.md).
 
 ### Approve
 A reviewer's sign-off that a Draft is good to become official. **Approving is not the same

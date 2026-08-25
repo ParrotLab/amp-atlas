@@ -1,8 +1,8 @@
 name: Issue triage
 
-# Auto-classify + label new issues per our label guide, flag likely duplicates,
-# and point common problems at the troubleshooting FAQ. Advisory + non-destructive.
-# Mirrors the working claude-code-review.yml structure (prompt-only + OAuth token).
+# Auto-classify + label new issues per our label guide, flag likely duplicates, and point
+# common problems at the troubleshooting FAQ. Advisory + non-destructive (never closes).
+# Uses scoped `gh` commands (not arbitrary Bash) so a malicious issue body can't run anything else.
 
 on:
   issues:
@@ -22,18 +22,26 @@ jobs:
           fetch-depth: 1
 
       - uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Only these scoped gh commands + read tools — safe against prompt injection in issue bodies.
+          claude_args: >-
+            --allowedTools "Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh issue list:*),Bash(gh issue view:*),Read,Grep,Glob"
           prompt: |
-            Triage this new issue: ${{ github.event.issue.html_url }}
+            Triage GitHub issue #${{ github.event.issue.number }} in ${{ github.repository }}.
+            The `gh` CLI is available and authenticated (GH_TOKEN is set).
 
-            1. Read `docs/contributing/labels.md` (our label guide) and apply the single best
-               TYPE label — one of: bug, enhancement, documentation, question. Add a status
-               label (e.g. `help wanted`) only if the issue clearly warrants it.
-            2. Scan existing OPEN issues. If this looks like a duplicate, add one short, friendly
-               comment linking the original. Do not close anything.
-            3. If it's a common problem already answered in
+            1. Read `docs/contributing/labels.md`, choose the single best TYPE label
+               (bug / enhancement / documentation / question), and apply it:
+               `gh issue edit ${{ github.event.issue.number }} --add-label "<label>"`
+               Add a status label only if clearly warranted.
+            2. Check open issues (`gh issue list --state open`). If this clearly duplicates an
+               existing one, add ONE short, friendly comment linking it
+               (`gh issue comment ${{ github.event.issue.number }} --body "..."`). Never close anything.
+            3. If it's a common problem covered in
                `docs/user-guides/04-reference/02-troubleshooting-faq.md`, add a brief comment
                pointing the author there.
 
-            Keep it concise and friendly. Apply the minimum necessary — no over-labeling.
+            Be concise and friendly; apply the minimum necessary — no over-labeling.

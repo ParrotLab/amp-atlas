@@ -2,7 +2,7 @@ name: Issue triage
 
 # Auto-classify + label new issues per our label guide, flag likely duplicates,
 # and point common problems at the troubleshooting FAQ. Advisory + non-destructive.
-# Uses the CLAUDE_CODE_OAUTH_TOKEN secret (added by `/install-github-app`).
+# Mirrors the working claude-code-review.yml structure (prompt-only + OAuth token).
 
 on:
   issues:
@@ -11,24 +11,19 @@ on:
 jobs:
   triage:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     permissions:
       contents: read
-      issues: write        # apply labels + comment
+      issues: write
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Cost guards: cheap model + capped turns.
-          claude_args: >-
-            --max-turns 4
-            --model claude-sonnet-5
-            --allowedTools "mcp__github__list_issues,mcp__github__update_issue,mcp__github__create_issue_comment"
           prompt: |
             Triage this new issue: ${{ github.event.issue.html_url }}
 
